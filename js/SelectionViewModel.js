@@ -23,5 +23,22 @@ function SelectionViewModel(selectionGroup) {
             selectionGroup.path(path).attr({ "SelectedPath": "true", "style": "fill:#0000ff" });
             this.selNumSelected(this.selNumSelected() + 1);
         }
+
+        var clipperPaths;
+        if (path != null)
+            clipperPaths = getClipperPathsFromSnapPath(path, function (msg) {
+                showAlert(msg, "alert-warning");
+            });
+
+        if (clipperPaths != null) {
+            var co = new ClipperLib.ClipperOffset();
+            co.AddPaths(clipperPaths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+            var offsetted = [];
+            co.Execute(offsetted, -snapToClipperScale*10);
+
+            path = getSnapPathFromClipperPaths(offsetted);
+            if (path != null)
+                selectionGroup.path(path).attr({ "style": "fill:#00ff00" });
+        }
     }
 }

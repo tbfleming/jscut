@@ -24,11 +24,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.3941125"
-     inkscape:cx="403.82311"
-     inkscape:cy="158.41641"
+     inkscape:zoom="0.5"
+     inkscape:cx="429.69591"
+     inkscape:cy="142.57007"
      inkscape:current-layer="layer1"
-     inkscape:document-units="px"
+     inkscape:document-units="mm"
      showgrid="true"
      inkscape:window-width="1396"
      inkscape:window-height="896"
@@ -44,7 +44,8 @@
        snapvisiblegridlinesonly="true"
        units="mm"
        spacingx="10mm"
-       spacingy="10mm" />
+       spacingy="10mm"
+       dotted="false" />
   </sodipodi:namedview>
   <metadata
      id="metadata4558">
@@ -140,5 +141,17 @@
        d="m 389.76378,422.83465 0,35.43307 35.43307,0 0,-35.43307 z"
        id="path3030"
        inkscape:connector-curvature="0" />
+    <path
+       style="fill:#ffff00;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 29.421664,188.75296 177.165356,0 0,141.73229 -70.86614,0 0,-35.43307 35.43307,0 0,-70.86615 -106.299206,0 0,70.86615 70.866136,0 0,35.43307 -106.299216,0 z"
+       id="path3034"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccccccccc" />
+    <path
+       style="fill:#00ff00;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 506.66142,270.29921 -177.16536,0 0,141.73229 70.86614,0 0,-35.43307 -35.43307,0 0,-70.86615 106.29922,0 0,70.86615 -70.86615,0 0,35.43307 106.29922,0 z"
+       id="path3036"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccccccccc" />
   </g>
 </svg>
