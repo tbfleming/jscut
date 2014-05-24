@@ -31,6 +31,9 @@ function SelectionViewModel(selectionGroup) {
             });
 
         if (clipperPaths != null) {
+            clipperPaths = ClipperLib.Clipper.CleanPolygons(clipperPaths, Path.cleanPolyDist);
+            clipperPaths = ClipperLib.Clipper.SimplifyPolygons(clipperPaths, ClipperLib.PolyFillType.pftEvenOdd);
+
             var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
             co.AddPaths(clipperPaths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
             var offsetted = [];

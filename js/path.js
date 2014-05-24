@@ -5,6 +5,7 @@ var Path = new (function () { })();
 (function () {
     Path.svgPxPerInch = 90;
     Path.snapToClipperScale = 100000;                                           // Scale Snap.svg to Clipper
+    Path.cleanPolyDist = Path.snapToClipperScale * Path.svgPxPerInch / 100000;  // 1/100000 in
     Path.arcTolerance = Path.snapToClipperScale * Path.svgPxPerInch / 40000;    // 1/40000 in
 
     // Linearize a cubic bezier. Returns ['L', x2, y2, x3, y3, ...]. The return value doesn't
