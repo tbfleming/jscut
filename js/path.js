@@ -46,7 +46,8 @@ function linearizeSnapPath(path, minNumSegments, minSegmentLength, alertFn) {
     for (var i = 1; i < path.length; ++i) {
         subpath = path[i];
         if (subpath[0] == 'C' && subpath.length == 7) {
-            result.push(linearizeCubicBezier(x, y, subpath[1], subpath[2], subpath[3], subpath[4], subpath[5], subpath[6], minSegmentLength));
+            result.push(linearizeCubicBezier(
+                x, y, subpath[1], subpath[2], subpath[3], subpath[4], subpath[5], subpath[6], minNumSegments, minSegmentLength));
             x = subpath[5];
             y = subpath[6];
         } else if (subpath[0] == 'M' && subpath.length == 3) {

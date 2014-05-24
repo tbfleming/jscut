@@ -1,12 +1,17 @@
 // Copyright 2014 Todd Fleming
 
-var materialViewModel = new MaterialViewModel();
-ko.applyBindings(materialViewModel);
-
 var mainSvg = Snap("#MainSvg");
-var content;
-var selectionGroup;
 var materialSvg = Snap("#MaterialSvg");
+var contentGroup = mainSvg.group();
+contentGroup.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)));
+var selectionGroup = mainSvg.g(mainSvg.circle(10, 10, 100, 100));
+
+var materialViewModel = new MaterialViewModel();
+var selectionViewModel = new SelectionViewModel(selectionGroup);
+
+ko.applyBindings(materialViewModel, $("#Material")[0]);
+ko.applyBindings(selectionViewModel, $("#Selection")[0]);
+
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -21,7 +26,6 @@ $(function () {
     $(window).resize(updateSvgAutoHeight);
 });
 
-
 var nextAlertNum = 1;
 function showAlert(message, alerttype) {
     var alertNum = nextAlertNum++;
@@ -31,32 +35,15 @@ function showAlert(message, alerttype) {
     }, 5000);
 }
 
-function selectPath(elem) {
-    if (elem.attr("SelectedPath") == "true") {
-        elem.remove();
-        return;
-    }
-
-    var path = getLinearSnapPathFromElement(elem, 1, 3, function (msg) {
-        showAlert(msg, "alert-warning");
-    });
-
-    if (path != null)
-        selectionGroup.path(path).attr({ "SelectedPath": "true", "style": "fill:#0000ff" });
-}
-
 Snap.load("Material.svg", function (f) {
     materialSvg.append(f);
     materialViewModel.materialSvg(materialSvg);
 });
 
 Snap.load("test.svg", function (f) {
-    content = mainSvg.group();
-    content.append(f);
-    content.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)));
-    selectionGroup = mainSvg.g(mainSvg.circle(10, 10, 100, 100));
+    contentGroup.append(f);
 });
 
 $("#MainSvg").click(function (e) {
-    selectPath(Snap.getElementByPoint(e.pageX, e.pageY));
+    selectionViewModel.toggleSelect(Snap.getElementByPoint(e.pageX, e.pageY));
 });

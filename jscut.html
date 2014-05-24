@@ -66,7 +66,7 @@
                 <div id="alert_placeholder"></div>
 
                 <!-- material -->
-                <div class="panel panel-default">
+                <div class="panel panel-default" id="Material">
                     <div class="panel-heading">
                         <h3 class="panel-title">Material</h3>
                     </div>
@@ -110,6 +110,29 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- selection -->
+                <div class="panel panel-default" id="Selection">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Selection</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label for="inputSelMinNumSegments" class="col-sm-5 control-label">Minimum Segments</label>
+                                <div class="col-sm-7">
+                                    <input type="number" class="form-control" id="inputSelMinNumSegments" data-bind="value: selMinNumSegments" placeholder="Segments">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputSelMinSegmentLength" class="col-sm-5 control-label">Minimum Segment Length (mm)</label>
+                                <div class="col-sm-7">
+                                    <input type="number" class="form-control" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -126,6 +149,7 @@
     <script src="lib/snap-0.2.0.svg-min.js"></script>
     <script src="js/path.js"></script>
     <script src="js/MaterialViewModel.js"></script>
+    <script src="js/SelectionViewModel.js"></script>
     <script src="js/jscut.js"></script>
 </body>
 </html>
