@@ -15,7 +15,7 @@ function SelectionViewModel(selectionGroup) {
             return;
         }
 
-        var path = getLinearSnapPathFromElement(elem, this.selMinNumSegments(), this.selMinSegmentLength() / mmPerInch * svgPxPerInch, function (msg) {
+        var path = Path.getLinearSnapPathFromElement(elem, this.selMinNumSegments(), this.selMinSegmentLength() / mmPerInch * svgPxPerInch, function (msg) {
             showAlert(msg, "alert-warning");
         });
 
@@ -26,17 +26,17 @@ function SelectionViewModel(selectionGroup) {
 
         var clipperPaths;
         if (path != null)
-            clipperPaths = getClipperPathsFromSnapPath(path, function (msg) {
+            clipperPaths = Path.getClipperPathsFromSnapPath(path, function (msg) {
                 showAlert(msg, "alert-warning");
             });
 
         if (clipperPaths != null) {
-            var co = new ClipperLib.ClipperOffset();
+            var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
             co.AddPaths(clipperPaths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
             var offsetted = [];
-            co.Execute(offsetted, -snapToClipperScale*10);
+            co.Execute(offsetted, -Path.snapToClipperScale * 10);
 
-            path = getSnapPathFromClipperPaths(offsetted);
+            path = Path.getSnapPathFromClipperPaths(offsetted);
             if (path != null)
                 selectionGroup.path(path).attr({ "style": "fill:#00ff00" });
         }
