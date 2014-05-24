@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>jscut</title>
+
+    <link href="lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="jscut.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Fixed navbar -->
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm">Project name</a>
+            </div>
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm">Home</a></li>
+                    <li><a href="http://getbootstrap.com/examples/sticky-footer-navbar/#about">About</a></li>
+                    <li><a href="http://getbootstrap.com/examples/sticky-footer-navbar/#contact">Contact</a></li>
+                    <li class="dropdown">
+                        <a href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm">Action</a></li>
+                            <li><a href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm">Another action</a></li>
+                            <li><a href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm">Something else here</a></li>
+                            <li class="divider"></li>
+                            <li class="dropdown-header">Nav header</li>
+                            <li><a href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm">Separated link</a></li>
+                            <li><a href="./Sticky Footer Navbar Template for Bootstrap_files/Sticky Footer Navbar Template for Bootstrap.htm">One more separated link</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+
+    <!-- Begin page content -->
+    <div class="container">
+        <div class="row">
+            <!-- left -->
+            <div class="col-md-2">
+            </div>
+
+            <!-- center -->
+            <div class="col-md-7">
+                <svg id="MainSvg" height="80%" />
+            </div>
+
+            <!-- right -->
+            <div class="col-md-3">
+                <div id="alert_placeholder"></div>
+
+                <!-- material -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Material</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <div class="col-sm-offset-2 col-sm-10">
+                                    <svg id="MaterialSvg" class="autoheight" viewBox="0 0 74 35" internalWidth="74" internalHeight="35" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="selectMatUnits" class="col-sm-5 control-label">Units</label>
+                                <div class="col-sm-7">
+                                    <select class="form-control" id="selectMatUnits" data-bind="value: matUnits">
+                                        <option>inch</option>
+                                        <option>mm</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputMatThickness" class="col-sm-5 control-label">Thickness</label>
+                                <div class="col-sm-7">
+                                    <input type="number" class="form-control" id="inputMatThickness" data-bind="value: matThickness" placeholder="Thickness">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="selectMatZOrigin" class="col-sm-5 control-label">Z Origin</label>
+                                <div class="col-sm-7">
+                                    <select class="form-control" id="selectMatZOrigin" data-bind="value: matZOrigin">
+                                        <option>Top</option>
+                                        <option>Bottom</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputMatClearance" class="col-sm-5 control-label">Clearance</label>
+                                <div class="col-sm-7">
+                                    <input type="number" class="form-control" id="inputMatClearance" data-bind="value: matClearance" placeholder="Clearance">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer">
+        <div class="container">
+            <p class="text-muted">Place sticky footer content here.</p>
+        </div>
+    </div>
+
+    <script src="lib/jquery-2.1.1.min.js"></script>
+    <script src="lib/bootstrap-3.1.1/js/bootstrap.min.js"></script>
+    <script src="lib/knockout-3.1.0.js"></script>
+    <script src="lib/snap-0.2.0.svg-min.js"></script>
+    <script src="jscut.js"></script>
+</body>
+</html>
