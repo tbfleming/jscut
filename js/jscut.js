@@ -1,10 +1,12 @@
 // Copyright 2014 Todd Fleming
 
+var materialViewModel = new MaterialViewModel();
+ko.applyBindings(materialViewModel);
+
 var mainSvg = Snap("#MainSvg");
 var content;
 var selectionGroup;
 var materialSvg = Snap("#MaterialSvg");
-var materialSvgReady = false;
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -19,66 +21,6 @@ $(function () {
     $(window).resize(updateSvgAutoHeight);
 });
 
-function formatZ(z) {
-    z = parseFloat(z);
-    return z.toFixed(3);
-}
-
-function AppViewModel() {
-    this.matUnits = ko.observable("inch");
-    this.matThickness = ko.observable("1.0");
-    this.matZOrigin = ko.observable("Bottom");
-    this.matClearance = ko.observable("1.0");
-
-    this.matUnits.subscribe(function (newValue) {
-        if (newValue == "inch") {
-            this.matThickness(this.matThickness() / 25.4);
-            this.matClearance(this.matClearance() / 25.4);
-        } else {
-            this.matThickness(this.matThickness() * 25.4);
-            this.matClearance(this.matClearance() * 25.4);
-        }
-    }, this);
-
-    this.matTopZ = ko.computed(function () {
-        if (this.matZOrigin() == "Top")
-            return 0;
-        else
-            return this.matThickness();
-    }, this);
-
-    this.matBotZ = ko.computed(function () {
-        if (this.matZOrigin() == "Bottom")
-            return 0;
-        else
-            return "-" + this.matThickness();
-    }, this);
-
-    this.matZSafeMove = ko.computed(function () {
-        if (this.matZOrigin() == "Top")
-            return this.matClearance();
-        else
-            return parseFloat(this.matThickness()) + parseFloat(this.matClearance());
-    }, this);
-
-    this.matTopZ.subscribe(function (newValue) {
-        if (materialSvgReady)
-            materialSvg.select("#matTopZ").node.textContent = formatZ(newValue);
-    });
-
-    this.matBotZ.subscribe(function (newValue) {
-        if (materialSvgReady)
-            materialSvg.select("#matBotZ").node.textContent = formatZ(newValue);
-    });
-
-    this.matZSafeMove.subscribe(function (newValue) {
-        if (materialSvgReady)
-            materialSvg.select("#matZSafeMove").node.textContent = formatZ(newValue);
-    });
-}
-
-var appViewModel = new AppViewModel();
-ko.applyBindings(appViewModel);
 
 var nextAlertNum = 1;
 function showAlert(message, alerttype) {
@@ -105,8 +47,7 @@ function selectPath(elem) {
 
 Snap.load("Material.svg", function (f) {
     materialSvg.append(f);
-    materialSvgReady = true;
-    appViewModel.matZOrigin("Top");
+    materialViewModel.materialSvg(materialSvg);
 });
 
 Snap.load("test.svg", function (f) {
