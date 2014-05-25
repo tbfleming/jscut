@@ -24,25 +24,15 @@ function SelectionViewModel(selectionGroup) {
             selectionGroup.path(path).attr("class", "selectedPath");
             self.selNumSelected(self.selNumSelected() + 1);
         }
-/*
-        var clipperPaths;
-        if (path != null)
-            clipperPaths = Path.getClipperPathsFromSnapPath(path, function (msg) {
-                showAlert(msg, "alert-warning");
-            });
-
-        if (clipperPaths != null) {
-            cutterPath = Cam.pocket(clipperPaths, Path.snapToClipperScale * 5, 0);
-            path = Path.getSnapPathFromClipperPaths(cutterPath);
-            if (path != null)
-                selectionGroup.path(path).attr("class", "toolPath");
-        }
-*/
 
         return true;
     }
 
     self.getSelection = function () {
         return selectionGroup.selectAll("Path");
+    }
+
+    self.clearSelection = function () {
+        selectionGroup.selectAll("Path").remove();
     }
 }

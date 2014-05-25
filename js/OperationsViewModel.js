@@ -7,12 +7,26 @@ function Operation(operationGroup, type, rawPaths) {
     self.combineOp = ko.observable("Union");
     self.combinedGeometry = [];
     self.combinedGeometrySvg = null;
+    self.toolPath = [];
+    self.toolPathSvg = null;
 
-    self.recombine = function () {
+    function removeCombinedGeometrySvg() {
         if (self.combinedGeometrySvg) {
             self.combinedGeometrySvg.remove();
             self.combinedGeometrySvg = null;
         }
+    }
+
+    function removeToolPathSvg() {
+        if (self.toolPathSvg) {
+            self.toolPathSvg.remove();
+            self.toolPathSvg = null;
+        }
+    }
+
+    self.recombine = function () {
+        removeCombinedGeometrySvg();
+        removeToolPathSvg();
 
         var all = [];
         for (var i = 0; i < self.rawPaths.length; ++i) {
@@ -51,8 +65,15 @@ function Operation(operationGroup, type, rawPaths) {
     }
 
     self.combineOp.subscribe(self.recombine);
-
     self.recombine();
+
+    self.generateToolPath = function () {
+        removeToolPathSvg();
+        self.toolPath = Cam.pocket(self.combinedGeometry, Path.snapToClipperScale * 5, 0);
+        path = Path.getSnapPathFromClipperPaths(self.toolPath);
+        if (path != null)
+            self.toolPathSvg = operationGroup.path(path).attr("class", "toolPath");
+    }
 }
 
 function OperationsViewModel(selectionViewModel, operationGroup) {
@@ -64,6 +85,7 @@ function OperationsViewModel(selectionViewModel, operationGroup) {
         selectionViewModel.getSelection().forEach(function (element) {
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
+        selectionViewModel.clearSelection();
         self.operations.push(new Operation(operationGroup, "Pocket", rawPaths));
     }
 
@@ -72,7 +94,7 @@ function OperationsViewModel(selectionViewModel, operationGroup) {
     }
 
     self.clickOnSvg = function (elem) {
-        if (elem.attr("class") == "combinedGeometry") {
+        if (elem.attr("class") == "combinedGeometry" || elem.attr("class") == "toolPath") {
             elem.remove();
             return true;
         }

@@ -65,11 +65,6 @@
                             <tbody data-bind="foreach: operations">
                                 <tr>
                                     <td>
-                                        <select data-bind="value: type">
-                                            <option>Pocket</option>
-                                        </select>
-                                    </td>
-                                    <td>
                                         <select data-bind="value: combineOp">
                                             <option>Union</option>
                                             <option>Intersect</option>
@@ -77,7 +72,13 @@
                                             <option>Xor</option>
                                         </select>
                                     </td>
-                                    <td><a href="#" data-bind="click: $root.removeOperation">Remove</a></td>
+                                    <td>
+                                        <select data-bind="value: type">
+                                            <option>Pocket</option>
+                                        </select>
+                                    </td>
+                                    <!--<td><a href="#" data-bind="click: $root.removeOperation">Remove</a></td>-->
+                                    <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -138,10 +139,10 @@
                         </div>
                     </div>
                 </div>
-                <!-- selection -->
-                <div class="panel panel-default" id="Selection">
+                <!-- Curve To Line Conversion -->
+                <div class="panel panel-default" id="CurveToLine">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Selection</h3>
+                        <h3 class="panel-title">Curve To Line Conversion</h3>
                     </div>
                     <div class="panel-body">
                         <div class="form-horizontal">
