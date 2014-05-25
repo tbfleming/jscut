@@ -5,7 +5,7 @@ function SelectionViewModel(selectionGroup) {
     mmPerInch = 25.4;
 
     this.selMinNumSegments = ko.observable("1");
-    this.selMinSegmentLength = ko.observable("20");
+    this.selMinSegmentLength = ko.observable("0.1");
     this.selNumSelected = ko.observable("0");
 
     this.toggleSelect = function(elem) {
@@ -31,6 +31,12 @@ function SelectionViewModel(selectionGroup) {
             });
 
         if (clipperPaths != null) {
+            cutterPath = Cam.pocket(clipperPaths, Path.snapToClipperScale * 5, 0);
+            path = Path.getSnapPathFromClipperPaths(cutterPath);
+            if (path != null)
+                selectionGroup.path(path).attr({ "style": "fill:none;stroke:#ff0000" });
+
+            /*
             clipperPaths = ClipperLib.Clipper.CleanPolygons(clipperPaths, Path.cleanPolyDist);
             clipperPaths = ClipperLib.Clipper.SimplifyPolygons(clipperPaths, ClipperLib.PolyFillType.pftEvenOdd);
 
@@ -42,6 +48,7 @@ function SelectionViewModel(selectionGroup) {
             path = Path.getSnapPathFromClipperPaths(offsetted);
             if (path != null)
                 selectionGroup.path(path).attr({ "style": "fill:#00ff00" });
+                */
         }
     }
 }
