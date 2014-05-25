@@ -10,6 +10,16 @@ var Cam = new function () {
         return offsetted;
     }
 
+    // Does the line from p1 to p2 cross outside of bounds?
+    function crosses(bounds, p1, p2) {
+        var clipper = new ClipperLib.Clipper();
+        clipper.AddPath([p1, p2], ClipperLib.PolyType.ptSubject, false);
+        clipper.AddPaths(bounds, ClipperLib.PolyType.ptClip, true);
+        var result = new ClipperLib.PolyTree();
+        clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+        return result.ChildCount() != 1;
+    }
+
     // Try to merge paths. A merged path doesn't cross outside of bounds.
     function mergePaths(bounds, paths) {
         if (paths.length == 0)
@@ -39,14 +49,21 @@ var Cam = new function () {
                 }
             }
 
-            // TODO: check crossing
             path = paths[closestPathIndex];
             paths[closestPathIndex] = [];
             numLeft -= 1;
+            var needNew = crosses(bounds, currentPoint, path[closestPointIndex]);
             path = path.slice(closestPointIndex, path.length).concat(path.slice(0, closestPointIndex));
             path.push(path[0]);
-            currentPath = currentPath.concat(path);
-            currentPoint = currentPath[currentPath.length - 1];
+            if (needNew) {
+                mergedPaths.push(currentPath);
+                currentPath = path;
+                currentPoint = currentPath[currentPath.length - 1];
+            }
+            else {
+                currentPath = currentPath.concat(path);
+                currentPoint = currentPath[currentPath.length - 1];
+            }
         }
         mergedPaths.push(currentPath);
         return mergedPaths;
