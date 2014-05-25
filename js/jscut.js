@@ -8,7 +8,7 @@ var operationGroup = mainSvg.g();
 var selectionGroup = mainSvg.g();
 
 var materialViewModel = new MaterialViewModel();
-var selectionViewModel = new SelectionViewModel(selectionGroup);
+var selectionViewModel = new SelectionViewModel(materialViewModel, selectionGroup);
 var operationsViewModel = new OperationsViewModel(selectionViewModel, operationGroup);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);

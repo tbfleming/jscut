@@ -1,13 +1,13 @@
 // Copyright 2014 Todd Fleming
 
-function SelectionViewModel(selectionGroup) {
+function SelectionViewModel(materialViewModel, selectionGroup) {
     var self = this;
-    svgPxPerInch = 90;
-    mmPerInch = 25.4;
 
     self.selMinNumSegments = ko.observable("1");
-    self.selMinSegmentLength = ko.observable("1.0");
+    self.selMinSegmentLength = ko.observable("0.1");
     self.selNumSelected = ko.observable("0");
+
+    materialViewModel.unitConverter.add(self.selMinSegmentLength);
 
     self.clickOnSvg = function (elem) {
         if (elem.attr("class") == "selectedPath") {
@@ -16,7 +16,7 @@ function SelectionViewModel(selectionGroup) {
             return true;
         }
 
-        var path = Path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength() / mmPerInch * svgPxPerInch, function (msg) {
+        var path = Path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength.toPx(), function (msg) {
             showAlert(msg, "alert-warning");
         });
 
