@@ -17,7 +17,17 @@ var Cam = new function () {
         clipper.AddPaths(bounds, ClipperLib.PolyType.ptClip, true);
         var result = new ClipperLib.PolyTree();
         clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
-        return result.ChildCount() != 1;
+        if (result.ChildCount() == 1) {
+            var child = result.Childs()[0];
+            points = child.Contour();
+            if (points.length == 2) {
+                if (points[0].X == p1.X && points[1].X == p2.X && points[0].Y == p1.Y && points[1].Y == p2.Y)
+                    return false;
+                if (points[0].X == p2.X && points[1].X == p1.X && points[0].Y == p2.Y && points[1].Y == p1.Y)
+                    return false;
+            }
+        }
+        return true;
     }
 
     // Try to merge paths. A merged path doesn't cross outside of bounds.
