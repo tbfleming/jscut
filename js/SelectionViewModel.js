@@ -9,11 +9,11 @@ function SelectionViewModel(selectionGroup) {
     self.selMinSegmentLength = ko.observable("0.1");
     self.selNumSelected = ko.observable("0");
 
-    self.toggleSelect = function (elem) {
+    self.clickOnSvg = function (elem) {
         if (elem.attr("class") == "selectedPath") {
             elem.remove();
             self.selNumSelected(self.selNumSelected() - 1);
-            return;
+            return true;
         }
 
         var path = Path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength() / mmPerInch * svgPxPerInch, function (msg) {
@@ -38,6 +38,8 @@ function SelectionViewModel(selectionGroup) {
                 selectionGroup.path(path).attr("class", "toolPath");
         }
 */
+
+        return true;
     }
 
     self.getSelection = function () {

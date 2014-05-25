@@ -47,5 +47,8 @@ Snap.load("test.svg", function (f) {
 });
 
 $("#MainSvg").click(function (e) {
-    selectionViewModel.toggleSelect(Snap.getElementByPoint(e.pageX, e.pageY));
+    var element = Snap.getElementByPoint(e.pageX, e.pageY);
+    if (element != null)
+        operationsViewModel.clickOnSvg(element) ||
+        selectionViewModel.clickOnSvg(element);
 });

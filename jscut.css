@@ -43,6 +43,11 @@ code {
     fill:#0080ff;
 }
 
+.combinedGeometry {
+    stroke: none;
+    fill: #000000;
+}
+
 .toolPath {
     stroke: #ff0000;
     fill: none;
