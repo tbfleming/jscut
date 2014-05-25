@@ -1,6 +1,8 @@
 // Copyright 2014 Todd Fleming
 
 var Cam = new function () {
+    var self = this;
+
     function offset(paths, amount) {
         var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
         co.AddPaths(paths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
@@ -80,7 +82,7 @@ var Cam = new function () {
     }
 
     // cutterDia is in Clipper units. overlap is in the range [0, 1).
-    this.pocket = function (geometry, cutterDia, overlap) {
+    self.pocket = function (geometry, cutterDia, overlap) {
         geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
         geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, ClipperLib.PolyFillType.pftEvenOdd);
         var current = offset(geometry, -cutterDia / 2);

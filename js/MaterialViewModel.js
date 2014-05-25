@@ -6,61 +6,62 @@ function MaterialViewModel() {
         return z.toFixed(3);
     }
 
-    this.matUnits = ko.observable("inch");
-    this.matThickness = ko.observable("1.0");
-    this.matZOrigin = ko.observable("Top");
-    this.matClearance = ko.observable("1.0");
-    this.materialSvg = ko.observable(null);
+    var self = this;
+    self.matUnits = ko.observable("inch");
+    self.matThickness = ko.observable("1.0");
+    self.matZOrigin = ko.observable("Top");
+    self.matClearance = ko.observable("1.0");
+    self.materialSvg = ko.observable(null);
 
-    this.matUnits.subscribe(function (newValue) {
+    self.matUnits.subscribe(function (newValue) {
         if (newValue == "inch") {
-            this.matThickness(this.matThickness() / 25.4);
-            this.matClearance(this.matClearance() / 25.4);
+            self.matThickness(self.matThickness() / 25.4);
+            self.matClearance(self.matClearance() / 25.4);
         } else {
-            this.matThickness(this.matThickness() * 25.4);
-            this.matClearance(this.matClearance() * 25.4);
+            self.matThickness(self.matThickness() * 25.4);
+            self.matClearance(self.matClearance() * 25.4);
         }
-    }, this);
+    });
 
-    this.matTopZ = ko.computed(function () {
-        if (this.matZOrigin() == "Top")
+    self.matTopZ = ko.computed(function () {
+        if (self.matZOrigin() == "Top")
             return 0;
         else
-            return this.matThickness();
-    }, this);
+            return self.matThickness();
+    });
 
-    this.matBotZ = ko.computed(function () {
-        if (this.matZOrigin() == "Bottom")
+    self.matBotZ = ko.computed(function () {
+        if (self.matZOrigin() == "Bottom")
             return 0;
         else
-            return "-" + this.matThickness();
-    }, this);
+            return "-" + self.matThickness();
+    });
 
-    this.matZSafeMove = ko.computed(function () {
-        if (this.matZOrigin() == "Top")
-            return this.matClearance();
+    self.matZSafeMove = ko.computed(function () {
+        if (self.matZOrigin() == "Top")
+            return self.matClearance();
         else
-            return parseFloat(this.matThickness()) + parseFloat(this.matClearance());
-    }, this);
+            return parseFloat(self.matThickness()) + parseFloat(self.matClearance());
+    });
 
-    this.matTopZ.subscribe(function (newValue) {
-        if (this.materialSvg())
-            this.materialSvg().select("#matTopZ").node.textContent = formatZ(newValue);
-    }, this);
+    self.matTopZ.subscribe(function (newValue) {
+        if (self.materialSvg())
+            self.materialSvg().select("#matTopZ").node.textContent = formatZ(newValue);
+    });
 
-    this.matBotZ.subscribe(function (newValue) {
-        if (this.materialSvg())
-            this.materialSvg().select("#matBotZ").node.textContent = formatZ(newValue);
-    }, this);
+    self.matBotZ.subscribe(function (newValue) {
+        if (self.materialSvg())
+            self.materialSvg().select("#matBotZ").node.textContent = formatZ(newValue);
+    });
 
-    this.matZSafeMove.subscribe(function (newValue) {
-        if (this.materialSvg())
-            this.materialSvg().select("#matZSafeMove").node.textContent = formatZ(newValue);
-    }, this);
+    self.matZSafeMove.subscribe(function (newValue) {
+        if (self.materialSvg())
+            self.materialSvg().select("#matZSafeMove").node.textContent = formatZ(newValue);
+    });
 
-    this.materialSvg.subscribe(function (newValue) {
+    self.materialSvg.subscribe(function (newValue) {
         // Propagate current values to materialSvg
-        this.matZOrigin("Bottom");
-        this.matZOrigin("Top");
-    }, this);
+        self.matZOrigin("Bottom");
+        self.matZOrigin("Top");
+    });
 }

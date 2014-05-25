@@ -1,27 +1,28 @@
 // Copyright 2014 Todd Fleming
 
 function SelectionViewModel(selectionGroup) {
+    var self = this;
     svgPxPerInch = 90;
     mmPerInch = 25.4;
 
-    this.selMinNumSegments = ko.observable("1");
-    this.selMinSegmentLength = ko.observable("0.1");
-    this.selNumSelected = ko.observable("0");
+    self.selMinNumSegments = ko.observable("1");
+    self.selMinSegmentLength = ko.observable("0.1");
+    self.selNumSelected = ko.observable("0");
 
-    this.toggleSelect = function(elem) {
+    self.toggleSelect = function (elem) {
         if (elem.attr("class") == "selectedPath") {
             elem.remove();
-            this.selNumSelected(this.selNumSelected() - 1);
+            self.selNumSelected(self.selNumSelected() - 1);
             return;
         }
 
-        var path = Path.getLinearSnapPathFromElement(elem, this.selMinNumSegments(), this.selMinSegmentLength() / mmPerInch * svgPxPerInch, function (msg) {
+        var path = Path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength() / mmPerInch * svgPxPerInch, function (msg) {
             showAlert(msg, "alert-warning");
         });
 
         if (path != null) {
             selectionGroup.path(path).attr("class", "selectedPath");
-            this.selNumSelected(this.selNumSelected() + 1);
+            self.selNumSelected(self.selNumSelected() + 1);
         }
 
         var clipperPaths;
