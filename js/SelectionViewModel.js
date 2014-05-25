@@ -9,7 +9,7 @@ function SelectionViewModel(selectionGroup) {
     this.selNumSelected = ko.observable("0");
 
     this.toggleSelect = function(elem) {
-        if (elem.attr("SelectedPath") == "true") {
+        if (elem.attr("class") == "selectedPath") {
             elem.remove();
             this.selNumSelected(this.selNumSelected() - 1);
             return;
@@ -20,7 +20,7 @@ function SelectionViewModel(selectionGroup) {
         });
 
         if (path != null) {
-            selectionGroup.path(path).attr({ "SelectedPath": "true", "style": "fill:#0000ff" });
+            selectionGroup.path(path).attr("class", "selectedPath");
             this.selNumSelected(this.selNumSelected() + 1);
         }
 
@@ -34,7 +34,7 @@ function SelectionViewModel(selectionGroup) {
             cutterPath = Cam.pocket(clipperPaths, Path.snapToClipperScale * 5, 0);
             path = Path.getSnapPathFromClipperPaths(cutterPath);
             if (path != null)
-                selectionGroup.path(path).attr({ "style": "fill:none;stroke:#ff0000" });
+                selectionGroup.path(path).attr("class", "toolPath");
 
             /*
             clipperPaths = ClipperLib.Clipper.CleanPolygons(clipperPaths, Path.cleanPolyDist);

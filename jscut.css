@@ -37,3 +37,13 @@ body > .container {
 code {
   font-size: 80%;
 }
+
+.selectedPath {
+    stroke:none;
+    fill:#0080ff;
+}
+
+.toolPath {
+    stroke: #ff0000;
+    fill: none;
+}
