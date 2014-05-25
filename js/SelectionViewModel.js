@@ -6,7 +6,7 @@ function SelectionViewModel(selectionGroup) {
     mmPerInch = 25.4;
 
     self.selMinNumSegments = ko.observable("1");
-    self.selMinSegmentLength = ko.observable("0.1");
+    self.selMinSegmentLength = ko.observable("1.0");
     self.selNumSelected = ko.observable("0");
 
     self.clickOnSvg = function (elem) {

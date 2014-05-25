@@ -1,4 +1,4 @@
 jscut
 =====
 
-Just testing out an idea
+I'm attempting to develop a CAM package that runs in the browser. Not usable yet.
