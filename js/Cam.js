@@ -3,6 +3,13 @@
 var Cam = new function () {
     var self = this;
 
+    // Simplify and clean up geometry
+    self.simplifyAndClean = function (geometry) {
+        geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
+        geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, ClipperLib.PolyFillType.pftEvenOdd);
+        return geometry;
+    }
+
     function offset(paths, amount) {
         var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
         co.AddPaths(paths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
@@ -83,8 +90,6 @@ var Cam = new function () {
 
     // cutterDia is in Clipper units. overlap is in the range [0, 1).
     self.pocket = function (geometry, cutterDia, overlap) {
-        geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
-        geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, ClipperLib.PolyFillType.pftEvenOdd);
         var current = offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
         var allPaths = [];

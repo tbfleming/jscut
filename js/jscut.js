@@ -5,13 +5,15 @@ var materialSvg = Snap("#MaterialSvg");
 var contentGroup = mainSvg.group();
 contentGroup.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)));
 var selectionGroup = mainSvg.g();
+var operationGroup = mainSvg.g();
 
 var materialViewModel = new MaterialViewModel();
 var selectionViewModel = new SelectionViewModel(selectionGroup);
+var operationsViewModel = new OperationsViewModel(selectionViewModel, operationGroup);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#Selection")[0]);
-
+ko.applyBindings(operationsViewModel, $("#Operations")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {

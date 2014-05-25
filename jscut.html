@@ -53,18 +53,45 @@
     <div class="container">
         <div class="row">
             <!-- left -->
-            <div class="col-md-2">
+            <div class="col-lg-3">
+                <!-- operations -->
+                <div class="panel panel-default" id="Operations">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Operations</h3>
+                    </div>
+                    <div class="panel-body">
+                        <button data-bind="click: addOperation">Add</button>
+                        <table>
+                            <tbody data-bind="foreach: operations">
+                                <tr>
+                                    <td>
+                                        <select data-bind="value: type">
+                                            <option>Pocket</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select data-bind="value: combineOp">
+                                            <option>Union</option>
+                                            <option>Intersect</option>
+                                            <option>Diff</option>
+                                        </select>
+                                    </td>
+                                    <td><a href="#" data-bind="click: $root.removeOperation">Remove</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- center -->
-            <div class="col-md-7">
+            <div class="col-lg-6">
                 <svg id="MainSvg" height="80%" />
             </div>
 
             <!-- right -->
-            <div class="col-md-3">
+            <div class="col-lg-3">
                 <div id="alert_placeholder"></div>
-
                 <!-- material -->
                 <div class="panel panel-default" id="Material">
                     <div class="panel-heading">
@@ -110,7 +137,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- selection -->
                 <div class="panel panel-default" id="Selection">
                     <div class="panel-heading">
@@ -152,6 +178,7 @@
     <script src="js/Cam.js"></script>
     <script src="js/MaterialViewModel.js"></script>
     <script src="js/SelectionViewModel.js"></script>
+    <script src="js/OperationsViewModel.js"></script>
     <script src="js/jscut.js"></script>
 </body>
 </html>

@@ -24,7 +24,7 @@ function SelectionViewModel(selectionGroup) {
             selectionGroup.path(path).attr("class", "selectedPath");
             self.selNumSelected(self.selNumSelected() + 1);
         }
-
+/*
         var clipperPaths;
         if (path != null)
             clipperPaths = Path.getClipperPathsFromSnapPath(path, function (msg) {
@@ -36,20 +36,11 @@ function SelectionViewModel(selectionGroup) {
             path = Path.getSnapPathFromClipperPaths(cutterPath);
             if (path != null)
                 selectionGroup.path(path).attr("class", "toolPath");
-
-            /*
-            clipperPaths = ClipperLib.Clipper.CleanPolygons(clipperPaths, Path.cleanPolyDist);
-            clipperPaths = ClipperLib.Clipper.SimplifyPolygons(clipperPaths, ClipperLib.PolyFillType.pftEvenOdd);
-
-            var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
-            co.AddPaths(clipperPaths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
-            var offsetted = [];
-            co.Execute(offsetted, -Path.snapToClipperScale * 10);
-
-            path = Path.getSnapPathFromClipperPaths(offsetted);
-            if (path != null)
-                selectionGroup.path(path).attr({ "style": "fill:#00ff00" });
-                */
         }
+*/
+    }
+
+    self.getSelection = function () {
+        return selectionGroup.selectAll("Path");
     }
 }
