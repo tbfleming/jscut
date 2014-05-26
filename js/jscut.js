@@ -82,3 +82,18 @@ $("#MainSvg").click(function (e) {
         operationsViewModel.clickOnSvg(element) ||
         selectionViewModel.clickOnSvg(element);
 });
+
+$('#createOperationButton').popover({
+    trigger: "manual",
+    html: true,
+    content: "<p class='bg-danger'>Select 1 or more objects before clicking here</p>",
+    container: "body",
+    placement: "right"
+});
+
+$('#createOperationButton').parent().hover(
+    function () {
+        if ($('#createOperationButton').attr("disabled"))
+            $('#createOperationButton').popover('show');
+    },
+    function () { $('#createOperationButton').popover('hide'); });

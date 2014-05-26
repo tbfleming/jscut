@@ -46,7 +46,9 @@
                         <h3 class="panel-title">Operations</h3>
                     </div>
                     <div class="panel-body">
-                        <button data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Add</button>
+                        <div style="display: inline-block">
+                            <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
+                        </div>
                     </div>
                     <table class="table operationsTable">
                         <tbody data-bind="foreach: operations">
