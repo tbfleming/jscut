@@ -34,5 +34,6 @@ function SelectionViewModel(materialViewModel, selectionGroup) {
 
     self.clearSelection = function () {
         selectionGroup.selectAll("Path").remove();
+        self.selNumSelected(0);
     }
 }

@@ -1,0 +1,30 @@
+* Firefox broken
+* IE broken
+* Check Safari
+* Pay attention to fill-rule on source SVG
+  * SelectionViewModel is creating default (nonzero)
+  * Operation is assuming evenodd
+* Tool settings
+  * Single tool initially
+  * Multiple tools later
+* Make combinedGeometrySvg depend on operation
+* Operation detail panels
+* Generate gcode
+* Load SVG
+* Polygon
+* Square & Rectangle
+* Circle & Ellipse
+* V-shaped bits
+* Ramped plunge
+* Tabs in Outline operation
+* Save session
+* UI cleanup
+  * header
+  * footer
+  * accordians
+  * scroll & zoom
+  * wasted space
+  * Make disabled "Add" button more obvious
+  * Split operationGroup into 2 groups
+  * Remove click-to-hide
+  * Layer checkboxes for each operation
