@@ -166,6 +166,7 @@ var Path = new function () {
         return geometry;
     }
 
+    // Clip Clipper geometry. clipType is a ClipperLib.ClipType constant. Returns new geometry.
     Path.clip = function (paths1, paths2, clipType) {
         var clipper = new ClipperLib.Clipper();
         clipper.AddPaths(paths1, ClipperLib.PolyType.ptSubject, true);
@@ -175,10 +176,12 @@ var Path = new function () {
         return result;
     }
 
+    // Return difference between to Clipper geometries. Returns new geometry.
     Path.diff = function (paths1, paths2) {
         return Path.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
     }
 
+    // Offset Clipper geometries by amount (positive expands, negative shrinks). Returns new geometry.
     Path.offset = function(paths, amount) {
         var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
         co.AddPaths(paths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);

@@ -72,7 +72,9 @@ var Cam = new function () {
         return mergedPaths;
     }
 
-    // cutterDia is in Clipper units. overlap is in the range [0, 1).
+    // Compute paths for pocket operation on Clipper geometry. Returns
+    // array of open paths. cutterDia is in Clipper units. overlap is 
+    // in the range [0, 1).
     Cam.pocket = function (geometry, cutterDia, overlap) {
         var current = Path.offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
@@ -84,7 +86,9 @@ var Cam = new function () {
         return mergePaths(bounds, allPaths);
     };
 
-    // cutterDia and width are in Clipper units. overlap is in the range [0, 1).
+    // Compute paths for outline operation on Clipper geometry. Returns
+    // array of open paths. cutterDia and width are in Clipper units. 
+    // overlap is in the range [0, 1).
     Cam.outline = function (geometry, cutterDia, width, overlap) {
         var current = Path.offset(geometry, cutterDia / 2);
         var currentWidth = cutterDia;

@@ -18,6 +18,8 @@
 * Ramped plunge
 * Tabs in Outline operation
 * Save session
+* Code cleanup
+  * Replace alertFn callback with exception
 * UI cleanup
   * header
   * footer
