@@ -1,8 +1,8 @@
 // Copyright 2014 Todd Fleming
 
-function Operation(operationGroup, type, rawPaths) {
+function Operation(operationGroup, rawPaths) {
     var self = this;
-    self.type = ko.observable(type);
+    self.type = ko.observable("Pocket");
     self.rawPaths = rawPaths;
     self.combineOp = ko.observable("Union");
     self.combinedGeometry = [];
@@ -41,20 +41,15 @@ function Operation(operationGroup, type, rawPaths) {
             self.combinedGeometry = [];
         else {
             self.combinedGeometry = all[0];
-            for(var i = 1; i < all.length; ++i) {
-                var clipper = new ClipperLib.Clipper();
-                clipper.AddPaths(self.combinedGeometry, ClipperLib.PolyType.ptSubject, true);
-                clipper.AddPaths(all[i], ClipperLib.PolyType.ptClip, true);
-                self.combinedGeometry = [];
-                var clipType = ClipperLib.ClipType.ctUnion;
-                if (self.combineOp() == "Intersect")
-                    clipType = ClipperLib.ClipType.ctIntersection;
-                else if (self.combineOp() == "Diff")
-                    clipType = ClipperLib.ClipType.ctDifference;
-                else if (self.combineOp() == "Xor")
-                    clipType = ClipperLib.ClipType.ctXor;
-                clipper.Execute(clipType, self.combinedGeometry, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
-            }
+            var clipType = ClipperLib.ClipType.ctUnion;
+            if (self.combineOp() == "Intersect")
+                clipType = ClipperLib.ClipType.ctIntersection;
+            else if (self.combineOp() == "Diff")
+                clipType = ClipperLib.ClipType.ctDifference;
+            else if (self.combineOp() == "Xor")
+                clipType = ClipperLib.ClipType.ctXor;
+            for (var i = 1; i < all.length; ++i)
+                self.combinedGeometry = Cam.clip(self.combinedGeometry, all[i], clipType);
         }
 
         if (self.combinedGeometry.length != 0) {
@@ -69,9 +64,13 @@ function Operation(operationGroup, type, rawPaths) {
 
     self.generateToolPath = function () {
         removeToolPathSvg();
-        self.toolPath = Cam.pocket(self.combinedGeometry, Path.snapToClipperScale * 5, 0);
+        self.toolPath = [];
+        if (self.type() == "Pocket")
+            self.toolPath = Cam.pocket(self.combinedGeometry, Path.snapToClipperScale * 5, 0);
+        else if (self.type() == "Outline")
+            self.toolPath = Cam.outline(self.combinedGeometry, Path.snapToClipperScale * 5, Path.snapToClipperScale * 30, 0);
         path = Path.getSnapPathFromClipperPaths(self.toolPath);
-        if (path != null)
+        if (path != null && path.length > 0)
             self.toolPathSvg = operationGroup.path(path).attr("class", "toolPath");
     }
 }
@@ -86,7 +85,7 @@ function OperationsViewModel(selectionViewModel, operationGroup) {
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
         selectionViewModel.clearSelection();
-        self.operations.push(new Operation(operationGroup, "Pocket", rawPaths));
+        self.operations.push(new Operation(operationGroup, rawPaths));
     }
 
     self.removeOperation = function (operation) {

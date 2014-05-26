@@ -10,6 +10,19 @@ var Cam = new function () {
         return geometry;
     }
 
+    self.clip = function(paths1, paths2, clipType) {
+        var clipper = new ClipperLib.Clipper();
+        clipper.AddPaths(paths1, ClipperLib.PolyType.ptSubject, true);
+        clipper.AddPaths(paths2, ClipperLib.PolyType.ptClip, true);
+        result = [];
+        clipper.Execute(clipType, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+        return result;
+    }
+
+    self.diff = function(paths1, paths2) {
+        return self.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
+    }
+
     function offset(paths, amount) {
         var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
         co.AddPaths(paths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
@@ -93,11 +106,30 @@ var Cam = new function () {
         var current = offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
         var allPaths = [];
-        while (true) {
-            if (current.length == 0)
-                break;
+        while (current.length != 0) {
             allPaths = current.concat(allPaths);
             current = offset(current, -cutterDia * (1 - overlap));
+        }
+        return mergePaths(bounds, allPaths);
+    };
+
+    // cutterDia and width are in Clipper units. overlap is in the range [0, 1).
+    self.outline = function (geometry, cutterDia, width, overlap) {
+        var current = offset(geometry, cutterDia / 2);
+        var currentWidth = cutterDia;
+        var bounds = self.diff(offset(geometry, width), geometry);
+        var allPaths = [];
+        var eachOffset = cutterDia * (1 - overlap);
+        while (currentWidth <= width) {
+            allPaths = current.concat(allPaths);
+            var nextWidth = currentWidth + eachOffset;
+            if (nextWidth > width && width - currentWidth > 0) {
+                current = offset(current, width - currentWidth);
+                allPaths = current.concat(allPaths);
+                break;
+            }
+            currentWidth = nextWidth;
+            current = offset(current, eachOffset);
         }
         return mergePaths(bounds, allPaths);
     };
