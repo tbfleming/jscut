@@ -4,12 +4,13 @@ var mainSvg = Snap("#MainSvg");
 var materialSvg = Snap("#MaterialSvg");
 var contentGroup = mainSvg.group();
 contentGroup.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)));
-var operationGroup = mainSvg.g();
+var combinedGeometryGroup = mainSvg.g();
+var toolPathsGroup = mainSvg.g();
 var selectionGroup = mainSvg.g();
 
 var materialViewModel = new MaterialViewModel();
 var selectionViewModel = new SelectionViewModel(materialViewModel, selectionGroup);
-var operationsViewModel = new OperationsViewModel(selectionViewModel, operationGroup);
+var operationsViewModel = new OperationsViewModel(selectionViewModel, combinedGeometryGroup, toolPathsGroup);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);

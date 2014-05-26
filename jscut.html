@@ -53,6 +53,7 @@
                     <table class="table operationsTable">
                         <tbody data-bind="foreach: operations">
                             <tr>
+                                <td><input type="checkbox" data-bind="checked: enabled"/></td>
                                 <td>
                                     <select data-bind="value: combineOp">
                                         <option>Union</option>
@@ -62,7 +63,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select data-bind="value: type">
+                                    <select data-bind="value: camOp">
                                         <option>Pocket</option>
                                         <option>Outline</option>
                                     </select>

@@ -32,7 +32,4 @@
   * accordians
   * scroll & zoom
   * wasted space
-  * Make disabled "Add" button more obvious
   * Split operationGroup into 2 groups
-  * Remove click-to-hide
-  * Layer checkboxes for each operation
