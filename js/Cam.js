@@ -3,35 +3,6 @@
 var Cam = new function () {
     var Cam = this;
 
-    // Simplify and clean up geometry
-    Cam.simplifyAndClean = function (geometry) {
-        geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
-        geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, ClipperLib.PolyFillType.pftEvenOdd);
-        return geometry;
-    }
-
-    Cam.clip = function (paths1, paths2, clipType) {
-        var clipper = new ClipperLib.Clipper();
-        clipper.AddPaths(paths1, ClipperLib.PolyType.ptSubject, true);
-        clipper.AddPaths(paths2, ClipperLib.PolyType.ptClip, true);
-        result = [];
-        clipper.Execute(clipType, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
-        return result;
-    }
-
-    Cam.diff = function (paths1, paths2) {
-        return Cam.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
-    }
-
-    function offset(paths, amount) {
-        var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
-        co.AddPaths(paths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
-        var offsetted = [];
-        co.Execute(offsetted, amount);
-        offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, Path.cleanPolyDist);
-        return offsetted;
-    }
-
     // Does the line from p1 to p2 cross outside of bounds?
     function crosses(bounds, p1, p2) {
         var clipper = new ClipperLib.Clipper();
@@ -103,33 +74,33 @@ var Cam = new function () {
 
     // cutterDia is in Clipper units. overlap is in the range [0, 1).
     Cam.pocket = function (geometry, cutterDia, overlap) {
-        var current = offset(geometry, -cutterDia / 2);
+        var current = Path.offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
         var allPaths = [];
         while (current.length != 0) {
             allPaths = current.concat(allPaths);
-            current = offset(current, -cutterDia * (1 - overlap));
+            current = Path.offset(current, -cutterDia * (1 - overlap));
         }
         return mergePaths(bounds, allPaths);
     };
 
     // cutterDia and width are in Clipper units. overlap is in the range [0, 1).
     Cam.outline = function (geometry, cutterDia, width, overlap) {
-        var current = offset(geometry, cutterDia / 2);
+        var current = Path.offset(geometry, cutterDia / 2);
         var currentWidth = cutterDia;
-        var bounds = Cam.diff(offset(geometry, width), geometry);
+        var bounds = Path.diff(Path.offset(geometry, width), geometry);
         var allPaths = [];
         var eachOffset = cutterDia * (1 - overlap);
         while (currentWidth <= width) {
             allPaths = current.concat(allPaths);
             var nextWidth = currentWidth + eachOffset;
             if (nextWidth > width && width - currentWidth > 0) {
-                current = offset(current, width - currentWidth);
+                current = Path.offset(current, width - currentWidth);
                 allPaths = current.concat(allPaths);
                 break;
             }
             currentWidth = nextWidth;
-            current = offset(current, eachOffset);
+            current = Path.offset(current, eachOffset);
         }
         return mergePaths(bounds, allPaths);
     };

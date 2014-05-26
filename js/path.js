@@ -158,4 +158,33 @@ var Path = new function () {
         }
         return result;
     };
+
+    // Simplify and clean up Clipper geometry
+    Path.simplifyAndClean = function (geometry) {
+        geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
+        geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, ClipperLib.PolyFillType.pftEvenOdd);
+        return geometry;
+    }
+
+    Path.clip = function (paths1, paths2, clipType) {
+        var clipper = new ClipperLib.Clipper();
+        clipper.AddPaths(paths1, ClipperLib.PolyType.ptSubject, true);
+        clipper.AddPaths(paths2, ClipperLib.PolyType.ptClip, true);
+        result = [];
+        clipper.Execute(clipType, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+        return result;
+    }
+
+    Path.diff = function (paths1, paths2) {
+        return Path.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
+    }
+
+    Path.offset = function(paths, amount) {
+        var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
+        co.AddPaths(paths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+        var offsetted = [];
+        co.Execute(offsetted, amount);
+        offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, Path.cleanPolyDist);
+        return offsetted;
+    }
 };

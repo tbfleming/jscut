@@ -34,7 +34,7 @@ function Operation(operationGroup, rawPaths) {
                 showAlert(msg, "alert-warning");
             });
             if (geometry != null)
-                all.push(Cam.simplifyAndClean(geometry));
+                all.push(Path.simplifyAndClean(geometry));
         }
 
         if (all.length == 0)
@@ -49,7 +49,7 @@ function Operation(operationGroup, rawPaths) {
             else if (self.combineOp() == "Xor")
                 clipType = ClipperLib.ClipType.ctXor;
             for (var i = 1; i < all.length; ++i)
-                self.combinedGeometry = Cam.clip(self.combinedGeometry, all[i], clipType);
+                self.combinedGeometry = Path.clip(self.combinedGeometry, all[i], clipType);
         }
 
         if (self.combinedGeometry.length != 0) {
