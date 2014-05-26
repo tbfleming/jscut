@@ -1,16 +1,16 @@
 // Copyright 2014 Todd Fleming
 
 var Cam = new function () {
-    var self = this;
+    var Cam = this;
 
     // Simplify and clean up geometry
-    self.simplifyAndClean = function (geometry) {
+    Cam.simplifyAndClean = function (geometry) {
         geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
         geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, ClipperLib.PolyFillType.pftEvenOdd);
         return geometry;
     }
 
-    self.clip = function(paths1, paths2, clipType) {
+    Cam.clip = function (paths1, paths2, clipType) {
         var clipper = new ClipperLib.Clipper();
         clipper.AddPaths(paths1, ClipperLib.PolyType.ptSubject, true);
         clipper.AddPaths(paths2, ClipperLib.PolyType.ptClip, true);
@@ -19,8 +19,8 @@ var Cam = new function () {
         return result;
     }
 
-    self.diff = function(paths1, paths2) {
-        return self.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
+    Cam.diff = function (paths1, paths2) {
+        return Cam.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
     }
 
     function offset(paths, amount) {
@@ -102,7 +102,7 @@ var Cam = new function () {
     }
 
     // cutterDia is in Clipper units. overlap is in the range [0, 1).
-    self.pocket = function (geometry, cutterDia, overlap) {
+    Cam.pocket = function (geometry, cutterDia, overlap) {
         var current = offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
         var allPaths = [];
@@ -114,10 +114,10 @@ var Cam = new function () {
     };
 
     // cutterDia and width are in Clipper units. overlap is in the range [0, 1).
-    self.outline = function (geometry, cutterDia, width, overlap) {
+    Cam.outline = function (geometry, cutterDia, width, overlap) {
         var current = offset(geometry, cutterDia / 2);
         var currentWidth = cutterDia;
-        var bounds = self.diff(offset(geometry, width), geometry);
+        var bounds = Cam.diff(offset(geometry, width), geometry);
         var allPaths = [];
         var eachOffset = cutterDia * (1 - overlap);
         while (currentWidth <= width) {

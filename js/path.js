@@ -1,8 +1,7 @@
 // Copyright 2014 Todd Fleming
 
-var Path = new (function () { })();
-
-(function () {
+var Path = new function () {
+    Path = this;
     Path.svgPxPerInch = 90;
     Path.snapToClipperScale = 100000;                                           // Scale Snap.svg to Clipper
     Path.cleanPolyDist = Path.snapToClipperScale * Path.svgPxPerInch / 100000;  // 1/100000 in
@@ -159,4 +158,4 @@ var Path = new (function () { })();
         }
         return result;
     };
-})();
+};
