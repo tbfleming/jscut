@@ -7,7 +7,7 @@ function Operation(operationGroup, rawPaths) {
     self.combineOp = ko.observable("Union");
     self.combinedGeometry = [];
     self.combinedGeometrySvg = null;
-    self.toolPath = [];
+    self.camPaths = [];
     self.toolPathSvg = null;
 
     function removeCombinedGeometrySvg() {
@@ -64,12 +64,12 @@ function Operation(operationGroup, rawPaths) {
 
     self.generateToolPath = function () {
         removeToolPathSvg();
-        self.toolPath = [];
+        self.camPaths = [];
         if (self.type() == "Pocket")
-            self.toolPath = Cam.pocket(self.combinedGeometry, Path.snapToClipperScale * 5, 0);
+            self.camPaths = Cam.pocket(self.combinedGeometry, Path.snapToClipperScale * 5, 0);
         else if (self.type() == "Outline")
-            self.toolPath = Cam.outline(self.combinedGeometry, Path.snapToClipperScale * 5, Path.snapToClipperScale * 30, 0);
-        path = Path.getSnapPathFromClipperPaths(self.toolPath);
+            self.camPaths = Cam.outline(self.combinedGeometry, Path.snapToClipperScale * 5, Path.snapToClipperScale * 30, 0);
+        path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.camPaths));
         if (path != null && path.length > 0)
             self.toolPathSvg = operationGroup.path(path).attr("class", "toolPath");
     }

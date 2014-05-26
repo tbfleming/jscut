@@ -5,6 +5,8 @@ var Cam = new function () {
 
     // Does the line from p1 to p2 cross outside of bounds?
     function crosses(bounds, p1, p2) {
+        if(p1.X == p2.X && p1.Y == p2.Y)
+            return false;
         var clipper = new ClipperLib.Clipper();
         clipper.AddPath([p1, p2], ClipperLib.PolyType.ptSubject, false);
         clipper.AddPaths(bounds, ClipperLib.PolyType.ptClip, true);
@@ -23,7 +25,12 @@ var Cam = new function () {
         return true;
     }
 
-    // Try to merge paths. A merged path doesn't cross outside of bounds.
+    // CamPath has this format: {
+    //      path:               Clipper path
+    //      safeToClose:        Is it safe to close the path without retracting?
+    // }
+
+    // Try to merge paths. A merged path doesn't cross outside of bounds. Returns array of CamPath.
     function mergePaths(bounds, paths) {
         if (paths.length == 0)
             return null;
@@ -69,12 +76,20 @@ var Cam = new function () {
             }
         }
         mergedPaths.push(currentPath);
-        return mergedPaths;
+
+        camPaths = [];
+        for(var i = 0; i < mergedPaths.length; ++i) {
+            var path = mergedPaths[i];
+            camPaths.push({
+                path: path,
+                safeToClose: !crosses(bounds, path[0], path[path.length-1])});
+        }
+
+        return camPaths;
     }
 
-    // Compute paths for pocket operation on Clipper geometry. Returns
-    // array of open paths. cutterDia is in Clipper units. overlap is 
-    // in the range [0, 1).
+    // Compute paths for pocket operation on Clipper geometry. Returns array
+    // of CamPath. cutterDia is in Clipper units. overlap is in the range [0, 1).
     Cam.pocket = function (geometry, cutterDia, overlap) {
         var current = Path.offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
@@ -86,9 +101,9 @@ var Cam = new function () {
         return mergePaths(bounds, allPaths);
     };
 
-    // Compute paths for outline operation on Clipper geometry. Returns
-    // array of open paths. cutterDia and width are in Clipper units. 
-    // overlap is in the range [0, 1).
+    // Compute paths for outline operation on Clipper geometry. Returns array
+    // of CamPath. cutterDia and width are in Clipper units. overlap is in the 
+    // range [0, 1).
     Cam.outline = function (geometry, cutterDia, width, overlap) {
         var current = Path.offset(geometry, cutterDia / 2);
         var currentWidth = cutterDia;
@@ -108,4 +123,57 @@ var Cam = new function () {
         }
         return mergePaths(bounds, allPaths);
     };
+
+    // Convert array of CamPath to array of Clipper path
+    Cam.getClipperPathsFromCamPaths = function (paths) {
+        result = [];
+        for (var i = 0; i < paths.length; ++i)
+            result.push(paths[i].path);
+        return result;
+    }
+
+/*
+    // Convert paths to gcode. getGcode() assumes that the current Z position is at safeZ.
+    // getGcode()'s gcode returns Z to this position at the end.
+    // namedArgs must have:
+    //      paths:          Array of CamPath
+    //      scale:          Factor to convert Clipper units to gcode units
+    //      decimal:        Number of decimal places to keep in gcode
+    //      topZ:           Top of area to cut (gcode units)
+    //      botZ:           Bottom of area to cut (gcode units)
+    //      safeZ:          Z position to safely move over uncut areas (gcode units)
+    //      passDepth:      Depth of cut for each pass (gcode units)
+    //      plungeFeed:     Feedrate to plunge cutter (gcode units)
+    //      retractFeed:    Feedrate to retract cutter (gcode units)
+    //      cutFeed:        Feedrate for horizontal cuts (gcode units)
+    //      rapidFeed:      Feedrate for rapid moves (gcode units)
+    Cam.getGcode = function (namedArgs) {
+        var paths = namedArgs.paths;
+        var scale = namedArgs.scale;
+        var decimal = namedArgs.decimal;
+        var topZ = namedArgs.topZ;
+        var botZ = namedArgs.botZ;
+        var safeZ = namedArgs.safeZ;
+        var passDepth = namedArgs.passDepth;
+        var plungeFeedGcode = 'F'+namedArgs.plungeFeed;
+        var retractFeedGcode = 'F'+namedArgs.retractFeed;
+        var cutFeedGcode = 'F'+namedArgs.cutFeed;
+        var rapidFeedGcode = 'F'+namedArgs.rapidFeed;
+        var gcode = "";
+
+        function convertPoint(p) {
+            return "X" + p.X.toFixed(decimal) * scale) + 'Y' + (-p.Y).toFixed(decimal) * scale;
+        }
+
+        for (var pathIndex = 0; pathIndex < paths.length; ++pathIndex) {
+            var path = paths[pathIndex];
+            if (path.length == 0)
+                continue;
+            gcode +=
+                'G1' + convertPoint(path[0]) + rapidFeedGcode + '\n' +
+                'G1' + topZ.toFixed(decimal) + '\n';
+            var currentZ = 
+        }
+    };
+*/
 };
