@@ -10,7 +10,11 @@
 * Make combinedGeometrySvg depend on operation
 * Operation detail panels
 * Generate gcode
-* Load SVG
+* Report problems on SVG load
+  * empty fill
+* SVG file management
+  * visibility control
+  * unload
 * Polygon
 * Square & Rectangle
 * Circle & Ellipse

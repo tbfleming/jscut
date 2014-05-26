@@ -29,12 +29,16 @@ $(function () {
 });
 
 var nextAlertNum = 1;
-function showAlert(message, alerttype) {
+function showAlert(message, alerttype, haveTimeout) {
+    haveTimeout = (typeof haveTimeout === "undefined") ? true : false;
     var alertNum = nextAlertNum++;
     $('#alert_placeholder').prepend('<div id="AlertNum' + alertNum + '" class="alert ' + alerttype + '"><a class="close" data-dismiss="alert">&times;</a>' + message + '</div>')
-    setTimeout(function () {
-        $("#AlertNum" + alertNum).remove();
-    }, 5000);
+    var result = $("#AlertNum" + alertNum);
+    if (haveTimeout)
+        setTimeout(function () {
+            result.remove();
+        }, 5000);
+    return result;
 }
 
 Snap.load("Material.svg", function (f) {
@@ -44,6 +48,32 @@ Snap.load("Material.svg", function (f) {
 
 Snap.load("test.svg", function (f) {
     contentGroup.append(f);
+});
+
+$(document).on('change', '#choose-svg-file', function (event) {
+    var files = event.target.files;
+    for (var i = 0, file; file = files[i]; ++i) {
+        (function (file) {
+            var alert = showAlert("loading " + file.name, "alert-info", false);
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                svg = Snap.parse(e.target.result);
+                contentGroup.append(svg);
+                alert.remove();
+                showAlert("loaded " + file.name, "alert-success");
+            };
+            reader.onabort = function (e) {
+                alert.remove();
+                showAlert("aborted reading " + file.name, "alert-danger");
+            };
+            reader.onerror = function (e) {
+                alert.remove();
+                showAlert("error reading " + file.name, "alert-danger");
+            };
+            reader.readAsText(file);
+        })(file);
+    }
+    $(event.target).replaceWith(control = $(event.target).clone(true));
 });
 
 $("#MainSvg").click(function (e) {
