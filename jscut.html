@@ -15,31 +15,31 @@
 </head>
 
 <body>
-    <!-- Fixed navbar -->
-    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-        <div class="container">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <span class="navbar-brand">jscut</span>
+    <div class="container-fluid">
+        <!-- Fixed navbar -->
+        <div class="row">
+            <div class="navbar navbar-default " role="navigation">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <span class="navbar-brand">jscut</span>
+                </div>
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a class="choose-file">Open SVG<input type="file" id="choose-svg-file" multiple></a></li>
+                    </ul>
+                </div><!--/.nav-collapse -->
             </div>
-            <div class="collapse navbar-collapse">
-                <ul class="nav navbar-nav">
-                    <li><a class="choose-file">Open SVG<input type="file" id="choose-svg-file" multiple></a></li>
-                </ul>
-            </div><!--/.nav-collapse -->
         </div>
-    </div>
 
-    <!-- Begin page content -->
-    <div class="container">
+        <!-- Begin page content -->
         <div class="row">
             <!-- left -->
-            <div class="col-lg-3">
+            <div class="col-sm-3 left-column">
                 <!-- operations -->
                 <div class="panel panel-default" id="Operations">
                     <div class="panel-heading">
@@ -47,39 +47,39 @@
                     </div>
                     <div class="panel-body">
                         <button data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Add</button>
-                        <table>
-                            <tbody data-bind="foreach: operations">
-                                <tr>
-                                    <td>
-                                        <select data-bind="value: combineOp">
-                                            <option>Union</option>
-                                            <option>Intersect</option>
-                                            <option>Diff</option>
-                                            <option>Xor</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select data-bind="value: type">
-                                            <option>Pocket</option>
-                                            <option>Outline</option>
-                                        </select>
-                                    </td>
-                                    <!--<td><a href="#" data-bind="click: $root.removeOperation">Remove</a></td>-->
-                                    <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
+                    <table class="table operationsTable">
+                        <tbody data-bind="foreach: operations">
+                            <tr>
+                                <td>
+                                    <select data-bind="value: combineOp">
+                                        <option>Union</option>
+                                        <option>Intersect</option>
+                                        <option>Diff</option>
+                                        <option>Xor</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select data-bind="value: type">
+                                        <option>Pocket</option>
+                                        <option>Outline</option>
+                                    </select>
+                                </td>
+                                <!--<td><a href="#" data-bind="click: $root.removeOperation">Remove</a></td>-->
+                                <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- center -->
-            <div class="col-lg-6">
+            <div class="col-sm-6">
                 <svg id="MainSvg" height="80%" />
             </div>
 
             <!-- right -->
-            <div class="col-lg-3">
+            <div class="col-sm-3 right-column">
                 <div id="alert_placeholder"></div>
                 <!-- material -->
                 <div class="panel panel-default" id="Material">
@@ -150,10 +150,8 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="footer">
-        <div class="container">
+        <div id="footer">
             <p class="text-muted">Place sticky footer content here.</p>
         </div>
     </div>

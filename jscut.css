@@ -38,6 +38,19 @@ code {
   font-size: 80%;
 }
 
+.left-column {
+    padding-left: 6px;
+}
+
+.right-column {
+    padding-right: 6px;
+}
+
+.operationsTable > tbody > tr > td {
+    border-top: none;
+    padding: 0px;
+}
+
 .selectedPath {
     stroke:none;
     fill:#0080ff;
