@@ -27,6 +27,5 @@
 * UI cleanup
   * header
   * footer
-  * accordians
   * scroll & zoom
   * wasted space

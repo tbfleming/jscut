@@ -7,13 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-
     <title>jscut</title>
-
     <link href="lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="jscut.css" rel="stylesheet">
 </head>
-
 <body>
     <div class="container-fluid">
         <!-- Fixed navbar -->
@@ -42,91 +39,21 @@
                 <!-- operations -->
                 <div class="panel panel-default" id="Operations">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Operations</h3>
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseOperations">Operations</a>
+                        </h3>
                     </div>
-                    <div class="panel-body">
-                        <div style="display: inline-block">
-                            <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
-                        </div>
-                    </div>
-                    <table class="table">
-                        <tbody data-bind="foreach: operations">
-                            <tr>
-                                <td><input type="radio" data-bind="checked: selected" /></td>
-                                <td><input type="checkbox" data-bind="checked: enabled" /></td>
-                                <td>
-                                    <select data-bind="value: combineOp">
-                                        <option>Union</option>
-                                        <option>Intersect</option>
-                                        <option>Diff</option>
-                                        <option>Xor</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select data-bind="value: camOp">
-                                        <option>Pocket</option>
-                                        <option>Outline</option>
-                                    </select>
-                                </td>
-                                <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <!-- tool -->
-                <div class="panel panel-default" id="Tool">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Tool (shared for all operations)</h3>
-                    </div>
-                    <div class="panel-body">
-                        <table class="table">
-                            <tr>
-                                <td><label class="control-label">Units</label>
-                                <td><select data-bind="value: units"><option>inch<option>mm</select>
-                            <tr>
-                                <td><label class="control-label">Diameter</label>
-                                <td><span data-bind="text: units"></span>
-                                <td><input type="number" data-bind="value: diameter">
-                            <tr>
-                                <td><label class="control-label">Pass Depth</label>
-                                <td><span data-bind="text: units"></span>
-                                <td><input type="number" data-bind="value: passDepth">
-                            <tr>
-                                <td><label class="control-label">Overlap</label>
-                                <td>[0, 1)
-                                <td><input type="number" data-bind="value: overlap">
-                            <tr>
-                                <td><label class="control-label">Rapid Rate</label>
-                                <td><span data-bind="text: units"></span>/min
-                                <td><input type="number" data-bind="value: rapidRate">
-                            <tr>
-                                <td><label class="control-label">Plunge Rate</label>
-                                <td><span data-bind="text: units"></span>/min
-                                <td><input type="number" data-bind="value: plungeRate">
-                            <tr>
-                                <td><label class="control-label">Cut Rate</label>
-                                <td><span data-bind="text: units"></span>/min
-                                <td><input type="number" data-bind="value: cutRate">
-                        </table>
-                    </div>
-                </div>
-                <!-- Operation -->
-                <div data-bind="with: selectedOperation" id="Operation">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">Selected Operation</h3>
-                        </div>
+                    <div id="collapseOperations" class="panel-collapse collapse in">
                         <div class="panel-body">
-                            <table class="table">
-                                <tr><td><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
-                                <tr><td><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
+                            <div style="display: inline-block">
+                                <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
+                            </div>
+                        </div>
+                        <table class="table">
+                            <tbody data-bind="foreach: operations">
                                 <tr>
-                                    <td><label class="control-label">Visible</label>
-                                    <td>
-                                    <td><input type="checkbox" data-bind="checked: enabled" />
-                                <tr>
-                                    <td><label class="control-label">Combine</label>
-                                    <td>
+                                    <td><input type="radio" data-bind="checked: selected" /></td>
+                                    <td><input type="checkbox" data-bind="checked: enabled" /></td>
                                     <td>
                                         <select data-bind="value: combineOp">
                                             <option>Union</option>
@@ -134,23 +61,105 @@
                                             <option>Diff</option>
                                             <option>Xor</option>
                                         </select>
-                                <tr>
-                                    <td><label class="control-label">Operation</label>
-                                    <td>
+                                    </td>
                                     <td>
                                         <select data-bind="value: camOp">
                                             <option>Pocket</option>
                                             <option>Outline</option>
                                         </select>
+                                    </td>
+                                    <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- tool -->
+                <div class="panel panel-default" id="Tool">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTool">Tool (shared for all operations)
+                        </h3>
+                    </div>
+                    <div id="collapseTool" class="panel-collapse collapse in">
+                        <div class="panel-body">
+                            <table class="table">
                                 <tr>
-                                    <td><label class="control-label">Margin</label>
-                                    <td><span data-bind="text: materialViewModel.matUnits" />
-                                    <td><input type="number" data-bind="value: margin">
-                                <tr data-bind="visible: camOp()=='Outline'">
-                                    <td><label class="control-label">Width</label>
-                                    <td><span data-bind="text: materialViewModel.matUnits" />
-                                    <td><input type="number" data-bind="value: width">
+                                    <td><label class="control-label">Units</label>
+                                    <td><select data-bind="value: units"><option>inch<option>mm</select>
+                                <tr>
+                                    <td><label class="control-label">Diameter</label>
+                                    <td><span data-bind="text: units"></span>
+                                    <td><input type="number" data-bind="value: diameter">
+                                <tr>
+                                    <td><label class="control-label">Pass Depth</label>
+                                    <td><span data-bind="text: units"></span>
+                                    <td><input type="number" data-bind="value: passDepth">
+                                <tr>
+                                    <td><label class="control-label">Overlap</label>
+                                    <td>[0, 1)
+                                    <td><input type="number" data-bind="value: overlap">
+                                <tr>
+                                    <td><label class="control-label">Rapid Rate</label>
+                                    <td><span data-bind="text: units"></span>/min
+                                    <td><input type="number" data-bind="value: rapidRate">
+                                <tr>
+                                    <td><label class="control-label">Plunge Rate</label>
+                                    <td><span data-bind="text: units"></span>/min
+                                    <td><input type="number" data-bind="value: plungeRate">
+                                <tr>
+                                    <td><label class="control-label">Cut Rate</label>
+                                    <td><span data-bind="text: units"></span>/min
+                                    <td><input type="number" data-bind="value: cutRate">
                             </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Operation -->
+                <div data-bind="with: selectedOperation" id="Operation">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">
+                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseOperation">Selected Operation</a>
+                            </h3>
+                        </div>
+                        <div id="collapseOperation" class="panel-collapse collapse in">
+                            <div class="panel-body">
+                                <table class="table">
+                                    <tr><td><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
+                                    <tr><td><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
+                                    <tr>
+                                        <td><label class="control-label">Visible</label>
+                                        <td>
+                                        <td><input type="checkbox" data-bind="checked: enabled" />
+                                    <tr>
+                                        <td><label class="control-label">Combine</label>
+                                        <td>
+                                        <td>
+                                            <select data-bind="value: combineOp">
+                                                <option>Union</option>
+                                                <option>Intersect</option>
+                                                <option>Diff</option>
+                                                <option>Xor</option>
+                                            </select>
+                                    <tr>
+                                        <td><label class="control-label">Operation</label>
+                                        <td>
+                                        <td>
+                                            <select data-bind="value: camOp">
+                                                <option>Pocket</option>
+                                                <option>Outline</option>
+                                            </select>
+                                    <tr>
+                                        <td><label class="control-label">Margin</label>
+                                        <td><span data-bind="text: materialViewModel.matUnits" />
+                                        <td><input type="number" data-bind="value: margin">
+                                    <tr data-bind="visible: camOp()=='Outline'">
+                                        <td><label class="control-label">Width</label>
+                                        <td><span data-bind="text: materialViewModel.matUnits" />
+                                        <td><input type="number" data-bind="value: width">
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -165,67 +174,72 @@
                 <!-- material -->
                 <div class="panel panel-default" id="Material">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Material</h3>
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseMaterial">Material</a>
+                        </h3>
                     </div>
-                    <div class="panel-body">
-                        <div class="form-horizontal">
-                            <div class="form-group">
-                                <div class="col-sm-10">
-                                    <svg id="MaterialSvg" class="autoheight" viewBox="0 0 74 35" internalWidth="74" internalHeight="35" />
+                    <div id="collapseMaterial" class="panel-collapse collapse in">
+                        <div class="panel-body">
+                            <div class="form-horizontal">
+                                <div class="form-group">
+                                    <div class="col-sm-10">
+                                        <svg id="MaterialSvg" class="autoheight" viewBox="0 0 74 35" internalWidth="74" internalHeight="35" />
+                                    </div>
                                 </div>
                             </div>
+                            <table class="table">
+                                <tr>
+                                    <td><label for="selectMatUnits">Units</label>
+                                    <td>
+                                        <select id="selectMatUnits" data-bind="value: matUnits">
+                                            <option>inch</option>
+                                            <option>mm</option>
+                                        </select>
+                                <tr>
+                                    <td><label for="inputMatThickness">Thickness</label>
+                                    <td><input type="number" id="inputMatThickness" data-bind="value: matThickness" placeholder="Thickness">
+                                <tr>
+                                    <td><label for="selectMatZOrigin">Z Origin</label>
+                                    <td>
+                                        <select id="selectMatZOrigin" data-bind="value: matZOrigin">
+                                            <option>Top</option>
+                                            <option>Bottom</option>
+                                        </select>
+                                <tr>
+                                    <td><label for="inputMatClearance">Clearance</label>
+                                    <td><input type="number" id="inputMatClearance" data-bind="value: matClearance" placeholder="Clearance">
+                            </table>
                         </div>
-                        <table class="table">
-                            <tr>
-                                <td><label for="selectMatUnits">Units</label>
-                                <td>
-                                    <select id="selectMatUnits" data-bind="value: matUnits">
-                                        <option>inch</option>
-                                        <option>mm</option>
-                                    </select>
-                            <tr>
-                                <td><label for="inputMatThickness">Thickness</label>
-                                <td><input type="number" id="inputMatThickness" data-bind="value: matThickness" placeholder="Thickness">
-                            <tr>
-                                <td><label for="selectMatZOrigin">Z Origin</label>
-                                <td>
-                                    <select id="selectMatZOrigin" data-bind="value: matZOrigin">
-                                        <option>Top</option>
-                                        <option>Bottom</option>
-                                    </select>
-                            <tr>
-                                <td><label for="inputMatClearance">Clearance</label>
-                                <td><input type="number" id="inputMatClearance" data-bind="value: matClearance" placeholder="Clearance">
-                        </table>
                     </div>
                 </div>
-
                 <!-- Curve To Line Conversion -->
                 <div class="panel panel-default" id="CurveToLine">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Curve To Line Conversion</h3>
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseCurveToLine">Curve To Line Conversion</a>
+                        </h3>
                     </div>
-                    <div class="panel-body">
-                        <div class="form-horizontal">
-                            <table class="table">
-                                <tr>
-                                    <td><label for="inputSelMinNumSegments">Minimum Segments</label>
-                                    <td><input type="number" id="inputSelMinNumSegments" data-bind="value: selMinNumSegments" placeholder="Segments">
-                                <tr>
-                                    <td><label for="inputSelMinSegmentLength">Minimum Segment Length (<span data-bind="text: selMinSegmentLength.units()"></span>)</label>
-                                    <td><input type="number" class="form-control" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
-                            </table>
+                    <div id="collapseCurveToLine" class="panel-collapse collapse in">
+                        <div class="panel-body">
+                            <div class="form-horizontal">
+                                <table class="table">
+                                    <tr>
+                                        <td><label for="inputSelMinNumSegments">Minimum Segments</label>
+                                        <td><input type="number" id="inputSelMinNumSegments" data-bind="value: selMinNumSegments" placeholder="Segments">
+                                    <tr>
+                                        <td><label for="inputSelMinSegmentLength">Minimum Segment Length (<span data-bind="text: selMinSegmentLength.units()"></span>)</label>
+                                        <td><input type="number" class="form-control" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
         <div id="footer">
             <p class="text-muted">Place sticky footer content here.</p>
         </div>
     </div>
-
     <script src="lib/jquery-2.1.1.min.js"></script>
     <script src="lib/bootstrap-3.1.1/js/bootstrap.min.js"></script>
     <script src="lib/knockout-3.1.0.js"></script>
