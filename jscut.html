@@ -119,13 +119,15 @@
                     </div>
                     <div class="panel-body">
                         <table class="table">
-                            <tr><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
-                            <tr><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
+                            <tr><td><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
+                            <tr><td><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
                             <tr>
                                 <td><label class="control-label">Visible</label>
+                                <td>
                                 <td><input type="checkbox" data-bind="checked: enabled" />
                             <tr>
                                 <td><label class="control-label">Combine</label>
+                                <td>
                                 <td>
                                     <select data-bind="value: combineOp">
                                         <option>Union</option>
@@ -136,13 +138,21 @@
                             <tr>
                                 <td><label class="control-label">Operation</label>
                                 <td>
+                                <td>
                                     <select data-bind="value: camOp">
                                         <option>Pocket</option>
                                         <option>Outline</option>
                                     </select>
+                            <tr>
+                                <td><label class="control-label">Margin</label>
+                                <td><span data-bind="text: materialViewModel.matUnits" />
+                                <td><input type="number" data-bind="value: margin">
+                            <tr data-bind="visible: camOp()=='Outline'">
+                                <td><label class="control-label">Width</label>
+                                <td><span data-bind="text: materialViewModel.matUnits" />
+                                <td><input type="number" data-bind="value: width">
                         </table>
                     </div>
-                    <table class="table"></table>
                 </div>
             </div>
 

@@ -11,7 +11,7 @@ var selectionGroup = mainSvg.g();
 var materialViewModel = new MaterialViewModel();
 var selectionViewModel = new SelectionViewModel(materialViewModel, selectionGroup);
 var toolModel = new ToolModel();
-var operationsViewModel = new OperationsViewModel(selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup);
+var operationsViewModel = new OperationsViewModel(materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);
