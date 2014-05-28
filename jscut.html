@@ -35,7 +35,6 @@
                 </div><!--/.nav-collapse -->
             </div>
         </div>
-
         <!-- Begin page content -->
         <div class="row">
             <!-- left -->
@@ -111,56 +110,55 @@
                         </table>
                     </div>
                 </div>
-
                 <!-- Operation -->
-                <div class="panel panel-default" id="Operation" data-bind="with: selectedOperation">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Selected Operation</h3>
-                    </div>
-                    <div class="panel-body">
-                        <table class="table">
-                            <tr><td><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
-                            <tr><td><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
-                            <tr>
-                                <td><label class="control-label">Visible</label>
-                                <td>
-                                <td><input type="checkbox" data-bind="checked: enabled" />
-                            <tr>
-                                <td><label class="control-label">Combine</label>
-                                <td>
-                                <td>
-                                    <select data-bind="value: combineOp">
-                                        <option>Union</option>
-                                        <option>Intersect</option>
-                                        <option>Diff</option>
-                                        <option>Xor</option>
-                                    </select>
-                            <tr>
-                                <td><label class="control-label">Operation</label>
-                                <td>
-                                <td>
-                                    <select data-bind="value: camOp">
-                                        <option>Pocket</option>
-                                        <option>Outline</option>
-                                    </select>
-                            <tr>
-                                <td><label class="control-label">Margin</label>
-                                <td><span data-bind="text: materialViewModel.matUnits" />
-                                <td><input type="number" data-bind="value: margin">
-                            <tr data-bind="visible: camOp()=='Outline'">
-                                <td><label class="control-label">Width</label>
-                                <td><span data-bind="text: materialViewModel.matUnits" />
-                                <td><input type="number" data-bind="value: width">
-                        </table>
+                <div data-bind="with: selectedOperation" id="Operation">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Selected Operation</h3>
+                        </div>
+                        <div class="panel-body">
+                            <table class="table">
+                                <tr><td><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
+                                <tr><td><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
+                                <tr>
+                                    <td><label class="control-label">Visible</label>
+                                    <td>
+                                    <td><input type="checkbox" data-bind="checked: enabled" />
+                                <tr>
+                                    <td><label class="control-label">Combine</label>
+                                    <td>
+                                    <td>
+                                        <select data-bind="value: combineOp">
+                                            <option>Union</option>
+                                            <option>Intersect</option>
+                                            <option>Diff</option>
+                                            <option>Xor</option>
+                                        </select>
+                                <tr>
+                                    <td><label class="control-label">Operation</label>
+                                    <td>
+                                    <td>
+                                        <select data-bind="value: camOp">
+                                            <option>Pocket</option>
+                                            <option>Outline</option>
+                                        </select>
+                                <tr>
+                                    <td><label class="control-label">Margin</label>
+                                    <td><span data-bind="text: materialViewModel.matUnits" />
+                                    <td><input type="number" data-bind="value: margin">
+                                <tr data-bind="visible: camOp()=='Outline'">
+                                    <td><label class="control-label">Width</label>
+                                    <td><span data-bind="text: materialViewModel.matUnits" />
+                                    <td><input type="number" data-bind="value: width">
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-
             <!-- center -->
             <div class="col-sm-6">
                 <svg id="MainSvg" height="80%" />
             </div>
-
             <!-- right -->
             <div class="col-sm-3 right-column">
                 <div id="alert_placeholder"></div>
@@ -172,43 +170,36 @@
                     <div class="panel-body">
                         <div class="form-horizontal">
                             <div class="form-group">
-                                <div class="col-sm-offset-2 col-sm-10">
+                                <div class="col-sm-10">
                                     <svg id="MaterialSvg" class="autoheight" viewBox="0 0 74 35" internalWidth="74" internalHeight="35" />
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label for="selectMatUnits" class="col-sm-5 control-label">Units</label>
-                                <div class="col-sm-7">
-                                    <select class="form-control" id="selectMatUnits" data-bind="value: matUnits">
+                        </div>
+                        <table class="table">
+                            <tr>
+                                <td><label for="selectMatUnits">Units</label>
+                                <td>
+                                    <select id="selectMatUnits" data-bind="value: matUnits">
                                         <option>inch</option>
                                         <option>mm</option>
                                     </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="inputMatThickness" class="col-sm-5 control-label">Thickness</label>
-                                <div class="col-sm-7">
-                                    <input type="number" class="form-control" id="inputMatThickness" data-bind="value: matThickness" placeholder="Thickness">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="selectMatZOrigin" class="col-sm-5 control-label">Z Origin</label>
-                                <div class="col-sm-7">
-                                    <select class="form-control" id="selectMatZOrigin" data-bind="value: matZOrigin">
+                            <tr>
+                                <td><label for="inputMatThickness">Thickness</label>
+                                <td><input type="number" id="inputMatThickness" data-bind="value: matThickness" placeholder="Thickness">
+                            <tr>
+                                <td><label for="selectMatZOrigin">Z Origin</label>
+                                <td>
+                                    <select id="selectMatZOrigin" data-bind="value: matZOrigin">
                                         <option>Top</option>
                                         <option>Bottom</option>
                                     </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="inputMatClearance" class="col-sm-5 control-label">Clearance</label>
-                                <div class="col-sm-7">
-                                    <input type="number" class="form-control" id="inputMatClearance" data-bind="value: matClearance" placeholder="Clearance">
-                                </div>
-                            </div>
-                        </div>
+                            <tr>
+                                <td><label for="inputMatClearance">Clearance</label>
+                                <td><input type="number" id="inputMatClearance" data-bind="value: matClearance" placeholder="Clearance">
+                        </table>
                     </div>
                 </div>
+
                 <!-- Curve To Line Conversion -->
                 <div class="panel panel-default" id="CurveToLine">
                     <div class="panel-heading">
@@ -216,18 +207,14 @@
                     </div>
                     <div class="panel-body">
                         <div class="form-horizontal">
-                            <div class="form-group">
-                                <label for="inputSelMinNumSegments" class="col-sm-5 control-label">Minimum Segments</label>
-                                <div class="col-sm-7">
-                                    <input type="number" class="form-control" id="inputSelMinNumSegments" data-bind="value: selMinNumSegments" placeholder="Segments">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="inputSelMinSegmentLength" class="col-sm-5 control-label">Minimum Segment Length (<span data-bind="text: selMinSegmentLength.units()"></span>)</label>
-                                <div class="col-sm-7">
-                                    <input type="number" class="form-control" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
-                                </div>
-                            </div>
+                            <table class="table">
+                                <tr>
+                                    <td><label for="inputSelMinNumSegments">Minimum Segments</label>
+                                    <td><input type="number" id="inputSelMinNumSegments" data-bind="value: selMinNumSegments" placeholder="Segments">
+                                <tr>
+                                    <td><label for="inputSelMinSegmentLength">Minimum Segment Length (<span data-bind="text: selMinSegmentLength.units()"></span>)</label>
+                                    <td><input type="number" class="form-control" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
+                            </table>
                         </div>
                     </div>
                 </div>
