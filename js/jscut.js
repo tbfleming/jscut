@@ -17,6 +17,7 @@ ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);
 ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
+ko.applyBindings(operationsViewModel, $("#Operation")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {

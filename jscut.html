@@ -53,7 +53,8 @@
                     <table class="table">
                         <tbody data-bind="foreach: operations">
                             <tr>
-                                <td><input type="checkbox" data-bind="checked: enabled"/></td>
+                                <td><input type="radio" data-bind="checked: selected" /></td>
+                                <td><input type="checkbox" data-bind="checked: enabled" /></td>
                                 <td>
                                     <select data-bind="value: combineOp">
                                         <option>Union</option>
@@ -68,7 +69,6 @@
                                         <option>Outline</option>
                                     </select>
                                 </td>
-                                <!--<td><a href="#" data-bind="click: $root.removeOperation">Remove</a></td>-->
                                 <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
                             </tr>
                         </tbody>
@@ -110,8 +110,39 @@
                                 <td><input type="number" data-bind="value: cutRate">
                         </table>
                     </div>
-                    <table class="table">
-                    </table>
+                </div>
+
+                <!-- Operation -->
+                <div class="panel panel-default" id="Operation" data-bind="with: selectedOperation">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Selected Operation</h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table">
+                            <tr><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
+                            <tr><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
+                            <tr>
+                                <td><label class="control-label">Visible</label>
+                                <td><input type="checkbox" data-bind="checked: enabled" />
+                            <tr>
+                                <td><label class="control-label">Combine</label>
+                                <td>
+                                    <select data-bind="value: combineOp">
+                                        <option>Union</option>
+                                        <option>Intersect</option>
+                                        <option>Diff</option>
+                                        <option>Xor</option>
+                                    </select>
+                            <tr>
+                                <td><label class="control-label">Operation</label>
+                                <td>
+                                    <select data-bind="value: camOp">
+                                        <option>Pocket</option>
+                                        <option>Outline</option>
+                                    </select>
+                        </table>
+                    </div>
+                    <table class="table"></table>
                 </div>
             </div>
 

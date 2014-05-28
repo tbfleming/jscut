@@ -38,10 +38,11 @@ function ToolModel() {
     }
 }
 
-function Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
+function Operation(operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
     var self = this;
     self.rawPaths = rawPaths;
     self.enabled = ko.observable(true);
+    self.selected = ko.observable("off");
     self.combineOp = ko.observable("Union");
     self.camOp = ko.observable("Pocket");
     self.combinedGeometry = [];
@@ -49,23 +50,32 @@ function Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
     self.camPaths = [];
     self.toolPathSvg = null;
 
-    function removeCombinedGeometrySvg() {
+    self.removeCombinedGeometrySvg = function() {
         if (self.combinedGeometrySvg) {
             self.combinedGeometrySvg.remove();
             self.combinedGeometrySvg = null;
         }
     }
 
-    function removeToolPathSvg() {
+    self.removeToolPathSvg = function() {
         if (self.toolPathSvg) {
             self.toolPathSvg.remove();
             self.toolPathSvg = null;
         }
     }
 
-    toolModel.diameter.subscribe(removeToolPathSvg);
-    toolModel.overlap.subscribe(removeToolPathSvg);
-    self.camOp.subscribe(removeToolPathSvg);
+    self.selected.subscribe(function (newValue) {
+        if (newValue == "on")
+            operationsViewModel.selectedOperation(self);
+    });
+
+    operationsViewModel.selectedOperation.subscribe(function () {
+        self.selected(operationsViewModel.selectedOperation() === self ? "on" : "off");
+    });
+
+    toolModel.diameter.subscribe(self.removeToolPathSvg);
+    toolModel.overlap.subscribe(self.removeToolPathSvg);
+    self.camOp.subscribe(self.removeToolPathSvg);
 
     self.enabled.subscribe(function (newValue) {
         var v;
@@ -80,8 +90,8 @@ function Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
     });
 
     self.recombine = function () {
-        removeCombinedGeometrySvg();
-        removeToolPathSvg();
+        self.removeCombinedGeometrySvg();
+        self.removeToolPathSvg();
 
         var all = [];
         for (var i = 0; i < self.rawPaths.length; ++i) {
@@ -120,7 +130,7 @@ function Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
     self.recombine();
 
     self.generateToolPath = function () {
-        removeToolPathSvg();
+        self.removeToolPathSvg();
         self.camPaths = [];
 
         toolCamArgs = toolModel.getCamArgs();
@@ -136,11 +146,14 @@ function Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
         self.enabled(true);
     }
+
+    self.selected("on");
 }
 
 function OperationsViewModel(selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup) {
     var self = this;
     self.operations = ko.observableArray();
+    self.selectedOperation = ko.observable();
 
     self.addOperation = function () {
         rawPaths = [];
@@ -148,11 +161,20 @@ function OperationsViewModel(selectionViewModel, toolModel, combinedGeometryGrou
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
         selectionViewModel.clearSelection();
-        self.operations.push(new Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths));
+        self.operations.push(new Operation(self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths));
     }
 
     self.removeOperation = function (operation) {
+        operation.removeCombinedGeometrySvg();
+        operation.removeToolPathSvg();
+        var i = self.operations.indexOf(operation);
         self.operations.remove(operation);
+        if (i < self.operations().length)
+            self.selectedOperation(self.operations()[i]);
+        else if (self.operations().length > 0)
+            self.selectedOperation(self.operations()[self.operations().length - 1]);
+        else
+            self.selectedOperation(null);
     }
 
     self.clickOnSvg = function (elem) {
