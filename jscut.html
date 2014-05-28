@@ -50,7 +50,7 @@
                             <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
                         </div>
                     </div>
-                    <table class="table operationsTable">
+                    <table class="table">
                         <tbody data-bind="foreach: operations">
                             <tr>
                                 <td><input type="checkbox" data-bind="checked: enabled"/></td>
@@ -72,6 +72,45 @@
                                 <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
                             </tr>
                         </tbody>
+                    </table>
+                </div>
+                <!-- tool -->
+                <div class="panel panel-default" id="Tool">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Tool (shared for all operations)</h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table">
+                            <tr>
+                                <td><label class="control-label">Units</label>
+                                <td><select data-bind="value: units"><option>inch<option>mm</select>
+                            <tr>
+                                <td><label class="control-label">Diameter</label>
+                                <td><span data-bind="text: units"></span>
+                                <td><input type="number" data-bind="value: diameter">
+                            <tr>
+                                <td><label class="control-label">Pass Depth</label>
+                                <td><span data-bind="text: units"></span>
+                                <td><input type="number" data-bind="value: passDepth">
+                            <tr>
+                                <td><label class="control-label">Overlap</label>
+                                <td>[0, 1)
+                                <td><input type="number" data-bind="value: overlap">
+                            <tr>
+                                <td><label class="control-label">Rapid Rate</label>
+                                <td><span data-bind="text: units"></span>/min
+                                <td><input type="number" data-bind="value: rapidRate">
+                            <tr>
+                                <td><label class="control-label">Plunge Rate</label>
+                                <td><span data-bind="text: units"></span>/min
+                                <td><input type="number" data-bind="value: plungeRate">
+                            <tr>
+                                <td><label class="control-label">Cut Rate</label>
+                                <td><span data-bind="text: units"></span>/min
+                                <td><input type="number" data-bind="value: cutRate">
+                        </table>
+                    </div>
+                    <table class="table">
                     </table>
                 </div>
             </div>

@@ -4,9 +4,7 @@
 * Pay attention to fill-rule on source SVG
   * SelectionViewModel is creating default (nonzero)
   * Operation is assuming evenodd
-* Tool settings
-  * Single tool initially
-  * Multiple tools later
+* Multiple tools
 * Make combinedGeometrySvg depend on operation
 * Operation detail panels
 * Generate gcode
@@ -32,4 +30,3 @@
   * accordians
   * scroll & zoom
   * wasted space
-  * Split operationGroup into 2 groups

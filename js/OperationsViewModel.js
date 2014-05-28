@@ -1,6 +1,44 @@
 // Copyright 2014 Todd Fleming
 
-function Operation(combinedGeometryGroup, toolPathsGroup, rawPaths) {
+function ToolModel() {
+    var self = this;
+    self.units = ko.observable("inch");
+    self.unitConverter = new UnitConverter(self.units);
+    self.diameter = ko.observable(.125);
+    self.passDepth = ko.observable(.125);
+    self.overlap = ko.observable(.4);
+    self.rapidRate = ko.observable(100);
+    self.plungeRate = ko.observable(20);
+    self.cutRate = ko.observable(40);
+
+    self.unitConverter.add(self.diameter);
+    self.unitConverter.add(self.passDepth);
+    self.unitConverter.add(self.rapidRate);
+    self.unitConverter.add(self.plungeRate);
+    self.unitConverter.add(self.cutRate);
+
+    self.getCamArgs = function () {
+        result = {
+            diameterClipper: self.diameter.toPx() * Path.snapToClipperScale,
+            overlap: Number(self.overlap()),
+        };
+        if (result.diameterClipper <= 0) {
+            showAlert("Tool diameter must be greater than 0", "alert-danger");
+            return null;
+        }
+        if (result.overlap < 0) {
+            showAlert("Tool overlap must be at least 0", "alert-danger");
+            return null;
+        }
+        if (result.overlap >= 1) {
+            showAlert("Tool overlap must be less than 1", "alert-danger");
+            return null;
+        }
+        return result;
+    }
+}
+
+function Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
     var self = this;
     self.rawPaths = rawPaths;
     self.enabled = ko.observable(true);
@@ -25,6 +63,8 @@ function Operation(combinedGeometryGroup, toolPathsGroup, rawPaths) {
         }
     }
 
+    toolModel.diameter.subscribe(removeToolPathSvg);
+    toolModel.overlap.subscribe(removeToolPathSvg);
     self.camOp.subscribe(removeToolPathSvg);
 
     self.enabled.subscribe(function (newValue) {
@@ -82,10 +122,15 @@ function Operation(combinedGeometryGroup, toolPathsGroup, rawPaths) {
     self.generateToolPath = function () {
         removeToolPathSvg();
         self.camPaths = [];
+
+        toolCamArgs = toolModel.getCamArgs();
+        if (toolCamArgs == null)
+            return;
+
         if (self.camOp() == "Pocket")
-            self.camPaths = Cam.pocket(self.combinedGeometry, Path.snapToClipperScale * 5, 0);
+            self.camPaths = Cam.pocket(self.combinedGeometry, toolCamArgs.diameterClipper, toolCamArgs.overlap);
         else if (self.camOp() == "Outline")
-            self.camPaths = Cam.outline(self.combinedGeometry, Path.snapToClipperScale * 5, Path.snapToClipperScale * 30, 0);
+            self.camPaths = Cam.outline(self.combinedGeometry, toolCamArgs.diameterClipper, Path.snapToClipperScale * 30, toolCamArgs.overlap);
         path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.camPaths));
         if (path != null && path.length > 0)
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
@@ -93,7 +138,7 @@ function Operation(combinedGeometryGroup, toolPathsGroup, rawPaths) {
     }
 }
 
-function OperationsViewModel(selectionViewModel, combinedGeometryGroup, toolPathsGroup) {
+function OperationsViewModel(selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup) {
     var self = this;
     self.operations = ko.observableArray();
 
@@ -103,7 +148,7 @@ function OperationsViewModel(selectionViewModel, combinedGeometryGroup, toolPath
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
         selectionViewModel.clearSelection();
-        self.operations.push(new Operation(combinedGeometryGroup, toolPathsGroup, rawPaths));
+        self.operations.push(new Operation(toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths));
     }
 
     self.removeOperation = function (operation) {

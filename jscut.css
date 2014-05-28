@@ -46,9 +46,13 @@ code {
     padding-right: 6px;
 }
 
-.operationsTable > tbody > tr > td {
+.table > tbody > tr > td {
     border-top: none;
-    padding: 0px;
+    padding: 2px;
+}
+
+.table > tbody > tr > td > input[type="number"] {
+    width: 60px;
 }
 
 .selectedPath {

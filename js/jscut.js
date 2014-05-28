@@ -10,10 +10,12 @@ var selectionGroup = mainSvg.g();
 
 var materialViewModel = new MaterialViewModel();
 var selectionViewModel = new SelectionViewModel(materialViewModel, selectionGroup);
-var operationsViewModel = new OperationsViewModel(selectionViewModel, combinedGeometryGroup, toolPathsGroup);
+var toolModel = new ToolModel();
+var operationsViewModel = new OperationsViewModel(selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);
+ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
 
 function updateSvgAutoHeight() {
