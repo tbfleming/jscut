@@ -46,15 +46,19 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
     self.selected = ko.observable("off");
     self.combineOp = ko.observable("Union");
     self.camOp = ko.observable("Pocket");
-    self.width = ko.observable("0.0");
+    self.cutDepth = ko.observable(0);
     self.margin = ko.observable("0.0");
+    self.width = ko.observable("0.0");
     self.combinedGeometry = [];
     self.combinedGeometrySvg = null;
     self.camPaths = [];
     self.toolPathSvg = null;
 
-    toolModel.unitConverter.add(self.width);
-    toolModel.unitConverter.add(self.margin);
+    materialViewModel.unitConverter.add(self.cutDepth);
+    materialViewModel.unitConverter.add(self.margin);
+    materialViewModel.unitConverter.add(self.width);
+
+    self.cutDepth.fromPx(toolModel.passDepth.toPx());
 
     self.removeCombinedGeometrySvg = function() {
         if (self.combinedGeometrySvg) {

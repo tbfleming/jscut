@@ -151,6 +151,10 @@
                                                 <option>Outline</option>
                                             </select>
                                     <tr>
+                                        <td><label class="control-label">Cut Depth</label>
+                                        <td><span data-bind="text: materialViewModel.matUnits" />
+                                        <td><input type="number" data-bind="value: cutDepth">
+                                    <tr>
                                         <td><label class="control-label">Margin</label>
                                         <td><span data-bind="text: materialViewModel.matUnits" />
                                         <td><input type="number" data-bind="value: margin">
@@ -228,7 +232,29 @@
                                         <td><input type="number" id="inputSelMinNumSegments" data-bind="value: selMinNumSegments" placeholder="Segments">
                                     <tr>
                                         <td><label for="inputSelMinSegmentLength">Minimum Segment Length (<span data-bind="text: selMinSegmentLength.units()"></span>)</label>
-                                        <td><input type="number" class="form-control" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
+                                        <td><input type="number" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Gcode Conversion -->
+                <div class="panel panel-default" id="GcodeConversion">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseGcodeConversion">Gcode Conversion</a>
+                        </h3>
+                    </div>
+                    <div id="collapseGcodeConversion" class="panel-collapse collapse in">
+                        <div class="panel-body">
+                            <div class="form-horizontal">
+                                <table class="table">
+                                    <tr>
+                                        <td><label class="control-label">Gcode Units</label>
+                                        <td><select data-bind="value: units"><option>inch<option>mm</select>
+                                    <tr><td>
+                                    <tr><td><a href="#">Convert</a>
+                                    <tr><td><a href="#">Get Gcode</a>
                                 </table>
                             </div>
                         </div>
@@ -250,6 +276,7 @@
     <script src="js/MaterialViewModel.js"></script>
     <script src="js/SelectionViewModel.js"></script>
     <script src="js/OperationsViewModel.js"></script>
+    <script src="js/GcodeConversionViewModel.js"></script>
     <script src="js/jscut.js"></script>
 </body>
 </html>

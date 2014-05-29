@@ -12,12 +12,14 @@ var materialViewModel = new MaterialViewModel();
 var selectionViewModel = new SelectionViewModel(materialViewModel, selectionGroup);
 var toolModel = new ToolModel();
 var operationsViewModel = new OperationsViewModel(materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup);
+var gcodeConversionViewModel = new GcodeConversionViewModel(materialViewModel, toolModel, operationsViewModel);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);
 ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
 ko.applyBindings(operationsViewModel, $("#Operation")[0]);
+ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {

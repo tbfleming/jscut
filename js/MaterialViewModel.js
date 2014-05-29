@@ -28,6 +28,12 @@ function UnitConverter(units) {
             else
                 return observable() * svgPxPerInch / mmPerInch;
         }
+        observable.fromPx = function (px) {
+            if (units() == "inch")
+                observable(px / svgPxPerInch);
+            else
+                observable(px * mmPerInch / svgPxPerInch);
+        }
     }
 }
 
