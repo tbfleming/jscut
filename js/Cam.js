@@ -127,12 +127,12 @@ var Cam = new function () {
     // Convert array of CamPath to array of Clipper path
     Cam.getClipperPathsFromCamPaths = function (paths) {
         result = [];
-        for (var i = 0; i < paths.length; ++i)
-            result.push(paths[i].path);
+        if (paths != null)
+            for (var i = 0; i < paths.length; ++i)
+                result.push(paths[i].path);
         return result;
     }
 
-/*
     // Convert paths to gcode. getGcode() assumes that the current Z position is at safeZ.
     // getGcode()'s gcode returns Z to this position at the end.
     // namedArgs must have:
@@ -142,7 +142,7 @@ var Cam = new function () {
     //      topZ:           Top of area to cut (gcode units)
     //      botZ:           Bottom of area to cut (gcode units)
     //      safeZ:          Z position to safely move over uncut areas (gcode units)
-    //      passDepth:      Depth of cut for each pass (gcode units)
+    //      passDepth:      Cut depth for each pass (gcode units)
     //      plungeFeed:     Feedrate to plunge cutter (gcode units)
     //      retractFeed:    Feedrate to retract cutter (gcode units)
     //      cutFeed:        Feedrate for horizontal cuts (gcode units)
@@ -161,19 +161,47 @@ var Cam = new function () {
         var rapidFeedGcode = 'F'+namedArgs.rapidFeed;
         var gcode = "";
 
+        var retractGcode =
+            '; Retract\r\n' +
+            'G1Z' + safeZ.toFixed(decimal) + rapidFeedGcode + '\r\n';
+
         function convertPoint(p) {
-            return "X" + p.X.toFixed(decimal) * scale) + 'Y' + (-p.Y).toFixed(decimal) * scale;
+            return "X" + (p.X*scale).toFixed(decimal) + 'Y' + (-p.Y*scale).toFixed(decimal);
         }
 
         for (var pathIndex = 0; pathIndex < paths.length; ++pathIndex) {
             var path = paths[pathIndex];
-            if (path.length == 0)
+            if (path.path.length == 0)
                 continue;
             gcode +=
-                'G1' + convertPoint(path[0]) + rapidFeedGcode + '\n' +
-                'G1' + topZ.toFixed(decimal) + '\n';
-            var currentZ = 
+                '\r\n'+
+                '; Path ' + pathIndex + '\r\n';
+            var currentZ = topZ;
+            while (currentZ > botZ) {
+                if (currentZ != topZ && !path.safeToClose)
+                    gcode += retractGcode;
+                gcode +=
+                    '; Rapid to initial position\r\n' +
+                    'G1' + convertPoint(path.path[0]) + rapidFeedGcode + '\r\n' +
+                    'G1Z' + currentZ.toFixed(decimal) + '\r\n';
+                currentZ -= passDepth;
+                if (currentZ < botZ)
+                    currentZ = botZ;
+                gcode +=
+                    '; plunge\r\n' +
+                    'G1Z' + currentZ.toFixed(decimal) + plungeFeedGcode + '\r\n' +
+                    '; cut\r\n';
+                for (var i = 1; i < path.path.length; ++i) {
+                    gcode += 'G1' + convertPoint(path.path[i]);
+                    if (i == 1)
+                        gcode += cutFeedGcode + '\r\n';
+                    else
+                        gcode += '\r\n';
+                }
+            }
+            gcode += retractGcode;
         }
+
+        return gcode;
     };
-*/
 };

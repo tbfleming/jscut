@@ -31,7 +31,7 @@ function UnitConverter(units) {
             return px * mmPerInch / svgPxPerInch;
     }
 
-    self.add = function(observable) {
+    self.add = function (observable) {
         self.unitsObservables.push(observable);
         observable.units = function () {
             return units();
@@ -41,6 +41,15 @@ function UnitConverter(units) {
         }
         observable.fromPx = function (px) {
             observable(self.fromPx(px));
+        }
+    }
+
+    self.addComputed = function (observable) {
+        observable.units = function () {
+            return units();
+        }
+        observable.toPx = function () {
+            return self.toPx(observable());
         }
     }
 }
@@ -66,6 +75,7 @@ function MaterialViewModel() {
         else
             return self.matThickness();
     });
+    self.unitConverter.addComputed(self.matTopZ);
 
     self.matBotZ = ko.computed(function () {
         if (self.matZOrigin() == "Bottom")
@@ -73,6 +83,7 @@ function MaterialViewModel() {
         else
             return "-" + self.matThickness();
     });
+    self.unitConverter.addComputed(self.matBotZ);
 
     self.matZSafeMove = ko.computed(function () {
         if (self.matZOrigin() == "Top")
@@ -80,6 +91,7 @@ function MaterialViewModel() {
         else
             return parseFloat(self.matThickness()) + parseFloat(self.matClearance());
     });
+    self.unitConverter.addComputed(self.matZSafeMove);
 
     function formatZ(z) {
         z = parseFloat(z);
