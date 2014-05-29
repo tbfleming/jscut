@@ -52,9 +52,9 @@ Snap.load("Material.svg", function (f) {
     materialViewModel.materialSvg(materialSvg);
 });
 
-Snap.load("test.svg", function (f) {
-    contentGroup.append(f);
-});
+//Snap.load("test.svg", function (f) {
+//    contentGroup.append(f);
+//});
 
 $(document).on('change', '#choose-svg-file', function (event) {
     var files = event.target.files;

@@ -7,7 +7,7 @@
 * Multiple tools
 * Make combinedGeometrySvg depend on operation
 * Highlight selected operation in main view
-* Generate gcode
+* Force non-boundary paths before boundary ones when combining
 * Report problems on SVG load
   * empty fill
 * SVG file management

@@ -155,18 +155,18 @@ var Cam = new function () {
         var botZ = namedArgs.botZ;
         var safeZ = namedArgs.safeZ;
         var passDepth = namedArgs.passDepth;
-        var plungeFeedGcode = 'F'+namedArgs.plungeFeed;
-        var retractFeedGcode = 'F'+namedArgs.retractFeed;
-        var cutFeedGcode = 'F'+namedArgs.cutFeed;
-        var rapidFeedGcode = 'F'+namedArgs.rapidFeed;
+        var plungeFeedGcode = ' F' + namedArgs.plungeFeed;
+        var retractFeedGcode = ' F' + namedArgs.retractFeed;
+        var cutFeedGcode = ' F' + namedArgs.cutFeed;
+        var rapidFeedGcode = ' F' + namedArgs.rapidFeed;
         var gcode = "";
 
         var retractGcode =
             '; Retract\r\n' +
-            'G1Z' + safeZ.toFixed(decimal) + rapidFeedGcode + '\r\n';
+            'G1 Z' + safeZ.toFixed(decimal) + rapidFeedGcode + '\r\n';
 
         function convertPoint(p) {
-            return "X" + (p.X*scale).toFixed(decimal) + 'Y' + (-p.Y*scale).toFixed(decimal);
+            return " X" + (p.X*scale).toFixed(decimal) + ' Y' + (-p.Y*scale).toFixed(decimal);
         }
 
         for (var pathIndex = 0; pathIndex < paths.length; ++pathIndex) {
@@ -183,13 +183,13 @@ var Cam = new function () {
                 gcode +=
                     '; Rapid to initial position\r\n' +
                     'G1' + convertPoint(path.path[0]) + rapidFeedGcode + '\r\n' +
-                    'G1Z' + currentZ.toFixed(decimal) + '\r\n';
+                    'G1 Z' + currentZ.toFixed(decimal) + '\r\n';
                 currentZ -= passDepth;
                 if (currentZ < botZ)
                     currentZ = botZ;
                 gcode +=
                     '; plunge\r\n' +
-                    'G1Z' + currentZ.toFixed(decimal) + plungeFeedGcode + '\r\n' +
+                    'G1 Z' + currentZ.toFixed(decimal) + plungeFeedGcode + '\r\n' +
                     '; cut\r\n';
                 for (var i = 1; i < path.path.length; ++i) {
                     gcode += 'G1' + convertPoint(path.path[i]);

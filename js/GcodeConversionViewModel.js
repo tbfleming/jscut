@@ -51,9 +51,10 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
         else
             gcode += "G21         ; Set units to mm\r\n";
         gcode += "G90         ; Absolute positioning\r\n";
-        gcode += "G1Z" + safeZ + "F" + rapidRate + "      ; Move to clearance level\r\n"
+        gcode += "G1 Z" + safeZ + " F" + rapidRate + "      ; Move to clearance level\r\n"
 
-        for (var opIndex = 0, op = ops[opIndex]; opIndex < ops.length; ++opIndex) {
+        for (var opIndex = 0; opIndex < ops.length; ++opIndex) {
+            var op = ops[opIndex];
             var cutDepth = self.unitConverter.fromPx(op.cutDepth.toPx());
             if(cutDepth <= 0) {
                 showAlert("An operation has a cut depth which is not greater than 0.", "alert-danger");
