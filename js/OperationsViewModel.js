@@ -51,7 +51,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
     self.width = ko.observable("0.0");
     self.combinedGeometry = [];
     self.combinedGeometrySvg = null;
-    self.camPaths = [];
+    self.toolPaths = [];
     self.toolPathSvg = null;
 
     materialViewModel.unitConverter.add(self.cutDepth);
@@ -67,10 +67,11 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
         }
     }
 
-    self.removeToolPathSvg = function() {
+    self.removeToolPaths = function() {
         if (self.toolPathSvg) {
             self.toolPathSvg.remove();
             self.toolPathSvg = null;
+            self.toolPaths = [];
         }
     }
 
@@ -83,11 +84,11 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
         self.selected(operationsViewModel.selectedOperation() === self ? "on" : "off");
     });
 
-    toolModel.diameter.subscribe(self.removeToolPathSvg);
-    toolModel.overlap.subscribe(self.removeToolPathSvg);
-    self.camOp.subscribe(self.removeToolPathSvg);
-    self.width.subscribe(self.removeToolPathSvg);
-    self.margin.subscribe(self.removeToolPathSvg);
+    toolModel.diameter.subscribe(self.removeToolPaths);
+    toolModel.overlap.subscribe(self.removeToolPaths);
+    self.camOp.subscribe(self.removeToolPaths);
+    self.width.subscribe(self.removeToolPaths);
+    self.margin.subscribe(self.removeToolPaths);
 
     self.enabled.subscribe(function (newValue) {
         var v;
@@ -103,7 +104,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
 
     self.recombine = function () {
         self.removeCombinedGeometrySvg();
-        self.removeToolPathSvg();
+        self.removeToolPaths();
 
         var all = [];
         for (var i = 0; i < self.rawPaths.length; ++i) {
@@ -142,8 +143,8 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
     self.recombine();
 
     self.generateToolPath = function () {
-        self.removeToolPathSvg();
-        self.camPaths = [];
+        self.removeToolPaths();
+        self.toolPaths = [];
 
         toolCamArgs = toolModel.getCamArgs();
         if (toolCamArgs == null)
@@ -157,14 +158,14 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
             geometry = Path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
-            self.camPaths = Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap);
+            self.toolPaths = Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap);
         else if (self.camOp() == "Outline") {
             var width = self.width.toPx() * Path.snapToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
-            self.camPaths = Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap);
+            self.toolPaths = Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap);
         }
-        var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.camPaths));
+        var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths));
         if (path != null && path.length > 0)
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
         self.enabled(true);
@@ -189,7 +190,7 @@ function OperationsViewModel(materialViewModel, selectionViewModel, toolModel, c
 
     self.removeOperation = function (operation) {
         operation.removeCombinedGeometrySvg();
-        operation.removeToolPathSvg();
+        operation.removeToolPaths();
         var i = self.operations.indexOf(operation);
         self.operations.remove(operation);
         if (i < self.operations().length)

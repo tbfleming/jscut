@@ -253,8 +253,8 @@
                                         <td><label class="control-label">Gcode Units</label>
                                         <td><select data-bind="value: units"><option>inch<option>mm</select>
                                     <tr><td>
-                                    <tr><td><a href="#">Convert</a>
-                                    <tr><td><a href="#">Get Gcode</a>
+                                    <tr><td><a data-bind="click:generateGcode" href="#">Generate Gcode</a>
+                                    <tr><td><a target="_blank" data-bind="visible:gcodeUrl()!=null, attr:{href:gcodeUrl()}">Get Gcode</a>
                                 </table>
                             </div>
                         </div>

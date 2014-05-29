@@ -17,22 +17,30 @@ function UnitConverter(units) {
             }
     });
 
+    self.toPx = function (x) {
+        if (units() == "inch")
+            return x * svgPxPerInch;
+        else
+            return x * svgPxPerInch / mmPerInch;
+    }
+
+    self.fromPx = function (px) {
+        if (units() == "inch")
+            return px / svgPxPerInch;
+        else
+            return px * mmPerInch / svgPxPerInch;
+    }
+
     self.add = function(observable) {
         self.unitsObservables.push(observable);
         observable.units = function () {
             return units();
         }
         observable.toPx = function () {
-            if (units() == "inch")
-                return observable() * svgPxPerInch;
-            else
-                return observable() * svgPxPerInch / mmPerInch;
+            return self.toPx(observable());
         }
         observable.fromPx = function (px) {
-            if (units() == "inch")
-                observable(px / svgPxPerInch);
-            else
-                observable(px * mmPerInch / svgPxPerInch);
+            observable(self.fromPx(px));
         }
     }
 }
