@@ -49,6 +49,22 @@ $(function () {
     $(window).resize(updateSvgAutoHeight);
 });
 
+function updateSvgSize() {
+    bbox = mainSvg.getBBox();
+    $("#MainSvg").attr({
+        width: $("#MainSvgDiv").width(),
+        height: $(window).height() - 80,
+        preserveAspectRatio: 'xMinYMin meet',
+    });
+    // attr() messes viewBox up
+    $("#MainSvg").get(0).setAttribute("viewBox", (bbox.x - 2) + " " + (bbox.y - 2) + " " + (bbox.w + 4) + " " + (bbox.h + 4));
+}
+
+$(function () {
+    updateSvgSize();
+    $(window).resize(updateSvgSize);
+});
+
 var nextAlertNum = 1;
 function showAlert(message, alerttype, haveTimeout) {
     haveTimeout = (typeof haveTimeout === "undefined") ? true : false;
@@ -69,6 +85,7 @@ Snap.load("Material.svg", function (f) {
 
 //Snap.load("test.svg", function (f) {
 //    contentGroup.append(f);
+//    updateSvgSize();
 //});
 
 $(document).on('change', '#choose-svg-file', function (event) {
@@ -80,6 +97,7 @@ $(document).on('change', '#choose-svg-file', function (event) {
             reader.onload = function (e) {
                 svg = Snap.parse(e.target.result);
                 contentGroup.append(svg);
+                updateSvgSize();
                 alert.remove();
                 showAlert("loaded " + file.name, "alert-success");
             };

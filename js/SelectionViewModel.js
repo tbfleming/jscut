@@ -44,11 +44,11 @@ function SelectionViewModel(materialViewModel, selectionGroup) {
     }
 
     self.getSelection = function () {
-        return selectionGroup.selectAll("Path");
+        return selectionGroup.selectAll("path");
     }
 
     self.clearSelection = function () {
-        selectionGroup.selectAll("Path").remove();
+        selectionGroup.selectAll("path").remove();
         self.selNumSelected(0);
     }
 }

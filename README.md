@@ -1,6 +1,4 @@
 jscut
 =====
 
-I'm attempting to develop a CAM package that runs in the browser. Not usable yet.
-
-Only works with Chrome for now.
+A simple CAM package that runs in the browser. Very new, very alpha.
