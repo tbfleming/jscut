@@ -273,7 +273,11 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><select data-bind="value: units"><option>inch<option>mm</select>
                                     <tr><td>
                                     <tr><td><a data-bind="click:generateGcode" href="#">Generate Gcode</a>
-                                    <tr><td><a target="_blank" data-bind="visible:gcodeUrl()!=null, attr:{href:gcodeUrl()}">Get Gcode</a>
+                                    <tr>
+                                        <td data-bind="visible:gcodeUrl()!=null">
+                                            <a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get Gcode</a>
+                                            <p>The "Get Gcode" link sometimes doesn't work under IE 11; please help me fix this.
+                                                Firefox 29 and Chrome 35 work.
                                 </table>
                             </div>
                         </div>
