@@ -105,5 +105,7 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
         if (self.gcodeUrl() != null)
             URL.revokeObjectURL(self.gcodeUrl());
         self.gcodeUrl(URL.createObjectURL(new Blob([gcode])));
+
+        tutorial(6, 'You\'re done! Right-click "Get Gcode" and select "Save link as..." to save your gcode.');
     }
 }

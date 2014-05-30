@@ -88,6 +88,19 @@ Snap.load("Material.svg", function (f) {
 //    updateSvgSize();
 //});
 
+var tutorialAlert = null;
+var nextTutorialStep = 0;
+function tutorial(step, message) {
+    if (step >= nextTutorialStep) {
+        if (tutorialAlert != null)
+            tutorialAlert.remove();
+        tutorialAlert = showAlert("Step " + step + ": " + message, "alert-info", false);
+        nextTutorialStep = step + 1;
+    }
+}
+
+tutorial(1, 'Click "Open SVG" and select an SVG file.');
+
 $(document).on('change', '#choose-svg-file', function (event) {
     var files = event.target.files;
     for (var i = 0, file; file = files[i]; ++i) {
@@ -100,6 +113,7 @@ $(document).on('change', '#choose-svg-file', function (event) {
                 updateSvgSize();
                 alert.remove();
                 showAlert("loaded " + file.name, "alert-success");
+                tutorial(2, 'Click 1 or more objects.');
             };
             reader.onabort = function (e) {
                 alert.remove();
@@ -117,9 +131,13 @@ $(document).on('change', '#choose-svg-file', function (event) {
 
 $("#MainSvg").click(function (e) {
     var element = Snap.getElementByPoint(e.pageX, e.pageY);
-    if (element != null)
+    if (element != null) {
         operationsViewModel.clickOnSvg(element) ||
         selectionViewModel.clickOnSvg(element);
+        if (selectionViewModel.selNumSelected() > 0) {
+            tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
+        }
+    }
 });
 
 $('#createOperationButton').popover({

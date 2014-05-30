@@ -181,8 +181,10 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
             self.toolPaths = Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap);
         }
         var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths));
-        if (path != null && path.length > 0)
+        if (path != null && path.length > 0) {
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
+            tutorial(5, 'After you finished adding and editing toolpaths, click "Generate Gcode"');
+        }
         self.enabled(true);
     }
 
@@ -201,6 +203,7 @@ function OperationsViewModel(materialViewModel, selectionViewModel, toolModel, c
         });
         selectionViewModel.clearSelection();
         self.operations.push(new Operation(materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths));
+        tutorial(4, 'Change settings in "Material," "Tool," and "Selected Operation" then click "Generate Toolpath".');
     }
 
     self.removeOperation = function (operation) {
