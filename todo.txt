@@ -1,3 +1,5 @@
+Unordered unprioritized todo list.
+
 * Check Safari
 * Pay attention to fill-rule on source SVG
   * SelectionViewModel is creating default (nonzero)
@@ -11,19 +13,19 @@
 * SVG file management
   * visibility control
   * unload
-* Polygon
-* Square & Rectangle
-* Circle & Ellipse
+* Support these primitives directly instead of requiring conversion to Path
+  * Polygon
+  * Square & Rectangle
+  * Circle & Ellipse
 * V-shaped bits
 * Ramped plunge
-* Tabs in Outline operation
+* tabs (cutting tabs; not UI tabs)
 * Save session
 * Code cleanup
   * Replace alertFn callback with exception
 * Trim gcode of tiny moves
 * Add ability to set gcode X & Y origin
 * UI cleanup
-  * header
-  * footer
-  * scroll & zoom
+  * add scroll & zoom
+  * make tutorial hidable
   * wasted space
