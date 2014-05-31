@@ -24,7 +24,6 @@ Unordered unprioritized todo list.
 * Code cleanup
   * Replace alertFn callback with exception
 * Trim gcode of tiny moves
-* Add ability to set gcode X & Y origin
 * UI cleanup
   * add scroll & zoom
   * make tutorial hidable
