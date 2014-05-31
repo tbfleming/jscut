@@ -271,12 +271,24 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <tr>
                                         <td><label class="control-label">Gcode Units</label>
                                         <td><select data-bind="value: units"><option>inch<option>mm</select>
-                                    <tr><td>
+                                    <tr>
+                                        <td><label for="gcodeOffsetX">X Offset</label>
+                                        <td><span data-bind="text: units" />
+                                        <td><input type="number" id="gcodeOffsetX" data-bind="value: offsetX">
+                                    <tr>
+                                        <td><label for="gcodeOffsetY">Y Offset</label>
+                                        <td><span data-bind="text: units" />
+                                        <td><input type="number" id="gcodeOffsetY" data-bind="value: offsetY">
+                                    <tr><td><label class="control-label">Minimum X</label><td><span data-bind="text: units" /><td><span data-bind="text: minX" />
+                                    <tr><td><label class="control-label">Maximum X</label><td><span data-bind="text: units" /><td><span data-bind="text: maxX" />
+                                    <tr><td><label class="control-label">Minimum Y</label><td><span data-bind="text: units" /><td><span data-bind="text: minY" />
+                                    <tr><td><label class="control-label">Maximum Y</label><td><span data-bind="text: units" /><td><span data-bind="text: maxY" />
                                     <tr><td><a data-bind="click:generateGcode" href="#">Generate Gcode</a>
                                     <tr>
                                         <td data-bind="visible:gcodeUrl()!=null">
                                             <a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get Gcode</a>
-                                            <p>The "Get Gcode" link sometimes doesn't work under IE 11; please help me fix this.
+                                            <p>
+                                                The "Get Gcode" link sometimes doesn't work under IE 11; please help me fix this.
                                                 Firefox 29 and Chrome 35 work.
                                 </table>
                             </div>

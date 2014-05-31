@@ -153,6 +153,8 @@ var Cam = new function () {
     // namedArgs must have:
     //      paths:          Array of CamPath
     //      scale:          Factor to convert Clipper units to gcode units
+    //      offsetX:        Offset X (gcode units)
+    //      offsetY:        Offset Y (gcode units)
     //      decimal:        Number of decimal places to keep in gcode
     //      topZ:           Top of area to cut (gcode units)
     //      botZ:           Bottom of area to cut (gcode units)
@@ -165,6 +167,8 @@ var Cam = new function () {
     Cam.getGcode = function (namedArgs) {
         var paths = namedArgs.paths;
         var scale = namedArgs.scale;
+        var offsetX = namedArgs.offsetX;
+        var offsetY = namedArgs.offsetY;
         var decimal = namedArgs.decimal;
         var topZ = namedArgs.topZ;
         var botZ = namedArgs.botZ;
@@ -181,7 +185,7 @@ var Cam = new function () {
             'G1 Z' + safeZ.toFixed(decimal) + rapidFeedGcode + '\r\n';
 
         function convertPoint(p) {
-            return " X" + (p.X*scale).toFixed(decimal) + ' Y' + (-p.Y*scale).toFixed(decimal);
+            return " X" + (p.X * scale + offsetX).toFixed(decimal) + ' Y' + (-p.Y * scale + offsetY).toFixed(decimal);
         }
 
         for (var pathIndex = 0; pathIndex < paths.length; ++pathIndex) {

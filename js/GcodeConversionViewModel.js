@@ -20,6 +20,24 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
     self.units = ko.observable("mm");
     self.unitConverter = new UnitConverter(self.units);
     self.gcodeUrl = ko.observable(null);
+    self.offsetX = ko.observable(0);
+    self.offsetY = ko.observable(0);
+
+    self.unitConverter.add(self.offsetX);
+    self.unitConverter.add(self.offsetY);
+
+    self.minX = ko.computed(function () {
+        return (self.unitConverter.fromPx(operationsViewModel.minX() / Path.snapToClipperScale) + Number(self.offsetX())).toFixed(4);
+    });
+    self.maxX = ko.computed(function () {
+        return (self.unitConverter.fromPx(operationsViewModel.maxX() / Path.snapToClipperScale) + Number(self.offsetX())).toFixed(4);
+    });
+    self.minY = ko.computed(function () {
+        return (-self.unitConverter.fromPx(operationsViewModel.maxY() / Path.snapToClipperScale) + Number(self.offsetY())).toFixed(4);
+    });
+    self.maxY = ko.computed(function () {
+        return (-self.unitConverter.fromPx(operationsViewModel.minY() / Path.snapToClipperScale) + Number(self.offsetY())).toFixed(4);
+    });
 
     self.generateGcode = function () {
         ops = [];
@@ -30,7 +48,7 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
         for (var i = 0; i < operationsViewModel.operations().length; ++i) {
             op = operationsViewModel.operations()[i];
             if (op.enabled()) {
-                if (op.toolPaths == null || op.toolPaths.length == 0) {
+                if (op.toolPaths() == null || op.toolPaths().length == 0) {
                     showAlert("An operation is missing toolpaths; click \"Generate\" by all visible operations.", "alert-danger");
                     return;
                 }
@@ -54,7 +72,7 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
         }
 
         var scale;
-        if(self.units == "inch")
+        if(self.units() == "inch")
             scale = 1 / Path.svgPxPerInch / Path.snapToClipperScale;
         else
             scale = 25.4 / Path.svgPxPerInch / Path.snapToClipperScale;
@@ -80,7 +98,7 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
                 "\r\n;" +
                 "\r\n; Operation:    " + opIndex +
                 "\r\n; Type:         " + op.camOp() +
-                "\r\n; Paths:        " + op.toolPaths.length +
+                "\r\n; Paths:        " + op.toolPaths().length +
                 "\r\n; Cut Depth:    " + cutDepth +
                 "\r\n; Pass Depth:   " + passDepth +
                 "\r\n; Plunge rate:  " + plungeRate +
@@ -88,8 +106,10 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
                 "\r\n;\r\n";
 
             gcode += Cam.getGcode({
-                paths:          op.toolPaths,
+                paths:          op.toolPaths(),
                 scale:          scale,
+                offsetX:        Number(self.offsetX()),
+                offsetY:        Number(self.offsetY()),
                 decimal:        4,
                 topZ:           topZ,
                 botZ:           topZ - cutDepth,

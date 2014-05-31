@@ -66,7 +66,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
     self.width = ko.observable("0.0");
     self.combinedGeometry = [];
     self.combinedGeometrySvg = null;
-    self.toolPaths = [];
+    self.toolPaths = ko.observable([]);
     self.toolPathSvg = null;
 
     materialViewModel.unitConverter.add(self.cutDepth);
@@ -86,7 +86,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
         if (self.toolPathSvg) {
             self.toolPathSvg.remove();
             self.toolPathSvg = null;
-            self.toolPaths = [];
+            self.toolPaths([]);
         }
     }
 
@@ -159,7 +159,6 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
 
     self.generateToolPath = function () {
         self.removeToolPaths();
-        self.toolPaths = [];
 
         toolCamArgs = toolModel.getCamArgs();
         if (toolCamArgs == null)
@@ -173,14 +172,14 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
             geometry = Path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
-            self.toolPaths = Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap);
+            self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap));
         else if (self.camOp() == "Outline") {
             var width = self.width.toPx() * Path.snapToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
-            self.toolPaths = Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap);
+            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap));
         }
-        var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths));
+        var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()));
         if (path != null && path.length > 0) {
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
             tutorial(5, 'After you finished adding and editing toolpaths, click "Generate Gcode"');
@@ -195,6 +194,44 @@ function OperationsViewModel(materialViewModel, selectionViewModel, toolModel, c
     var self = this;
     self.operations = ko.observableArray();
     self.selectedOperation = ko.observable();
+    self.minX = ko.observable(0);
+    self.minY = ko.observable(0);
+    self.maxX = ko.observable(0);
+    self.maxY = ko.observable(0);
+
+    function findMinMax() {
+        var minX = 0, maxX = 0, minY = 0, maxY = 0;
+        var foundFirst = false;
+        var ops = self.operations();
+        for (var i = 0; i < ops.length; ++i) {
+            if (ops[i].enabled()) {
+                var toolPaths = ops[i].toolPaths();
+                for (var j = 0; j < toolPaths.length; ++j) {
+                    var toolPath = toolPaths[j].path;
+                    for (var k = 0; k < toolPath.length; ++k) {
+                        var point = toolPath[k];
+                        if (!foundFirst) {
+                            minX = point.X;
+                            maxX = point.X;
+                            minY = point.Y;
+                            maxY = point.Y;
+                            foundFirst = true;
+                        }
+                        else {
+                            minX = Math.min(minX, point.X);
+                            minY = Math.min(minY, point.Y);
+                            maxX = Math.max(maxX, point.X);
+                            maxY = Math.max(maxY, point.Y);
+                        }
+                    }
+                }
+            }
+        }
+        self.minX(minX);
+        self.maxX(maxX);
+        self.minY(minY);
+        self.maxY(maxY);
+    }
 
     self.addOperation = function () {
         rawPaths = [];
@@ -202,7 +239,10 @@ function OperationsViewModel(materialViewModel, selectionViewModel, toolModel, c
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
         selectionViewModel.clearSelection();
-        self.operations.push(new Operation(materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths));
+        var op = new Operation(materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths);
+        self.operations.push(op);
+        op.enabled.subscribe(findMinMax);
+        op.toolPaths.subscribe(findMinMax);
         tutorial(4, 'Change settings in "Material," "Tool," and "Selected Operation" then click "Generate Toolpath".');
     }
 
