@@ -17,10 +17,9 @@
 
 var Path = new function () {
     Path = this;
-    Path.svgPxPerInch = 90;
-    Path.snapToClipperScale = 100000;                                           // Scale Snap.svg to Clipper
-    Path.cleanPolyDist = Path.snapToClipperScale * Path.svgPxPerInch / 100000;  // 1/100000 in
-    Path.arcTolerance = Path.snapToClipperScale * Path.svgPxPerInch / 40000;    // 1/40000 in
+    Path.inchToClipperScale = 100000;                           // Scale inch to Clipper
+    Path.cleanPolyDist = Path.inchToClipperScale / 100000;
+    Path.arcTolerance = Path.inchToClipperScale / 40000;
 
     // Linearize a cubic bezier. Returns ['L', x2, y2, x3, y3, ...]. The return value doesn't
     // include (p1x, p1y); it's part of the previous segment.
@@ -120,31 +119,31 @@ var Path = new function () {
         return path;
     };
 
-    Path.getClipperPointFromSnapPoint = function (x, y) {
-        return {
-            X: Math.round(x * Path.snapToClipperScale),
-            Y: Math.round(y * Path.snapToClipperScale)
-        };
-    };
-
     // Convert a path in snap.svg format to Clipper format. May return multiple
     // paths. Only supports linear paths. Calls alertFn with an error message
     // and returns null if there's a problem.
-    Path.getClipperPathsFromSnapPath = function (path, alertFn) {
+    Path.getClipperPathsFromSnapPath = function (path, pxPerInch, alertFn) {
+        function getClipperPointFromSnapPoint(x, y) {
+            return {
+                X: Math.round(x * Path.inchToClipperScale / pxPerInch),
+                Y: Math.round(y * Path.inchToClipperScale / pxPerInch)
+            };
+        };
+
         if (path.length < 2 || path[0].length != 3 || path[0][0] != 'M') {
             alertFn("Path does not begin with M");
             return null;
         }
-        var currentPath = [Path.getClipperPointFromSnapPoint(path[0][1], path[0][2])];
+        var currentPath = [getClipperPointFromSnapPoint(path[0][1], path[0][2])];
         var result = [currentPath];
         for (var i = 1; i < path.length; ++i) {
             subpath = path[i];
             if (subpath[0] == 'M' && subpath.length == 3) {
-                currentPath = [Path.getClipperPointFromSnapPoint(subpath[1], subpath[2])];
+                currentPath = [getClipperPointFromSnapPoint(subpath[1], subpath[2])];
                 result.push(currentPath);
             } else if (subpath[0] == 'L') {
                 for (var j = 0; j < (subpath.length - 1) / 2; ++j)
-                    currentPath.push(Path.getClipperPointFromSnapPoint(subpath[1 + j * 2], subpath[2 + j * 2]));
+                    currentPath.push(getClipperPointFromSnapPoint(subpath[1 + j * 2], subpath[2 + j * 2]));
             } else {
                 alertFn("Subpath has a non-linear prefix: " + subpath[0]);
                 return null;
@@ -153,13 +152,13 @@ var Path = new function () {
         return result;
     };
 
-    function pushSnapPointFromClipperPoint(a, p) {
-        a.push(p.X * 1.0 / Path.snapToClipperScale);
-        a.push(p.Y * 1.0 / Path.snapToClipperScale);
-    }
-
     // Convert a set of Clipper paths to a single snap.svg path.
-    Path.getSnapPathFromClipperPaths = function (path) {
+    Path.getSnapPathFromClipperPaths = function (path, pxPerInch) {
+        function pushSnapPointFromClipperPoint(a, p) {
+            a.push(p.X * pxPerInch / Path.inchToClipperScale);
+            a.push(p.Y * pxPerInch / Path.inchToClipperScale);
+        }
+
         var result = [];
         for (var i = 0; i < path.length; ++i) {
             var p = path[i];

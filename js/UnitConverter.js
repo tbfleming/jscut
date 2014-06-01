@@ -32,18 +32,20 @@ function UnitConverter(units) {
             }
     });
 
-    self.toPx = function (x) {
+    // Convert x from the current unit to inch
+    self.toInch = function (x) {
         if (units() == "inch")
-            return x * svgPxPerInch;
+            return x;
         else
-            return x * svgPxPerInch / mmPerInch;
+            return x / 25.4;
     }
 
-    self.fromPx = function (px) {
+    // Convert x from inch to the current unit
+    self.fromInch = function (x) {
         if (units() == "inch")
-            return px / svgPxPerInch;
+            return x;
         else
-            return px * mmPerInch / svgPxPerInch;
+            return x * 25.4;
     }
 
     self.add = function (observable) {
@@ -51,11 +53,11 @@ function UnitConverter(units) {
         observable.units = function () {
             return units();
         }
-        observable.toPx = function () {
-            return self.toPx(observable());
+        observable.toInch = function () {
+            return self.toInch(observable());
         }
-        observable.fromPx = function (px) {
-            observable(self.fromPx(px));
+        observable.fromInch = function (x) {
+            observable(self.fromInch(x));
         }
     }
 
@@ -63,8 +65,8 @@ function UnitConverter(units) {
         observable.units = function () {
             return units();
         }
-        observable.toPx = function () {
-            return self.toPx(observable());
+        observable.toInch = function () {
+            return self.toInch(observable());
         }
     }
 }

@@ -23,10 +23,11 @@ var combinedGeometryGroup = mainSvg.g();
 var toolPathsGroup = mainSvg.g();
 var selectionGroup = mainSvg.g();
 
+var svgViewModel = new SvgViewModel();
 var materialViewModel = new MaterialViewModel();
-var selectionViewModel = new SelectionViewModel(materialViewModel, selectionGroup);
+var selectionViewModel = new SelectionViewModel(svgViewModel, materialViewModel, selectionGroup);
 var toolModel = new ToolModel();
-var operationsViewModel = new OperationsViewModel(materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup);
+var operationsViewModel = new OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup);
 var gcodeConversionViewModel = new GcodeConversionViewModel(materialViewModel, toolModel, operationsViewModel);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);

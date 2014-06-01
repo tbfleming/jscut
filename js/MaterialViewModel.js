@@ -16,9 +16,6 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function MaterialViewModel() {
-    svgPxPerInch = 90;
-    mmPerInch = 25.4;
-
     var self = this;
     self.matUnits = ko.observable("inch");
     self.unitConverter = new UnitConverter(self.matUnits);
@@ -48,7 +45,7 @@ function MaterialViewModel() {
 
     self.matZSafeMove = ko.computed(function () {
         if (self.matZOrigin() == "Top")
-            return self.matClearance();
+            return parseFloat(self.matClearance());
         else
             return parseFloat(self.matThickness()) + parseFloat(self.matClearance());
     });

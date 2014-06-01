@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function SelectionViewModel(materialViewModel, selectionGroup) {
+function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
     var self = this;
 
     self.selMinNumSegments = ko.observable("1");
@@ -31,7 +31,7 @@ function SelectionViewModel(materialViewModel, selectionGroup) {
             return true;
         }
 
-        var path = Path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength.toPx(), function (msg) {
+        var path = Path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength.toInch() * svgViewModel.pxPerInch(), function (msg) {
             showAlert(msg, "alert-warning");
         });
 

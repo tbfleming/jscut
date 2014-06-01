@@ -34,7 +34,7 @@ function ToolModel() {
 
     self.getCamArgs = function () {
         result = {
-            diameterClipper: self.diameter.toPx() * Path.snapToClipperScale,
+            diameterClipper: self.diameter.toInch() * Path.inchToClipperScale,
             overlap: Number(self.overlap()),
         };
         if (result.diameterClipper <= 0) {
@@ -53,7 +53,7 @@ function ToolModel() {
     }
 }
 
-function Operation(materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
+function Operation(svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
     var self = this;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
@@ -73,7 +73,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
     materialViewModel.unitConverter.add(self.margin);
     materialViewModel.unitConverter.add(self.width);
 
-    self.cutDepth.fromPx(toolModel.passDepth.toPx());
+    self.cutDepth.fromInch(toolModel.passDepth.toInch());
 
     self.removeCombinedGeometrySvg = function() {
         if (self.combinedGeometrySvg) {
@@ -123,7 +123,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
 
         var all = [];
         for (var i = 0; i < self.rawPaths.length; ++i) {
-            var geometry = Path.getClipperPathsFromSnapPath(self.rawPaths[i], function (msg) {
+            var geometry = Path.getClipperPathsFromSnapPath(self.rawPaths[i], svgViewModel.pxPerInch(), function (msg) {
                 showAlert(msg, "alert-warning");
             });
             if (geometry != null)
@@ -146,7 +146,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
         }
 
         if (self.combinedGeometry.length != 0) {
-            var path = Path.getSnapPathFromClipperPaths(self.combinedGeometry);
+            var path = Path.getSnapPathFromClipperPaths(self.combinedGeometry, svgViewModel.pxPerInch());
             if (path != null)
                 self.combinedGeometrySvg = combinedGeometryGroup.path(path).attr("class", "combinedGeometry");
         }
@@ -165,7 +165,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
             return;
 
         var geometry = self.combinedGeometry;
-        var offset = self.margin.toPx() * Path.snapToClipperScale;
+        var offset = self.margin.toInch() * Path.inchToClipperScale;
         if (self.camOp() == "Pocket")
             offset = -offset;
         if (offset != 0)
@@ -174,12 +174,12 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
         if (self.camOp() == "Pocket")
             self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap));
         else if (self.camOp() == "Outline") {
-            var width = self.width.toPx() * Path.snapToClipperScale;
+            var width = self.width.toInch() * Path.inchToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
             self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap));
         }
-        var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()));
+        var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
         if (path != null && path.length > 0) {
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
             tutorial(5, 'After you finished adding and editing toolpaths, click "Generate Gcode"');
@@ -190,7 +190,7 @@ function Operation(materialViewModel, operationsViewModel, toolModel, combinedGe
     self.selected("on");
 }
 
-function OperationsViewModel(materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup) {
+function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup) {
     var self = this;
     self.operations = ko.observableArray();
     self.selectedOperation = ko.observable();
@@ -204,7 +204,7 @@ function OperationsViewModel(materialViewModel, selectionViewModel, toolModel, c
         var foundFirst = false;
         var ops = self.operations();
         for (var i = 0; i < ops.length; ++i) {
-            if (ops[i].enabled()) {
+            if (ops[i].enabled() && ops[i].toolPaths() != null) {
                 var toolPaths = ops[i].toolPaths();
                 for (var j = 0; j < toolPaths.length; ++j) {
                     var toolPath = toolPaths[j].path;
@@ -239,7 +239,7 @@ function OperationsViewModel(materialViewModel, selectionViewModel, toolModel, c
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
         selectionViewModel.clearSelection();
-        var op = new Operation(materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths);
+        var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths);
         self.operations.push(op);
         op.enabled.subscribe(findMinMax);
         op.toolPaths.subscribe(findMinMax);

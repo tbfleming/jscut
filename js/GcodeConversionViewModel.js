@@ -27,16 +27,16 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
     self.unitConverter.add(self.offsetY);
 
     self.minX = ko.computed(function () {
-        return (self.unitConverter.fromPx(operationsViewModel.minX() / Path.snapToClipperScale) + Number(self.offsetX())).toFixed(4);
+        return (self.unitConverter.fromInch(operationsViewModel.minX() / Path.inchToClipperScale) + Number(self.offsetX())).toFixed(4);
     });
     self.maxX = ko.computed(function () {
-        return (self.unitConverter.fromPx(operationsViewModel.maxX() / Path.snapToClipperScale) + Number(self.offsetX())).toFixed(4);
+        return (self.unitConverter.fromInch(operationsViewModel.maxX() / Path.inchToClipperScale) + Number(self.offsetX())).toFixed(4);
     });
     self.minY = ko.computed(function () {
-        return (-self.unitConverter.fromPx(operationsViewModel.maxY() / Path.snapToClipperScale) + Number(self.offsetY())).toFixed(4);
+        return (-self.unitConverter.fromInch(operationsViewModel.maxY() / Path.inchToClipperScale) + Number(self.offsetY())).toFixed(4);
     });
     self.maxY = ko.computed(function () {
-        return (-self.unitConverter.fromPx(operationsViewModel.minY() / Path.snapToClipperScale) + Number(self.offsetY())).toFixed(4);
+        return (-self.unitConverter.fromInch(operationsViewModel.minY() / Path.inchToClipperScale) + Number(self.offsetY())).toFixed(4);
     });
 
     self.generateGcode = function () {
@@ -60,11 +60,11 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
             return;
         }
 
-        var safeZ = self.unitConverter.fromPx(materialViewModel.matZSafeMove.toPx());
-        var rapidRate = self.unitConverter.fromPx(toolModel.rapidRate.toPx());
-        var plungeRate = self.unitConverter.fromPx(toolModel.plungeRate.toPx());
-        var cutRate = self.unitConverter.fromPx(toolModel.cutRate.toPx());
-        var passDepth = self.unitConverter.fromPx(toolModel.passDepth.toPx());
+        var safeZ = self.unitConverter.fromInch(materialViewModel.matZSafeMove.toInch());
+        var rapidRate = self.unitConverter.fromInch(toolModel.rapidRate.toInch());
+        var plungeRate = self.unitConverter.fromInch(toolModel.plungeRate.toInch());
+        var cutRate = self.unitConverter.fromInch(toolModel.cutRate.toInch());
+        var passDepth = self.unitConverter.fromInch(toolModel.passDepth.toInch());
 
         if(passDepth <= 0) {
             showAlert("Pass Depth is not greater than 0.", "alert-danger");
@@ -73,10 +73,10 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
 
         var scale;
         if(self.units() == "inch")
-            scale = 1 / Path.svgPxPerInch / Path.snapToClipperScale;
+            scale = 1 / Path.inchToClipperScale;
         else
-            scale = 25.4 / Path.svgPxPerInch / Path.snapToClipperScale;
-        var topZ = self.unitConverter.fromPx(materialViewModel.matTopZ.toPx());
+            scale = 25.4 / Path.inchToClipperScale;
+        var topZ = self.unitConverter.fromInch(materialViewModel.matTopZ.toInch());
 
         var gcode = "";
         if (self.units() == "inch")
@@ -88,7 +88,7 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
 
         for (var opIndex = 0; opIndex < ops.length; ++opIndex) {
             var op = ops[opIndex];
-            var cutDepth = self.unitConverter.fromPx(op.cutDepth.toPx());
+            var cutDepth = self.unitConverter.fromInch(op.cutDepth.toInch());
             if(cutDepth <= 0) {
                 showAlert("An operation has a cut depth which is not greater than 0.", "alert-danger");
                 return;
