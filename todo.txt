@@ -5,7 +5,6 @@ Unordered unprioritized todo list.
   * SelectionViewModel is creating default (nonzero)
   * Operation is assuming evenodd
 * Multiple tools
-* Make combinedGeometrySvg depend on operation
 * Highlight selected operation in main view
 * Force non-boundary paths before boundary ones when combining
 * Report problems on SVG load

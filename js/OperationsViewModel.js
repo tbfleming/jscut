@@ -99,12 +99,6 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
         self.selected(operationsViewModel.selectedOperation() === self ? "on" : "off");
     });
 
-    toolModel.diameter.subscribe(self.removeToolPaths);
-    toolModel.overlap.subscribe(self.removeToolPaths);
-    self.camOp.subscribe(self.removeToolPaths);
-    self.width.subscribe(self.removeToolPaths);
-    self.margin.subscribe(self.removeToolPaths);
-
     self.enabled.subscribe(function (newValue) {
         var v;
         if (newValue)
@@ -145,8 +139,29 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
                 self.combinedGeometry = Path.clip(self.combinedGeometry, all[i], clipType);
         }
 
-        if (self.combinedGeometry.length != 0) {
-            var path = Path.getSnapPathFromClipperPaths(self.combinedGeometry, svgViewModel.pxPerInch());
+        var previewGeometry = self.combinedGeometry;
+
+        if (previewGeometry.length != 0) {
+            var offset = self.margin.toInch() * Path.inchToClipperScale;
+            if (self.camOp() == "Pocket")
+                offset = -offset;
+            if (offset != 0)
+                previewGeometry = Path.offset(previewGeometry, offset);
+
+            if (self.camOp() == "Outline") {
+                var toolCamArgs = toolModel.getCamArgs();
+                if (toolCamArgs != null) {
+                    var width = self.width.toInch() * Path.inchToClipperScale;
+                    if (width < toolCamArgs.diameterClipper)
+                        width = toolCamArgs.diameterClipper;
+                    self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap));
+                    previewGeometry = Path.diff(Path.offset(previewGeometry, width), previewGeometry);
+                }
+            }
+        }
+
+        if (previewGeometry.length != 0) {
+            var path = Path.getSnapPathFromClipperPaths(previewGeometry, svgViewModel.pxPerInch());
             if (path != null)
                 self.combinedGeometrySvg = combinedGeometryGroup.path(path).attr("class", "combinedGeometry");
         }
@@ -154,14 +169,20 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
         self.enabled(true);
     }
 
+    toolModel.overlap.subscribe(self.removeToolPaths);
+
+    toolModel.diameter.subscribe(self.recombine);
     svgViewModel.pxPerInch.subscribe(self.recombine);
     self.combineOp.subscribe(self.recombine);
+    self.camOp.subscribe(self.recombine);
+    self.margin.subscribe(self.recombine);
+    self.width.subscribe(self.recombine);
     self.recombine();
 
     self.generateToolPath = function () {
         self.removeToolPaths();
 
-        toolCamArgs = toolModel.getCamArgs();
+        var toolCamArgs = toolModel.getCamArgs();
         if (toolCamArgs == null)
             return;
 
