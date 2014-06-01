@@ -141,6 +141,14 @@ $("#MainSvg").click(function (e) {
     }
 });
 
+$('#pxPerInch').popover({
+    trigger: "hover",
+    html: true,
+    content: "<table><tr><td>Inkscape:<td>90<tr><td>Adobe Illustrator:<td>72<tr><td>CorelDRAW:<td>96</table>",
+    container: "body",
+    placement: "right"
+});
+
 $('#createOperationButton').popover({
     trigger: "manual",
     html: true,

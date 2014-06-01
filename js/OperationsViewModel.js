@@ -154,6 +154,7 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
         self.enabled(true);
     }
 
+    svgViewModel.pxPerInch.subscribe(self.recombine);
     self.combineOp.subscribe(self.recombine);
     self.recombine();
 
@@ -192,6 +193,7 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
 
 function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup) {
     var self = this;
+    self.svgViewModel = svgViewModel;
     self.operations = ko.observableArray();
     self.selectedOperation = ko.observable();
     self.minX = ko.observable(0);

@@ -64,6 +64,11 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                     </div>
                     <div id="collapseOperations" class="panel-collapse collapse in">
                         <div class="panel-body">
+                            <table class="table">
+                                <tr>
+                                    <td><label for="pxPerInch">px per inch</label>
+                                    <td><input type="number" id="pxPerInch" data-bind="value: svgViewModel.pxPerInch">
+                            </table>
                             <div style="display: inline-block">
                                 <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
                             </div>

@@ -1,6 +1,5 @@
 Unordered unprioritized todo list.
 
-* Allow scaling on import for non-Inkscape resolutions
 * Check Safari
 * Pay attention to fill-rule on source SVG
   * SelectionViewModel is creating default (nonzero)
