@@ -18,7 +18,7 @@
 var mainSvg = Snap("#MainSvg");
 var materialSvg = Snap("#MaterialSvg");
 var contentGroup = mainSvg.group();
-contentGroup.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)));
+contentGroup.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)).attr("filterUnits", "objectBoundingBox"));
 var combinedGeometryGroup = mainSvg.g();
 var toolPathsGroup = mainSvg.g();
 var selectionGroup = mainSvg.g();
