@@ -47,41 +47,41 @@ function RenderPath(canvas, shadersReady) {
 
     var rasterizePathVertexShader;
     var rasterizePathFragmentShader;
-    var pathProgram;
+    var rasterizePathProgram;
 
-    function linkPrograms() {
-        pathProgram = self.gl.createProgram();
-        self.gl.attachShader(pathProgram, rasterizePathVertexShader);
-        self.gl.attachShader(pathProgram, rasterizePathFragmentShader);
-        self.gl.linkProgram(pathProgram);
+    function linkRasterizePathProgram() {
+        rasterizePathProgram = self.gl.createProgram();
+        self.gl.attachShader(rasterizePathProgram, rasterizePathVertexShader);
+        self.gl.attachShader(rasterizePathProgram, rasterizePathFragmentShader);
+        self.gl.linkProgram(rasterizePathProgram);
 
-        if (!self.gl.getProgramParameter(pathProgram, self.gl.LINK_STATUS)) {
+        if (!self.gl.getProgramParameter(rasterizePathProgram, self.gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
 
-        self.gl.useProgram(pathProgram);
+        self.gl.useProgram(rasterizePathProgram);
 
-        pathProgram.pos1 = self.gl.getAttribLocation(pathProgram, "pos1");
-        self.gl.enableVertexAttribArray(pathProgram.pos1);
+        rasterizePathProgram.pos1 = self.gl.getAttribLocation(rasterizePathProgram, "pos1");
+        self.gl.enableVertexAttribArray(rasterizePathProgram.pos1);
 
-        pathProgram.pos2 = self.gl.getAttribLocation(pathProgram, "pos2");
-        self.gl.enableVertexAttribArray(pathProgram.pos2);
+        rasterizePathProgram.pos2 = self.gl.getAttribLocation(rasterizePathProgram, "pos2");
+        self.gl.enableVertexAttribArray(rasterizePathProgram.pos2);
 
-        pathProgram.vertex = self.gl.getAttribLocation(pathProgram, "vertex");
-        self.gl.enableVertexAttribArray(pathProgram.vertex);
+        rasterizePathProgram.vertex = self.gl.getAttribLocation(rasterizePathProgram, "vertex");
+        self.gl.enableVertexAttribArray(rasterizePathProgram.vertex);
 
-        pathProgram.resolution = self.gl.getUniformLocation(pathProgram, "resolution");
-        pathProgram.cutterDia = self.gl.getUniformLocation(pathProgram, "cutterDia");
-        pathProgram.pathXYOffset = self.gl.getUniformLocation(pathProgram, "pathXYOffset");
-        pathProgram.pathXYScale = self.gl.getUniformLocation(pathProgram, "pathXYScale");
-        pathProgram.pathMinZ = self.gl.getUniformLocation(pathProgram, "pathMinZ");
-        pathProgram.pathTopZ = self.gl.getUniformLocation(pathProgram, "pathTopZ");
+        rasterizePathProgram.resolution = self.gl.getUniformLocation(rasterizePathProgram, "resolution");
+        rasterizePathProgram.cutterDia = self.gl.getUniformLocation(rasterizePathProgram, "cutterDia");
+        rasterizePathProgram.pathXYOffset = self.gl.getUniformLocation(rasterizePathProgram, "pathXYOffset");
+        rasterizePathProgram.pathXYScale = self.gl.getUniformLocation(rasterizePathProgram, "pathXYScale");
+        rasterizePathProgram.pathMinZ = self.gl.getUniformLocation(rasterizePathProgram, "pathMinZ");
+        rasterizePathProgram.pathTopZ = self.gl.getUniformLocation(rasterizePathProgram, "pathTopZ");
     }
 
     function loadedShader() {
         if (!rasterizePathVertexShader || !rasterizePathFragmentShader)
             return;
-        linkPrograms();
+        linkRasterizePathProgram();
         shadersReady();
     }
 
@@ -148,16 +148,16 @@ function RenderPath(canvas, shadersReady) {
         self.gl.viewport(0, 0, resolution, resolution);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
-        self.gl.uniform1f(pathProgram.resolution, resolution);
-        self.gl.uniform1f(pathProgram.cutterDia, self.cutterDia);
-        self.gl.uniform2f(pathProgram.pathXYOffset, pathXOffset, pathYOffset);
-        self.gl.uniform1f(pathProgram.pathXYScale, pathXYScale);
-        self.gl.uniform1f(pathProgram.pathMinZ, pathMinZ);
-        self.gl.uniform1f(pathProgram.pathTopZ, pathTopZ);
+        self.gl.uniform1f(rasterizePathProgram.resolution, resolution);
+        self.gl.uniform1f(rasterizePathProgram.cutterDia, self.cutterDia);
+        self.gl.uniform2f(rasterizePathProgram.pathXYOffset, pathXOffset, pathYOffset);
+        self.gl.uniform1f(rasterizePathProgram.pathXYScale, pathXYScale);
+        self.gl.uniform1f(rasterizePathProgram.pathMinZ, pathMinZ);
+        self.gl.uniform1f(rasterizePathProgram.pathTopZ, pathTopZ);
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
-        self.gl.vertexAttribPointer(pathProgram.pos1, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 0);
-        self.gl.vertexAttribPointer(pathProgram.pos2, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
-        self.gl.vertexAttribPointer(pathProgram.vertex, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(rasterizePathProgram.pos1, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 0);
+        self.gl.vertexAttribPointer(rasterizePathProgram.pos2, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(rasterizePathProgram.vertex, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
 
         self.gl.drawArrays(self.gl.TRIANGLES, 0, pathNumVertexes);
     }
