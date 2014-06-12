@@ -1,0 +1,101 @@
+// Copyright 2014 Todd Fleming
+//
+// This file is part of jscut.
+//
+// jscut is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// jscut is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with jscut.  If not, see <http://www.gnu.org/licenses/>.
+
+uniform float resolution;
+uniform float cutterDia;
+uniform vec2 pathXYOffset;
+uniform float pathXYScale;
+uniform float pathMinZ;
+uniform float pathTopZ;
+
+attribute vec3 pos1;
+attribute vec3 pos2;
+attribute float vertex;
+
+varying vec4 color;
+varying vec2 center;
+varying float radius;
+
+void main(void) {
+    vec3 lower, upper;
+    if(pos1.z < pos2.z) {
+        lower = vec3((pos1.xy+pathXYOffset)*pathXYScale, pos1.z);
+        upper = vec3((pos2.xy+pathXYOffset)*pathXYScale, pos2.z);
+    } else {
+        lower = vec3((pos2.xy+pathXYOffset)*pathXYScale, pos2.z);
+        upper = vec3((pos1.xy+pathXYOffset)*pathXYScale, pos1.z);
+    }
+
+    // vertex 00-02: lower circle triangle 1
+    // vertex 03-05: lower circle triangle 2
+    // vertex 06-08: upper circle triangle 1
+    // vertex 09-11: upper circle triangle 2
+    // vertex 12-14: connecting line triangle 1
+    // vertex 15-17: connecting line triangle 2
+
+    int i = int(vertex);
+    vec3 thisPos;
+    if(i < 6)
+        thisPos = lower;
+    else
+        thisPos = upper;
+
+    center = (thisPos.xy*resolution + resolution)/2.0;
+    color = vec4(0.0, 1.0, 1.0, 1.0);
+    float r = cutterDia*pathXYScale/2.0;
+
+    if(i < 12) {
+        radius = r*resolution/2.0;
+        vec2 offset;
+        if(i == 0 || i == 6)
+            offset = vec2(-r, -r);
+        else if(i == 1 || i == 7)
+            offset = vec2(r, r);
+        else if(i == 2 || i == 8)
+            offset = vec2(-r, r);
+        else if(i == 3 || i == 9)
+            offset = vec2(-r, -r);
+        else if(i == 4 || i == 10)
+            offset = vec2(r, -r);
+        else if(i == 5 || i == 11)
+            offset = vec2(r, r);
+        gl_Position = vec4(thisPos.xy + offset, thisPos.z, 1.0);
+    } else {
+        radius = 0.0;
+        vec3 delta = normalize(lower - upper) * r;
+        float l = length(delta);
+        if(i == 12)
+            gl_Position = vec4(upper.x+delta.y, upper.y-delta.x, lower.z, 1.0);
+        else if(i == 13)
+            gl_Position = vec4(lower.x+delta.y, lower.y-delta.x, lower.z, 1.0);
+        else if(i == 14)
+            gl_Position = vec4(upper.x-delta.y, upper.y+delta.x, lower.z, 1.0);
+        else if(i == 15)
+            gl_Position = vec4(upper.x-delta.y, upper.y+delta.x, lower.z, 1.0);
+        else if(i == 16)
+            gl_Position = vec4(lower.x+delta.y, lower.y-delta.x, lower.z, 1.0);
+        else if(i == 17)
+            gl_Position = vec4(lower.x-delta.y, lower.y+delta.x, lower.z, 1.0);
+    }
+
+    float nearZ = pathMinZ;
+    float farZ = pathTopZ;
+    if(farZ == nearZ)
+        farZ = nearZ + 1.0;
+    color.r = (gl_Position.z - farZ) / (nearZ - farZ);
+    gl_Position.z = gl_Position.z * -2.0 / (farZ - nearZ) + (farZ + nearZ) / (farZ - nearZ);
+}
