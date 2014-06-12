@@ -56,19 +56,10 @@ function RenderPath(canvas, shadersReady) {
         self.gl.linkProgram(rasterizePathProgram);
 
         if (!self.gl.getProgramParameter(rasterizePathProgram, self.gl.LINK_STATUS)) {
-            alert("Could not initialise shaders");
+            alert("Could not initialise RasterizePath shaders");
         }
 
         self.gl.useProgram(rasterizePathProgram);
-
-        rasterizePathProgram.pos1 = self.gl.getAttribLocation(rasterizePathProgram, "pos1");
-        self.gl.enableVertexAttribArray(rasterizePathProgram.pos1);
-
-        rasterizePathProgram.pos2 = self.gl.getAttribLocation(rasterizePathProgram, "pos2");
-        self.gl.enableVertexAttribArray(rasterizePathProgram.pos2);
-
-        rasterizePathProgram.vertex = self.gl.getAttribLocation(rasterizePathProgram, "vertex");
-        self.gl.enableVertexAttribArray(rasterizePathProgram.vertex);
 
         rasterizePathProgram.resolution = self.gl.getUniformLocation(rasterizePathProgram, "resolution");
         rasterizePathProgram.cutterDia = self.gl.getUniformLocation(rasterizePathProgram, "cutterDia");
@@ -76,6 +67,11 @@ function RenderPath(canvas, shadersReady) {
         rasterizePathProgram.pathXYScale = self.gl.getUniformLocation(rasterizePathProgram, "pathXYScale");
         rasterizePathProgram.pathMinZ = self.gl.getUniformLocation(rasterizePathProgram, "pathMinZ");
         rasterizePathProgram.pathTopZ = self.gl.getUniformLocation(rasterizePathProgram, "pathTopZ");
+        rasterizePathProgram.pos1 = self.gl.getAttribLocation(rasterizePathProgram, "pos1");
+        rasterizePathProgram.pos2 = self.gl.getAttribLocation(rasterizePathProgram, "pos2");
+        rasterizePathProgram.vertex = self.gl.getAttribLocation(rasterizePathProgram, "vertex");
+
+        self.gl.useProgram(null);
     }
 
     function loadedShader() {
@@ -102,9 +98,6 @@ function RenderPath(canvas, shadersReady) {
     var pathNumVertexes = 0;
 
     self.fillPathBuffer = function (path) {
-        if (!pathBuffer)
-            pathBuffer = self.gl.createBuffer();
-        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
         pathNumPoints = path.length / 3;
         pathNumVertexes = pathNumPoints * pathVertexesPerLine;
         var bufferContent = new Float32Array(pathNumPoints * pathStride * pathVertexesPerLine);
@@ -133,7 +126,12 @@ function RenderPath(canvas, shadersReady) {
                 bufferContent[base + 6] = virtex;
             }
         }
+
+        if (!pathBuffer)
+            pathBuffer = self.gl.createBuffer();
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
         self.gl.bufferData(self.gl.ARRAY_BUFFER, bufferContent, self.gl.STATIC_DRAW);
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
 
         pathXOffset = -(minX + maxX) / 2;
         pathYOffset = -(minY + maxY) / 2;
@@ -143,8 +141,8 @@ function RenderPath(canvas, shadersReady) {
     }
 
     self.drawPath = function () {
+        self.gl.useProgram(rasterizePathProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        //self.gl.disable(renderPath.gl.DEPTH_TEST);
         self.gl.viewport(0, 0, resolution, resolution);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
@@ -159,7 +157,16 @@ function RenderPath(canvas, shadersReady) {
         self.gl.vertexAttribPointer(rasterizePathProgram.pos2, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
         self.gl.vertexAttribPointer(rasterizePathProgram.vertex, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
 
+        self.gl.enableVertexAttribArray(rasterizePathProgram.pos1);
+        self.gl.enableVertexAttribArray(rasterizePathProgram.pos2);
+        self.gl.enableVertexAttribArray(rasterizePathProgram.vertex);
         self.gl.drawArrays(self.gl.TRIANGLES, 0, pathNumVertexes);
+        self.gl.disableVertexAttribArray(rasterizePathProgram.pos1);
+        self.gl.disableVertexAttribArray(rasterizePathProgram.pos2);
+        self.gl.disableVertexAttribArray(rasterizePathProgram.vertex);
+
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+        self.gl.useProgram(null);
     }
 
     var pathFramebuffer = null;
@@ -197,7 +204,7 @@ function RenderPath(canvas, shadersReady) {
         meshNumVertexes = numTriangles * 3;
         var bufferContent = new Float32Array(meshNumVertexes * meshStride);
         var pos = 0;
-        for (var y = 0; y < resolution - 2; ++y)
+        for (var y = 0; y < resolution - 1; ++y)
             for (var x = 0; x < resolution; ++x) {
                 var left = x - 1;
                 if (left < 0)
