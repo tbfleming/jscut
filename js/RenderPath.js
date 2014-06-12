@@ -74,10 +74,41 @@ function RenderPath(canvas, shadersReady) {
         self.gl.useProgram(null);
     }
 
+    var renderHeightMapVertexShader;
+    var renderHeightMapFragmentShader;
+    var renderHeightMapProgram;
+
+    function linkRenderHeightMapProgram() {
+        renderHeightMapProgram = self.gl.createProgram();
+        self.gl.attachShader(renderHeightMapProgram, renderHeightMapVertexShader);
+        self.gl.attachShader(renderHeightMapProgram, renderHeightMapFragmentShader);
+        self.gl.linkProgram(renderHeightMapProgram);
+
+        if (!self.gl.getProgramParameter(renderHeightMapProgram, self.gl.LINK_STATUS)) {
+            alert("Could not initialise RenderHeightMap shaders");
+        }
+
+        self.gl.useProgram(renderHeightMapProgram);
+
+        renderHeightMapProgram.resolution = self.gl.getUniformLocation(renderHeightMapProgram, "resolution");
+        //renderHeightMapProgram.pathXYScale = self.gl.getUniformLocation(renderHeightMapProgram, "pathXYScale");
+        //renderHeightMapProgram.pathMinZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathMinZ");
+        //renderHeightMapProgram.pathTopZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathTopZ");
+        renderHeightMapProgram.heightMap = self.gl.getUniformLocation(renderHeightMapProgram, "heightMap");
+        renderHeightMapProgram.pos0 = self.gl.getAttribLocation(renderHeightMapProgram, "pos0");
+        renderHeightMapProgram.pos1 = self.gl.getAttribLocation(renderHeightMapProgram, "pos1");
+        renderHeightMapProgram.pos2 = self.gl.getAttribLocation(renderHeightMapProgram, "pos2");
+        renderHeightMapProgram.thisPos = self.gl.getAttribLocation(renderHeightMapProgram, "thisPos");
+        //renderHeightMapProgram.vertex = self.gl.getAttribLocation(renderHeightMapProgram, "vertex");
+
+        self.gl.useProgram(null);
+    }
+
     function loadedShader() {
-        if (!rasterizePathVertexShader || !rasterizePathFragmentShader)
+        if (!rasterizePathVertexShader || !rasterizePathFragmentShader || !renderHeightMapVertexShader || !renderHeightMapFragmentShader)
             return;
         linkRasterizePathProgram();
+        linkRenderHeightMapProgram();
         shadersReady();
     }
 
@@ -88,6 +119,16 @@ function RenderPath(canvas, shadersReady) {
 
     loadShader("js/rasterizePathFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
         rasterizePathFragmentShader = shader;
+        loadedShader();
+    });
+
+    loadShader("js/renderHeightMapVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+        renderHeightMapVertexShader = shader;
+        loadedShader();
+    });
+
+    loadShader("js/renderHeightMapFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+        renderHeightMapFragmentShader = shader;
         loadedShader();
     });
 
@@ -178,8 +219,11 @@ function RenderPath(canvas, shadersReady) {
             self.gl.bindFramebuffer(self.gl.FRAMEBUFFER, pathFramebuffer);
 
             pathRgbaTexture = self.gl.createTexture();
+            self.gl.activeTexture(self.gl.TEXTURE0);
             self.gl.bindTexture(self.gl.TEXTURE_2D, pathRgbaTexture);
             self.gl.texImage2D(self.gl.TEXTURE_2D, 0, self.gl.RGBA, resolution, resolution, 0, self.gl.RGBA, self.gl.UNSIGNED_BYTE, null);
+            self.gl.texParameteri(self.gl.TEXTURE_2D, self.gl.TEXTURE_MAG_FILTER, self.gl.NEAREST);
+            self.gl.texParameteri(self.gl.TEXTURE_2D, self.gl.TEXTURE_MIN_FILTER, self.gl.NEAREST);
             self.gl.framebufferTexture2D(self.gl.FRAMEBUFFER, self.gl.COLOR_ATTACHMENT0, self.gl.TEXTURE_2D, pathRgbaTexture, 0);
             self.gl.bindTexture(self.gl.TEXTURE_2D, null);
 
@@ -196,7 +240,8 @@ function RenderPath(canvas, shadersReady) {
         self.gl.bindFramebuffer(self.gl.FRAMEBUFFER, null);
     }
 
-    var meshStride = 7;
+    var meshBuffer;
+    var meshStride = 9;
     var meshNumVertexes = 0;
 
     if (self.gl) {
@@ -220,6 +265,17 @@ function RenderPath(canvas, shadersReady) {
                         bufferContent[pos++] = y;
                         bufferContent[pos++] = right;
                         bufferContent[pos++] = y + 1;
+                        if (i == 0) {
+                            bufferContent[pos++] = left;
+                            bufferContent[pos++] = y + 1;
+                        } else if (i == 1) {
+                            bufferContent[pos++] = x;
+                            bufferContent[pos++] = y;
+                        }
+                        else {
+                            bufferContent[pos++] = right;
+                            bufferContent[pos++] = y + 1;
+                        }
                         bufferContent[pos++] = i;
                     }
                 else
@@ -230,9 +286,72 @@ function RenderPath(canvas, shadersReady) {
                         bufferContent[pos++] = y;
                         bufferContent[pos++] = x;
                         bufferContent[pos++] = y + 1;
+                        if (i == 0) {
+                            bufferContent[pos++] = left;
+                            bufferContent[pos++] = y;
+                        } else if (i == 1) {
+                            bufferContent[pos++] = right;
+                            bufferContent[pos++] = y;
+                        }
+                        else {
+                            bufferContent[pos++] = x;
+                            bufferContent[pos++] = y + 1;
+                        }
                         bufferContent[pos++] = i;
                     }
             }
+
+        //bufferContent = new Float32Array([
+        //    1,1,126,1,64,126,    0,
+        //    1,1,126,1,64,126,    1,
+        //    1,1,126,1,64,126,    2,
+        //]);
+        //meshNumVertexes = 3;
+
+        meshBuffer = self.gl.createBuffer();
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, meshBuffer);
+        self.gl.bufferData(self.gl.ARRAY_BUFFER, bufferContent, self.gl.STATIC_DRAW);
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+    }
+
+    self.drawHeightMap = function () {
+        self.gl.useProgram(renderHeightMapProgram);
+        self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        self.gl.disable(renderPath.gl.DEPTH_TEST);
+        self.gl.viewport(0, 0, resolution, resolution);
+        self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
+
+        self.gl.activeTexture(self.gl.TEXTURE0);
+        self.gl.bindTexture(self.gl.TEXTURE_2D, pathRgbaTexture);
+
+        self.gl.uniform1f(renderHeightMapProgram.resolution, resolution);
+        //self.gl.uniform1f(renderHeightMapProgram.pathXYScale, pathXYScale);
+        //self.gl.uniform1f(renderHeightMapProgram.pathMinZ, pathMinZ);
+        //self.gl.uniform1f(renderHeightMapProgram.pathTopZ, pathTopZ);
+        self.gl.uniform1i(renderHeightMapProgram.heightMap, 0);
+
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, meshBuffer);
+        self.gl.vertexAttribPointer(renderHeightMapProgram.pos0, 2, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 0);
+        self.gl.vertexAttribPointer(renderHeightMapProgram.pos1, 2, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(renderHeightMapProgram.pos2, 2, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(renderHeightMapProgram.thisPos, 2, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+        //self.gl.vertexAttribPointer(renderHeightMapProgram.vertex, 1, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+
+        self.gl.enableVertexAttribArray(renderHeightMapProgram.pos0);
+        self.gl.enableVertexAttribArray(renderHeightMapProgram.pos1);
+        self.gl.enableVertexAttribArray(renderHeightMapProgram.pos2);
+        self.gl.enableVertexAttribArray(renderHeightMapProgram.thisPos);
+        //self.gl.enableVertexAttribArray(renderHeightMapProgram.vertex);
+        self.gl.drawArrays(self.gl.TRIANGLES, 0, meshNumVertexes);
+        self.gl.disableVertexAttribArray(renderHeightMapProgram.pos0);
+        self.gl.disableVertexAttribArray(renderHeightMapProgram.pos1);
+        self.gl.disableVertexAttribArray(renderHeightMapProgram.pos2);
+        self.gl.disableVertexAttribArray(renderHeightMapProgram.thisPos);
+        //self.gl.disableVertexAttribArray(renderHeightMapProgram.vertex);
+
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+        self.gl.bindTexture(self.gl.TEXTURE_2D, null);
+        self.gl.useProgram(null);
     }
 }
 
@@ -246,7 +365,8 @@ function webGLStart() {
             path = parseGcode(gcode);
             renderPath.fillPathBuffer(path);
             renderPath.createPathTexture();
-            renderPath.drawPath();
+            //renderPath.drawPath();
+            renderPath.drawHeightMap();
         });
     });
 }
