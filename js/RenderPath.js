@@ -27,12 +27,7 @@ function RenderPath(canvas, shadersReady) {
     var pathTopZ = 0;
     self.rotate = mat4.create();
 
-    self.gl = null;
-
-    try {
-        self.gl = canvas.getContext("webgl");
-    } catch (e) {
-    }
+    self.gl = WebGLUtils.setupWebGL(canvas);
 
     function loadShader(filename, type, callback) {
         if (self.gl)
@@ -320,7 +315,7 @@ function RenderPath(canvas, shadersReady) {
     self.drawHeightMap = function () {
         self.gl.useProgram(renderHeightMapProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        self.gl.disable(renderPath.gl.DEPTH_TEST);
+        self.gl.enable(renderPath.gl.DEPTH_TEST);
         self.gl.viewport(0, 0, resolution, resolution);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
@@ -346,7 +341,9 @@ function RenderPath(canvas, shadersReady) {
         self.gl.enableVertexAttribArray(renderHeightMapProgram.pos2);
         self.gl.enableVertexAttribArray(renderHeightMapProgram.thisPos);
         //self.gl.enableVertexAttribArray(renderHeightMapProgram.vertex);
+
         self.gl.drawArrays(self.gl.TRIANGLES, 0, meshNumVertexes);
+
         self.gl.disableVertexAttribArray(renderHeightMapProgram.pos0);
         self.gl.disableVertexAttribArray(renderHeightMapProgram.pos1);
         self.gl.disableVertexAttribArray(renderHeightMapProgram.pos2);
@@ -384,20 +381,18 @@ function webGLStart() {
                 mat4.copy(origRotate, renderPath.rotate);
             });
 
-            $(canvas).mousemove(function (e) {
+            $(document).mousemove(function (e) {
                 if (!mouseDown)
                     return;
-
                 var m = mat4.create();
-                mat4.rotateY(m, m, (e.pageX -lastX) / 200);
-                mat4.rotateX(m, m, (e.pageY -lastY) / 200);
+                mat4.rotateY(m, m, (e.pageX - lastX) / 200);
+                mat4.rotateX(m, m, (e.pageY - lastY) / 200);
                 mat4.multiply(renderPath.rotate, m, origRotate);
-
                 renderPath.fillPathBuffer(path);
                 renderPath.drawHeightMap();
             });
 
-            $(canvas).mouseup(function (e) {
+            $(document).mouseup(function (e) {
                 mouseDown = false;
             });
         });

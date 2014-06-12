@@ -42,7 +42,7 @@ void main(void) {
     vec3 p2 = getPos(pos2);
     vec3 tp = getPos(thisPos);
 
-    color = vec4(tp.z, 1.0, 1.0, 1.0);
+    color = vec4(1.0-tp.z, 1.0-tp.z, .5, 1.0);
 
     vec4 p = vec4(tp.xy, -tp.z/20.0, 1.0);
 
@@ -67,5 +67,4 @@ void main(void) {
     );
 
     gl_Position = camera * offset * rotate * p;
-
 }
