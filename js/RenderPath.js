@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function RenderPath(canvas, shadersReady) {
+    "use strict";
     var self = this;
     var resolution = 1024;
     self.cutterDia = .125 / 4;
@@ -24,6 +25,7 @@ function RenderPath(canvas, shadersReady) {
     var pathXYScale = 1;
     var pathMinZ = -1;
     var pathTopZ = 0;
+    self.rotate = mat4.create();
 
     self.gl = null;
 
@@ -94,6 +96,7 @@ function RenderPath(canvas, shadersReady) {
         //renderHeightMapProgram.pathXYScale = self.gl.getUniformLocation(renderHeightMapProgram, "pathXYScale");
         //renderHeightMapProgram.pathMinZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathMinZ");
         //renderHeightMapProgram.pathTopZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathTopZ");
+        renderHeightMapProgram.rotate = self.gl.getUniformLocation(renderHeightMapProgram, "rotate");
         renderHeightMapProgram.heightMap = self.gl.getUniformLocation(renderHeightMapProgram, "heightMap");
         renderHeightMapProgram.pos0 = self.gl.getAttribLocation(renderHeightMapProgram, "pos0");
         renderHeightMapProgram.pos1 = self.gl.getAttribLocation(renderHeightMapProgram, "pos1");
@@ -328,6 +331,7 @@ function RenderPath(canvas, shadersReady) {
         //self.gl.uniform1f(renderHeightMapProgram.pathXYScale, pathXYScale);
         //self.gl.uniform1f(renderHeightMapProgram.pathMinZ, pathMinZ);
         //self.gl.uniform1f(renderHeightMapProgram.pathTopZ, pathTopZ);
+        self.gl.uniformMatrix4fv(renderHeightMapProgram.rotate, false, self.rotate);
         self.gl.uniform1i(renderHeightMapProgram.heightMap, 0);
 
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, meshBuffer);
@@ -367,6 +371,35 @@ function webGLStart() {
             renderPath.createPathTexture();
             //renderPath.drawPath();
             renderPath.drawHeightMap();
+
+            var mouseDown = false;
+            var lastX = 0;
+            var lastY = 0;
+
+            var origRotate = mat4.create();
+            $(canvas).mousedown(function (e) {
+                mouseDown = true;
+                lastX = e.pageX;
+                lastY = e.pageY;
+                mat4.copy(origRotate, renderPath.rotate);
+            });
+
+            $(canvas).mousemove(function (e) {
+                if (!mouseDown)
+                    return;
+
+                var m = mat4.create();
+                mat4.rotateY(m, m, (e.pageX -lastX) / 200);
+                mat4.rotateX(m, m, (e.pageY -lastY) / 200);
+                mat4.multiply(renderPath.rotate, m, origRotate);
+
+                renderPath.fillPathBuffer(path);
+                renderPath.drawHeightMap();
+            });
+
+            $(canvas).mouseup(function (e) {
+                mouseDown = false;
+            });
         });
     });
 }

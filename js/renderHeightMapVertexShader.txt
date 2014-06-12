@@ -19,6 +19,7 @@ uniform float resolution;
 //uniform float pathXYScale;
 //uniform float pathMinZ;
 //uniform float pathTopZ;
+uniform mat4 rotate;
 uniform sampler2D heightMap;
 
 attribute vec2 pos0;
@@ -41,6 +42,30 @@ void main(void) {
     vec3 p2 = getPos(pos2);
     vec3 tp = getPos(thisPos);
 
-    gl_Position = vec4(tp, 1.0);
     color = vec4(tp.z, 1.0, 1.0, 1.0);
+
+    vec4 p = vec4(tp.xy, -tp.z/20.0, 1.0);
+
+    mat4 offset = mat4(
+        1.0,    0.0,    0.0,    0.0,
+        0.0,    1.0,    0.0,    0.0,
+        0.0,    0.0,    1.0,    0.0,
+        0.0,    0.0,    -3.5,   1.0
+    );
+
+    float left = -1.0;
+    float right = 1.0;
+    float top = 1.0;
+    float bot = -1.0;
+    float near = 2.0;
+    float far = 5.0;
+    mat4 camera = mat4(
+        2.0*near/(right-left),      0.0,                    0.0,                        0.0,
+        0.0,                        2.0*near/(top-bot),     0.0,                        0.0,
+        (right+left)/(right-left),  (top+bot)/(top-bot),    (far+near)/(near-far),      -1,
+        0.0,                        0.0,                    2.0*far*near/(near-far),    0.0
+    );
+
+    gl_Position = camera * offset * rotate * p;
+
 }
