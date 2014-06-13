@@ -33,7 +33,7 @@ varying vec4 color;
 vec3 getPos(vec2 p) {
     return vec3(
         p * 2.0 / resolution - vec2(1.0, 1.0),
-        texture2D(heightMap, p/resolution).r*3.0);
+        texture2D(heightMap, p/resolution).r);
 }
 
 void main(void) {
@@ -42,9 +42,19 @@ void main(void) {
     vec3 p2 = getPos(pos2);
     vec3 tp = getPos(thisPos);
 
-    color = vec4(1.0-tp.z, 1.0-tp.z, .5, 1.0);
+    vec4 topColor = vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 botColor = vec4(0.0, 0.0, 1.0, 1.0);
+    vec4 transitionColor = vec4(0.0, 0.0, 0.0, 1.0);
 
-    vec4 p = vec4(tp.xy, -tp.z/20.0, 1.0);
+    float transition = min(.7, 100.0*max(abs(p0.z-p1.z), abs(p0.z-p2.z)));
+    color = (1.0-tp.z) * topColor + tp.z * botColor;
+    color = transition * transitionColor + (1.0-transition) * color;
+
+    // try to make it look like it does to people with red-green color blindness
+    // for usability testing.
+    //color.rg = vec2((color.r+color.g)/2.0, (color.r+color.g)/2.0);
+
+    vec4 p = vec4(tp.xy, -tp.z/7.0, 1.0);
 
     mat4 offset = mat4(
         1.0,    0.0,    0.0,    0.0,
