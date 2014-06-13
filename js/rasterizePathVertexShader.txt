@@ -21,22 +21,36 @@ uniform vec2 pathXYOffset;
 uniform float pathXYScale;
 uniform float pathMinZ;
 uniform float pathTopZ;
+uniform float stopAtTime;
 
 attribute vec3 pos1;
 attribute vec3 pos2;
+attribute float startTime;
+attribute float endTime;
 attribute float vertex;
 
 varying vec4 color;
 varying vec2 center;
 varying float radius;
+varying float enable;
 
 void main(void) {
+    enable = 1.0;
+
+    vec3 clampedPos2;
+    if(endTime <= stopAtTime)
+        clampedPos2 = pos2;
+    else if(startTime <= stopAtTime)
+        clampedPos2 = pos1 + (pos2-pos1)*(stopAtTime-startTime)/(endTime-startTime);
+    else
+        enable = 0.0;
+
     vec3 lower, upper;
     if(pos1.z < pos2.z) {
         lower = vec3((pos1.xy+pathXYOffset)*pathXYScale, pos1.z);
-        upper = vec3((pos2.xy+pathXYOffset)*pathXYScale, pos2.z);
+        upper = vec3((clampedPos2.xy+pathXYOffset)*pathXYScale, clampedPos2.z);
     } else {
-        lower = vec3((pos2.xy+pathXYOffset)*pathXYScale, pos2.z);
+        lower = vec3((clampedPos2.xy+pathXYOffset)*pathXYScale, clampedPos2.z);
         upper = vec3((pos1.xy+pathXYOffset)*pathXYScale, pos1.z);
     }
 

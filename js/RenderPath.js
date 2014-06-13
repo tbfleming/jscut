@@ -19,12 +19,13 @@ function RenderPath(canvas, shadersReady) {
     "use strict";
     var self = this;
     var resolution = 1024;
-    self.cutterDia = .125 / 4;
+    self.cutterDia = .125;
     var pathXOffset = 0;
     var pathYOffset = 0;
     var pathXYScale = 1;
     var pathMinZ = -1;
     var pathTopZ = 0;
+    self.stopAtTime = 9999999;
     self.rotate = mat4.create();
 
     self.gl = WebGLUtils.setupWebGL(canvas);
@@ -64,8 +65,11 @@ function RenderPath(canvas, shadersReady) {
         rasterizePathProgram.pathXYScale = self.gl.getUniformLocation(rasterizePathProgram, "pathXYScale");
         rasterizePathProgram.pathMinZ = self.gl.getUniformLocation(rasterizePathProgram, "pathMinZ");
         rasterizePathProgram.pathTopZ = self.gl.getUniformLocation(rasterizePathProgram, "pathTopZ");
+        rasterizePathProgram.stopAtTime = self.gl.getUniformLocation(rasterizePathProgram, "stopAtTime");
         rasterizePathProgram.pos1 = self.gl.getAttribLocation(rasterizePathProgram, "pos1");
         rasterizePathProgram.pos2 = self.gl.getAttribLocation(rasterizePathProgram, "pos2");
+        rasterizePathProgram.startTime = self.gl.getAttribLocation(rasterizePathProgram, "startTime");
+        rasterizePathProgram.endTime = self.gl.getAttribLocation(rasterizePathProgram, "endTime");
         rasterizePathProgram.vertex = self.gl.getAttribLocation(rasterizePathProgram, "vertex");
 
         self.gl.useProgram(null);
@@ -132,12 +136,14 @@ function RenderPath(canvas, shadersReady) {
 
     var pathBuffer;
     var pathNumPoints = 0;
-    var pathStride = 7;
+    var pathStride = 9;
     var pathVertexesPerLine = 18;
     var pathNumVertexes = 0;
+    self.totalTime = 0;
 
     self.fillPathBuffer = function (path) {
-        pathNumPoints = path.length / 3;
+        var inputStride = 4;
+        pathNumPoints = path.length / inputStride;
         pathNumVertexes = pathNumPoints * pathVertexesPerLine;
         var bufferContent = new Float32Array(pathNumPoints * pathStride * pathVertexesPerLine);
 
@@ -147,24 +153,42 @@ function RenderPath(canvas, shadersReady) {
         var maxY = path[1];
         var minZ = path[2];
 
+        var time = 0;
         for (var point = 0; point < pathNumPoints; ++point) {
-            minX = Math.min(minX, path[point * 3 + 0]);
-            maxX = Math.max(maxX, path[point * 3 + 0]);
-            minY = Math.min(minY, path[point * 3 + 1]);
-            maxY = Math.max(maxY, path[point * 3 + 1]);
-            minZ = Math.min(minZ, path[point * 3 + 2]);
             var prevPoint = Math.max(point - 1, 0);
+            var pointBegin = point * inputStride;
+            var prevPointBegin = prevPoint * inputStride;
+            var x = path[pointBegin + 0];
+            var y = path[pointBegin + 1];
+            var z = path[pointBegin + 2];
+            var f = path[pointBegin + 3];
+            var prevX = path[prevPointBegin + 0];
+            var prevY = path[prevPointBegin + 1];
+            var prevZ = path[prevPointBegin + 2];
+            var dist = Math.sqrt((x - prevX) * (x - prevX) + (y - prevY) * (y - prevY) + (z - prevZ) * (z - prevZ));
+            var beginTime = time;
+            time = time + dist / f * 60;
+
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+            minZ = Math.min(minZ, z);
+
             for (var virtex = 0; virtex < pathVertexesPerLine; ++virtex) {
                 var base = point * pathStride * pathVertexesPerLine + virtex * pathStride;
-                bufferContent[base + 0] = path[prevPoint * 3 + 0];
-                bufferContent[base + 1] = path[prevPoint * 3 + 1];
-                bufferContent[base + 2] = path[prevPoint * 3 + 2];
-                bufferContent[base + 3] = path[point * 3 + 0];
-                bufferContent[base + 4] = path[point * 3 + 1];
-                bufferContent[base + 5] = path[point * 3 + 2];
-                bufferContent[base + 6] = virtex;
+                bufferContent[base + 0] = prevX;
+                bufferContent[base + 1] = prevY;
+                bufferContent[base + 2] = prevZ;
+                bufferContent[base + 3] = x;
+                bufferContent[base + 4] = y;
+                bufferContent[base + 5] = z;
+                bufferContent[base + 6] = beginTime;
+                bufferContent[base + 7] = time;
+                bufferContent[base + 8] = virtex;
             }
         }
+        self.totalTime = time;
 
         if (!pathBuffer)
             pathBuffer = self.gl.createBuffer();
@@ -192,17 +216,24 @@ function RenderPath(canvas, shadersReady) {
         self.gl.uniform1f(rasterizePathProgram.pathXYScale, pathXYScale);
         self.gl.uniform1f(rasterizePathProgram.pathMinZ, pathMinZ);
         self.gl.uniform1f(rasterizePathProgram.pathTopZ, pathTopZ);
+        self.gl.uniform1f(rasterizePathProgram.stopAtTime, self.stopAtTime);
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
         self.gl.vertexAttribPointer(rasterizePathProgram.pos1, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 0);
         self.gl.vertexAttribPointer(rasterizePathProgram.pos2, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
-        self.gl.vertexAttribPointer(rasterizePathProgram.vertex, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(rasterizePathProgram.startTime, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(rasterizePathProgram.endTime, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(rasterizePathProgram.vertex, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
 
         self.gl.enableVertexAttribArray(rasterizePathProgram.pos1);
         self.gl.enableVertexAttribArray(rasterizePathProgram.pos2);
+        self.gl.enableVertexAttribArray(rasterizePathProgram.startTime);
+        self.gl.enableVertexAttribArray(rasterizePathProgram.endTime);
         self.gl.enableVertexAttribArray(rasterizePathProgram.vertex);
         self.gl.drawArrays(self.gl.TRIANGLES, 0, pathNumVertexes);
         self.gl.disableVertexAttribArray(rasterizePathProgram.pos1);
         self.gl.disableVertexAttribArray(rasterizePathProgram.pos2);
+        self.gl.disableVertexAttribArray(rasterizePathProgram.startTime);
+        self.gl.disableVertexAttribArray(rasterizePathProgram.endTime);
         self.gl.disableVertexAttribArray(rasterizePathProgram.vertex);
 
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
@@ -359,8 +390,18 @@ function RenderPath(canvas, shadersReady) {
 
 var canvas;
 var renderPath;
+var timeSlider;
 
 function webGLStart() {
+    timeSlider = $('#timeSlider').slider({
+        formater: function (value) {
+            if (renderPath)
+                return 'Time: ' + Math.round(value / 1000 * renderPath.totalTime) + 's';
+            else
+                return value;
+        }
+    });
+
     canvas = document.getElementById("canvas");
     renderPath = new RenderPath(canvas, function () {
         $.get("logo-gcode.txt", function (gcode) {
@@ -389,12 +430,17 @@ function webGLStart() {
                 mat4.rotateY(m, m, (e.pageX - lastX) / 200);
                 mat4.rotateX(m, m, (e.pageY - lastY) / 200);
                 mat4.multiply(renderPath.rotate, m, origRotate);
-                renderPath.createPathTexture();
                 renderPath.drawHeightMap();
             });
 
             $(document).mouseup(function (e) {
                 mouseDown = false;
+            });
+
+            timeSlider.on('slide', function () {
+                renderPath.stopAtTime = timeSlider.val() / 1000 * renderPath.totalTime;
+                renderPath.createPathTexture();
+                renderPath.drawHeightMap();
             });
         });
     });

@@ -33,7 +33,7 @@ varying vec4 color;
 vec3 getPos(vec2 p) {
     return vec3(
         p * 2.0 / resolution - vec2(1.0, 1.0),
-        texture2D(heightMap, p/resolution).r);
+        texture2D(heightMap, p/resolution).r*3.0);
 }
 
 void main(void) {
@@ -53,10 +53,10 @@ void main(void) {
         0.0,    0.0,    -3.5,   1.0
     );
 
-    float left = -1.0;
-    float right = 1.0;
-    float top = 1.0;
-    float bot = -1.0;
+    float left = -.6;
+    float right = .6;
+    float top = .6;
+    float bot = -.6;
     float near = 2.0;
     float far = 5.0;
     mat4 camera = mat4(

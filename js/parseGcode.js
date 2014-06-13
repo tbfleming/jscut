@@ -17,8 +17,8 @@
 
 function parseGcode(gcode) {
     var path = [];
-    var lastX = NaN, lastY = NaN, lastZ = NaN;
-    var stride = 3;
+    var lastX = NaN, lastY = NaN, lastZ = NaN, lastF = NaN;
+    var stride = 4;
     var i = 0;
     while (i < gcode.length) {
         function parse() {
@@ -30,7 +30,7 @@ function parseGcode(gcode) {
                 ++i;
             return Number(gcode.substr(begin, i - begin));
         }
-        var g = NaN, x = NaN, y = NaN, z = NaN;
+        var g = NaN, x = NaN, y = NaN, z = NaN, f = NaN;
         while (i < gcode.length && gcode[i] != ';' && gcode[i] != '\r' && gcode[i] != '\n') {
             if (gcode[i] == 'G' || gcode[i] == 'g')
                 g = parse();
@@ -40,6 +40,8 @@ function parseGcode(gcode) {
                 y = parse();
             else if (gcode[i] == 'Z' || gcode[i] == 'z')
                 z = parse();
+            else if (gcode[i] == 'F' || gcode[i] == 'f')
+                f = parse();
             else
                 ++i;
         }
@@ -62,9 +64,16 @@ function parseGcode(gcode) {
                         path[j] = z;
                 lastZ = z;
             }
+            if (!isNaN(f)) {
+                if (isNaN(lastF))
+                    for (var j = 3; j < path.length; j += stride)
+                        path[j] = f;
+                lastF = f;
+            }
             path.push(lastX);
             path.push(lastY);
             path.push(lastZ);
+            path.push(lastF);
         }
         while (i < gcode.length && gcode[i] != '\r' && gcode[i] != '\n')
             ++i;
