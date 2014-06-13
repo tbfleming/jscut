@@ -182,6 +182,7 @@ function RenderPath(canvas, shadersReady) {
     self.drawPath = function () {
         self.gl.useProgram(rasterizePathProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        self.gl.disable(renderPath.gl.DEPTH_TEST);
         self.gl.viewport(0, 0, resolution, resolution);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
@@ -388,7 +389,7 @@ function webGLStart() {
                 mat4.rotateY(m, m, (e.pageX - lastX) / 200);
                 mat4.rotateX(m, m, (e.pageY - lastY) / 200);
                 mat4.multiply(renderPath.rotate, m, origRotate);
-                renderPath.fillPathBuffer(path);
+                renderPath.createPathTexture();
                 renderPath.drawHeightMap();
             });
 
