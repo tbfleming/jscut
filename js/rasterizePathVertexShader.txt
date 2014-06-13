@@ -38,12 +38,12 @@ void main(void) {
     enable = 1.0;
 
     vec3 clampedPos2;
-    if(endTime <= stopAtTime)
-        clampedPos2 = pos2;
-    else if(startTime <= stopAtTime)
-        clampedPos2 = pos1 + (pos2-pos1)*(stopAtTime-startTime)/(endTime-startTime);
-    else
+
+    clampedPos2 = pos2;
+    if(stopAtTime < startTime)
         enable = 0.0;
+    else if(stopAtTime < endTime)
+        clampedPos2 = pos1 + (pos2-pos1)*(stopAtTime-startTime)/(endTime-startTime);
 
     vec3 lower, upper;
     if(pos1.z < pos2.z) {
