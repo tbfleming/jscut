@@ -18,6 +18,11 @@
 function RenderPath(canvas, shadersReady) {
     "use strict";
     var self = this;
+
+    var needToCreatePathTexture = false;
+    var needToDrawHeightMap = false;
+    var requestFrame;
+
     var resolution = 1024;
     self.cutterDia = .125;
     var pathXOffset = 0;
@@ -142,6 +147,8 @@ function RenderPath(canvas, shadersReady) {
     self.totalTime = 0;
 
     self.fillPathBuffer = function (path) {
+        needToCreatePathTexture = true;
+        requestFrame();
         var inputStride = 4;
         pathNumPoints = path.length / inputStride;
         pathNumVertexes = pathNumPoints * pathVertexesPerLine;
@@ -268,6 +275,8 @@ function RenderPath(canvas, shadersReady) {
         self.gl.bindFramebuffer(self.gl.FRAMEBUFFER, pathFramebuffer);
         self.drawPath();
         self.gl.bindFramebuffer(self.gl.FRAMEBUFFER, null);
+        needToCreatePathTexture = false;
+        needToDrawHeightMap = true;
     }
 
     var meshBuffer;
@@ -385,6 +394,35 @@ function RenderPath(canvas, shadersReady) {
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
         self.gl.bindTexture(self.gl.TEXTURE_2D, null);
         self.gl.useProgram(null);
+
+        needToDrawHeightMap = false;
+    }
+
+    var pendingRequest = false;
+    requestFrame = function () {
+        if (!pendingRequest) {
+            window.requestAnimFrame(self.render, canvas);
+            pendingRequest = true;
+        }
+    }
+
+    self.render = function () {
+        pendingRequest = true;
+        if (needToCreatePathTexture)
+            self.createPathTexture();
+        if (needToDrawHeightMap)
+            self.drawHeightMap();
+        pendingRequest = false;
+    }
+
+    self.timeChanged = function () {
+        needToCreatePathTexture = true;
+        requestFrame();
+    }
+
+    self.viewChanged = function () {
+        needToDrawHeightMap = true;
+        requestFrame();
     }
 }
 
@@ -405,11 +443,7 @@ function webGLStart() {
     canvas = document.getElementById("canvas");
     renderPath = new RenderPath(canvas, function () {
         $.get("logo-gcode.txt", function (gcode) {
-            path = parseGcode(gcode);
-            renderPath.fillPathBuffer(path);
-            renderPath.createPathTexture();
-            //renderPath.drawPath();
-            renderPath.drawHeightMap();
+            renderPath.fillPathBuffer(parseGcode(gcode));
 
             var mouseDown = false;
             var lastX = 0;
@@ -430,7 +464,7 @@ function webGLStart() {
                 mat4.rotateY(m, m, (e.pageX - lastX) / 200);
                 mat4.rotateX(m, m, (e.pageY - lastY) / 200);
                 mat4.multiply(renderPath.rotate, m, origRotate);
-                renderPath.drawHeightMap();
+                renderPath.viewChanged();
             });
 
             $(document).mouseup(function (e) {
@@ -439,8 +473,7 @@ function webGLStart() {
 
             timeSlider.on('slide', function () {
                 renderPath.stopAtTime = timeSlider.val() / 1000 * renderPath.totalTime;
-                renderPath.createPathTexture();
-                renderPath.drawHeightMap();
+                renderPath.timeChanged();
             });
         });
     });
