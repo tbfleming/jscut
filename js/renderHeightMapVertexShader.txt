@@ -16,9 +16,9 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 uniform float resolution;
-//uniform float pathXYScale;
-//uniform float pathMinZ;
-//uniform float pathTopZ;
+uniform float pathScale;
+uniform float pathMinZ;
+uniform float pathTopZ;
 uniform mat4 rotate;
 uniform sampler2D heightMap;
 
@@ -54,7 +54,7 @@ void main(void) {
     // for usability testing.
     //color.rg = vec2((color.r+color.g)/2.0, (color.r+color.g)/2.0);
 
-    vec4 p = vec4(tp.xy, -tp.z/7.0, 1.0);
+    vec4 p = vec4(tp.xy, -tp.z*(pathTopZ-pathMinZ)*pathScale, 1.0);
 
     mat4 offset = mat4(
         1.0,    0.0,    0.0,    0.0,

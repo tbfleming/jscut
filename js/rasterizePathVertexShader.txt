@@ -18,7 +18,7 @@
 uniform float resolution;
 uniform float cutterDia;
 uniform vec2 pathXYOffset;
-uniform float pathXYScale;
+uniform float pathScale;
 uniform float pathMinZ;
 uniform float pathTopZ;
 uniform float stopAtTime;
@@ -47,11 +47,11 @@ void main(void) {
 
     vec3 lower, upper;
     if(pos1.z < pos2.z) {
-        lower = vec3((pos1.xy+pathXYOffset)*pathXYScale, pos1.z);
-        upper = vec3((clampedPos2.xy+pathXYOffset)*pathXYScale, clampedPos2.z);
+        lower = vec3((pos1.xy+pathXYOffset)*pathScale, pos1.z);
+        upper = vec3((clampedPos2.xy+pathXYOffset)*pathScale, clampedPos2.z);
     } else {
-        lower = vec3((clampedPos2.xy+pathXYOffset)*pathXYScale, clampedPos2.z);
-        upper = vec3((pos1.xy+pathXYOffset)*pathXYScale, pos1.z);
+        lower = vec3((clampedPos2.xy+pathXYOffset)*pathScale, clampedPos2.z);
+        upper = vec3((pos1.xy+pathXYOffset)*pathScale, pos1.z);
     }
 
     // vertex 00-02: lower circle triangle 1
@@ -70,7 +70,7 @@ void main(void) {
 
     center = (thisPos.xy*resolution + resolution)/2.0;
     color = vec4(0.0, 1.0, 1.0, 1.0);
-    float r = cutterDia*pathXYScale/2.0;
+    float r = cutterDia*pathScale/2.0;
 
     if(i < 12) {
         radius = r*resolution/2.0;

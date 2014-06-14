@@ -27,7 +27,7 @@ function RenderPath(canvas, shadersReady) {
     self.cutterDia = .125;
     var pathXOffset = 0;
     var pathYOffset = 0;
-    var pathXYScale = 1;
+    var pathScale = 1;
     var pathMinZ = -1;
     var pathTopZ = 0;
     self.stopAtTime = 9999999;
@@ -67,7 +67,7 @@ function RenderPath(canvas, shadersReady) {
         rasterizePathProgram.resolution = self.gl.getUniformLocation(rasterizePathProgram, "resolution");
         rasterizePathProgram.cutterDia = self.gl.getUniformLocation(rasterizePathProgram, "cutterDia");
         rasterizePathProgram.pathXYOffset = self.gl.getUniformLocation(rasterizePathProgram, "pathXYOffset");
-        rasterizePathProgram.pathXYScale = self.gl.getUniformLocation(rasterizePathProgram, "pathXYScale");
+        rasterizePathProgram.pathScale = self.gl.getUniformLocation(rasterizePathProgram, "pathScale");
         rasterizePathProgram.pathMinZ = self.gl.getUniformLocation(rasterizePathProgram, "pathMinZ");
         rasterizePathProgram.pathTopZ = self.gl.getUniformLocation(rasterizePathProgram, "pathTopZ");
         rasterizePathProgram.stopAtTime = self.gl.getUniformLocation(rasterizePathProgram, "stopAtTime");
@@ -97,9 +97,9 @@ function RenderPath(canvas, shadersReady) {
         self.gl.useProgram(renderHeightMapProgram);
 
         renderHeightMapProgram.resolution = self.gl.getUniformLocation(renderHeightMapProgram, "resolution");
-        //renderHeightMapProgram.pathXYScale = self.gl.getUniformLocation(renderHeightMapProgram, "pathXYScale");
-        //renderHeightMapProgram.pathMinZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathMinZ");
-        //renderHeightMapProgram.pathTopZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathTopZ");
+        renderHeightMapProgram.pathScale = self.gl.getUniformLocation(renderHeightMapProgram, "pathScale");
+        renderHeightMapProgram.pathMinZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathMinZ");
+        renderHeightMapProgram.pathTopZ = self.gl.getUniformLocation(renderHeightMapProgram, "pathTopZ");
         renderHeightMapProgram.rotate = self.gl.getUniformLocation(renderHeightMapProgram, "rotate");
         renderHeightMapProgram.heightMap = self.gl.getUniformLocation(renderHeightMapProgram, "heightMap");
         renderHeightMapProgram.pos0 = self.gl.getAttribLocation(renderHeightMapProgram, "pos0");
@@ -208,7 +208,7 @@ function RenderPath(canvas, shadersReady) {
         pathXOffset = -(minX + maxX) / 2;
         pathYOffset = -(minY + maxY) / 2;
         var size = Math.max(maxX - minX + 4 * self.cutterDia, maxY - minY + 4 * self.cutterDia);
-        pathXYScale = 2 / size;
+        pathScale = 2 / size;
         pathMinZ = minZ;
     }
 
@@ -222,7 +222,7 @@ function RenderPath(canvas, shadersReady) {
         self.gl.uniform1f(rasterizePathProgram.resolution, resolution);
         self.gl.uniform1f(rasterizePathProgram.cutterDia, self.cutterDia);
         self.gl.uniform2f(rasterizePathProgram.pathXYOffset, pathXOffset, pathYOffset);
-        self.gl.uniform1f(rasterizePathProgram.pathXYScale, pathXYScale);
+        self.gl.uniform1f(rasterizePathProgram.pathScale, pathScale);
         self.gl.uniform1f(rasterizePathProgram.pathMinZ, pathMinZ);
         self.gl.uniform1f(rasterizePathProgram.pathTopZ, pathTopZ);
         self.gl.uniform1f(rasterizePathProgram.stopAtTime, self.stopAtTime);
@@ -366,9 +366,9 @@ function RenderPath(canvas, shadersReady) {
         self.gl.bindTexture(self.gl.TEXTURE_2D, pathRgbaTexture);
 
         self.gl.uniform1f(renderHeightMapProgram.resolution, resolution);
-        //self.gl.uniform1f(renderHeightMapProgram.pathXYScale, pathXYScale);
-        //self.gl.uniform1f(renderHeightMapProgram.pathMinZ, pathMinZ);
-        //self.gl.uniform1f(renderHeightMapProgram.pathTopZ, pathTopZ);
+        self.gl.uniform1f(renderHeightMapProgram.pathScale, pathScale);
+        self.gl.uniform1f(renderHeightMapProgram.pathMinZ, pathMinZ);
+        self.gl.uniform1f(renderHeightMapProgram.pathTopZ, pathTopZ);
         self.gl.uniformMatrix4fv(renderHeightMapProgram.rotate, false, self.rotate);
         self.gl.uniform1i(renderHeightMapProgram.heightMap, 0);
 
