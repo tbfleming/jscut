@@ -119,25 +119,27 @@ function RenderPath(canvas, shadersReady) {
         shadersReady();
     }
 
-    loadShader("js/rasterizePathVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
-        rasterizePathVertexShader = shader;
-        loadedShader();
-    });
+    if (self.gl) {
+        loadShader("js/rasterizePathVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+            rasterizePathVertexShader = shader;
+            loadedShader();
+        });
 
-    loadShader("js/rasterizePathFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
-        rasterizePathFragmentShader = shader;
-        loadedShader();
-    });
+        loadShader("js/rasterizePathFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+            rasterizePathFragmentShader = shader;
+            loadedShader();
+        });
 
-    loadShader("js/renderHeightMapVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
-        renderHeightMapVertexShader = shader;
-        loadedShader();
-    });
+        loadShader("js/renderHeightMapVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+            renderHeightMapVertexShader = shader;
+            loadedShader();
+        });
 
-    loadShader("js/renderHeightMapFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
-        renderHeightMapFragmentShader = shader;
-        loadedShader();
-    });
+        loadShader("js/renderHeightMapFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+            renderHeightMapFragmentShader = shader;
+            loadedShader();
+        });
+    }
 
     var pathBuffer;
     var pathNumPoints = 0;
@@ -413,6 +415,11 @@ function RenderPath(canvas, shadersReady) {
         if (needToDrawHeightMap)
             self.drawHeightMap();
         pendingRequest = false;
+
+        //needToCreatePathTexture = true;
+        //needToDrawHeightMap = true;
+        //self.stopAtTime += .2;
+        //requestFrame();
     }
 
     self.timeChanged = function () {
