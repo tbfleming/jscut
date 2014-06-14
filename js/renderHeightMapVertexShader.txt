@@ -30,7 +30,7 @@ attribute float vertex;
 
 varying vec4 color;
 
-vec3 getPos(vec2 p) {
+vec3 getPos(in vec2 p) {
     return vec3(
         p * 2.0 / resolution - vec2(1.0, 1.0),
         texture2D(heightMap, p/resolution).r);
@@ -47,8 +47,8 @@ void main(void) {
     vec4 transitionColor = vec4(0.0, 0.0, 0.0, 1.0);
 
     float transition = min(.7, 100.0*max(abs(p0.z-p1.z), abs(p0.z-p2.z)));
-    color = (1.0-tp.z) * topColor + tp.z * botColor;
-    color = transition * transitionColor + (1.0-transition) * color;
+    color = mix(topColor, botColor, tp.z);
+    color = mix(color, transitionColor, transition);
 
     // try to make it look like it does to people with red-green color blindness
     // for usability testing.
