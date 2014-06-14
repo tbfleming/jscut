@@ -24,7 +24,7 @@ function RenderPath(canvas, shadersReady) {
     var requestFrame;
 
     var resolution = 1024;
-    self.cutterDia = .125;
+    var cutterDia = .125;
     var pathXOffset = 0;
     var pathYOffset = 0;
     var pathScale = 1;
@@ -148,7 +148,8 @@ function RenderPath(canvas, shadersReady) {
     var pathNumVertexes = 0;
     self.totalTime = 0;
 
-    self.fillPathBuffer = function (path) {
+    self.fillPathBuffer = function (path, cutterDiameter) {
+        cutterDia = cutterDiameter;
         needToCreatePathTexture = true;
         requestFrame();
         var inputStride = 4;
@@ -207,7 +208,7 @@ function RenderPath(canvas, shadersReady) {
 
         pathXOffset = -(minX + maxX) / 2;
         pathYOffset = -(minY + maxY) / 2;
-        var size = Math.max(maxX - minX + 4 * self.cutterDia, maxY - minY + 4 * self.cutterDia);
+        var size = Math.max(maxX - minX + 4 * cutterDia, maxY - minY + 4 * cutterDia);
         pathScale = 2 / size;
         pathMinZ = minZ;
     }
@@ -220,7 +221,7 @@ function RenderPath(canvas, shadersReady) {
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
         self.gl.uniform1f(rasterizePathProgram.resolution, resolution);
-        self.gl.uniform1f(rasterizePathProgram.cutterDia, self.cutterDia);
+        self.gl.uniform1f(rasterizePathProgram.cutterDia, cutterDia);
         self.gl.uniform2f(rasterizePathProgram.pathXYOffset, pathXOffset, pathYOffset);
         self.gl.uniform1f(rasterizePathProgram.pathScale, pathScale);
         self.gl.uniform1f(rasterizePathProgram.pathMinZ, pathMinZ);
@@ -450,7 +451,7 @@ function webGLStart() {
     canvas = document.getElementById("canvas");
     renderPath = new RenderPath(canvas, function () {
         $.get("logo-gcode.txt", function (gcode) {
-            renderPath.fillPathBuffer(parseGcode(gcode));
+            renderPath.fillPathBuffer(parseGcode(gcode), .125);
 
             var mouseDown = false;
             var lastX = 0;
