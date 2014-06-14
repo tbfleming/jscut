@@ -1,5 +1,7 @@
 Unordered unprioritized todo list.
 
+* SVG view doesn't resize if "Edit Toolpaths" tab is selected
+  while opening an SVG
 * Check Safari
 * Pay attention to fill-rule on source SVG
   * SelectionViewModel is creating default (nonzero)
