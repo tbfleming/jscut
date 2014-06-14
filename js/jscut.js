@@ -22,6 +22,7 @@ contentGroup.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)).attr("filte
 var combinedGeometryGroup = mainSvg.g();
 var toolPathsGroup = mainSvg.g();
 var selectionGroup = mainSvg.g();
+var renderPath;
 
 var svgViewModel = new SvgViewModel();
 var materialViewModel = new MaterialViewModel();
@@ -36,6 +37,7 @@ ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
 ko.applyBindings(operationsViewModel, $("#Operation")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
+ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -54,7 +56,7 @@ function updateSvgSize() {
     bbox = mainSvg.getBBox();
     $("#MainSvg").attr({
         width: $("#MainSvgDiv").width(),
-        height: $(window).height() - 80,
+        height: Math.max(10, $(window).height() - 120),
         preserveAspectRatio: 'xMinYMin meet',
     });
     // attr() messes viewBox up
@@ -64,6 +66,19 @@ function updateSvgSize() {
 $(function () {
     updateSvgSize();
     $(window).resize(updateSvgSize);
+});
+
+function updateRenderPathSize() {
+    $("#renderPathCanvas").attr({
+        width: $("#MainSvgDiv").width(),
+        height: $("#MainSvgDiv").width(),
+    });
+}
+
+$(function () {
+    updateRenderPathSize();
+    $(window).resize(updateRenderPathSize);
+    renderPath = startRenderPath($("#renderPathCanvas")[0], function () { });
 });
 
 var nextAlertNum = 1;
@@ -152,7 +167,7 @@ $('#pxPerInch').popover({
 $('#createOperationButton').popover({
     trigger: "manual",
     html: true,
-    content: "<p class='bg-danger'>Select 1 or more objects before clicking here</p>",
+    content: "<p class='bg-danger'>Select 1 or more objects in the \"Edit Toolpaths\" tab before clicking here</p>",
     container: "body",
     placement: "right"
 });

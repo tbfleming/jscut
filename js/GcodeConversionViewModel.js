@@ -126,6 +126,11 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
             URL.revokeObjectURL(self.gcodeUrl());
         self.gcodeUrl(URL.createObjectURL(new Blob([gcode])));
 
-        tutorial(6, 'You\'re done! Right-click "Get Gcode" and select "Save link as..." to save your gcode.');
+        if (renderPath) {
+            renderPath.fillPathBuffer(parseGcode(gcode), self.unitConverter.fromInch(toolModel.diameter.toInch()));
+            renderPath.setStopAtTime(renderPath.totalTime);
+        }
+
+        tutorial(6, 'You\'re done! Look at the "Simulate GCODE" tab. Right-click "Get Gcode" and select "Save link as..." to save your gcode.');
     }
 }

@@ -21,7 +21,7 @@ function ToolModel() {
     self.unitConverter = new UnitConverter(self.units);
     self.diameter = ko.observable(.125);
     self.passDepth = ko.observable(.125);
-    self.overlap = ko.observable(.4);
+    self.overlap = ko.observable(.6);
     self.rapidRate = ko.observable(100);
     self.plungeRate = ko.observable(20);
     self.cutRate = ko.observable(40);

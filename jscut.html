@@ -28,6 +28,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
     <meta name="author" content="">
     <title>jscut</title>
     <link href="lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="lib/bootstrap-slider.min.css" rel="stylesheet">
     <link href="jscut.css" rel="stylesheet">
 </head>
 <body>
@@ -194,7 +195,31 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
             </div>
             <!-- center -->
             <div id="MainSvgDiv" class="col-sm-6">
-                <svg id="MainSvg" viewBox="0 0 500 500" preserveAspectRatio="xMinYMin meet" />
+                <div class="tabbable" id="tabs-139888">
+                    <ul class="nav nav-tabs">
+                        <li class="active">
+                            <a href="#svgPanel" data-toggle="tab">Edit Toolpaths</a>
+                        </li>
+                        <li>
+                            <a href="#simulatePanel" data-toggle="tab">Simulate GCODE</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="svgPanel">
+                            <svg id="MainSvg" viewBox="0 0 500 500" preserveAspectRatio="xMinYMin meet" />
+                        </div>
+                        <div class="tab-pane" id="simulatePanel">
+                            <canvas id="renderPathCanvas" style="border: none;" width="10" height="10"></canvas>
+                            <br /><br /><b>Simulation time: &nbsp;&nbsp;&nbsp;</b><input id="timeSlider" type="text" data-slider-min="0" data-slider-max="1000" data-slider-step="1" data-slider-value="1000" />
+                            <br /><br />
+                            <ul>
+                                <li>Use mouse to rotate view</li>
+                                <li>Use slider control to set simulation time</li>
+                                <li>Simulation remains blank until you <a data-bind="click:generateGcode" href="#">Generate Gcode</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- right -->
             <div class="col-sm-3 right-column">
@@ -305,11 +330,16 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
     </div>
     <script src="lib/jquery-2.1.1.min.js"></script>
     <script src="lib/bootstrap-3.1.1/js/bootstrap.min.js"></script>
+    <script src="lib/bootstrap-slider.min.js"></script>
     <script src="lib/knockout-3.1.0.js"></script>
     <script src="lib/snap-0.2.0.svg-min.js"></script>
     <script src="lib/clipper_unminified-6.1.3.2.js"></script>
+    <script src="lib/gl-matrix-2.2.0-min.js"></script>
+    <script src="lib/webgl-utils.js"></script>
     <script src="js/path.js"></script>
     <script src="js/Cam.js"></script>
+    <script src="js/parseGcode.js"></script>
+    <script src="js/RenderPath.js"></script>
     <script src="js/UnitConverter.js"></script>
     <script src="js/SvgViewModel.js"></script>
     <script src="js/MaterialViewModel.js"></script>
