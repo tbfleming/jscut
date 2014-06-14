@@ -215,7 +215,7 @@ function RenderPath(canvas, shadersReady) {
     self.drawPath = function () {
         self.gl.useProgram(rasterizePathProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        self.gl.disable(renderPath.gl.DEPTH_TEST);
+        self.gl.enable(renderPath.gl.DEPTH_TEST);
         self.gl.viewport(0, 0, resolution, resolution);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 

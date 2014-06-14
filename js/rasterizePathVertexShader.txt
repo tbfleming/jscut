@@ -106,10 +106,14 @@ void main(void) {
             gl_Position = vec4(lower.x-delta.y, lower.y+delta.x, lower.z, 1.0);
     }
 
-    float nearZ = pathMinZ;
-    float farZ = pathTopZ;
-    if(farZ == nearZ)
-        farZ = nearZ + 1.0;
-    color.r = (gl_Position.z - farZ) / (nearZ - farZ);
-    gl_Position.z = gl_Position.z * -2.0 / (farZ - nearZ) + (farZ + nearZ) / (farZ - nearZ);
+    float bottom = pathMinZ;
+    if(bottom == pathTopZ)
+        bottom = pathTopZ - 1.0;
+
+    // color.r = normalized cut depth
+    color.r = (gl_Position.z - pathTopZ) / (bottom - pathTopZ);
+
+    float nearZ = -pathTopZ;
+    float farZ = -bottom;
+    gl_Position.z = gl_Position.z * 2.0 / (farZ - nearZ) + (farZ + nearZ) / (farZ - nearZ);
 }
