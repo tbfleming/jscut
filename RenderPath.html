@@ -16,7 +16,7 @@
     <script src="js/parseGcode.js"></script>
     <script src="js/RenderPath.js"></script>
 </head>
-<body onload="webGLStart();">
+<body onload="startRenderPathDemo();">
     <div class="container-fluid">
         <div class="row clearfix">
             <div class="col-md-12 column">
@@ -30,7 +30,7 @@
                     </div>
                     <div class="leftLabel" />
 
-                    <canvas id="canvas" style="border: none;" width="1024" height="1024"></canvas>
+                    <canvas id="renderPathCanvas" style="border: none;" width="1024" height="512"></canvas>
 
                     <h1>
                         Coming soon: 3D cut previewing in jscut

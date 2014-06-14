@@ -30,8 +30,13 @@ function RenderPath(canvas, shadersReady) {
     var pathScale = 1;
     var pathMinZ = -1;
     var pathTopZ = 0;
-    self.stopAtTime = 9999999;
-    self.rotate = mat4.create();
+    var stopAtTime = 9999999;
+    var rotate = mat4.create();
+
+    $(canvas).resize(function () {
+        needToDrawHeightMap = true;
+        requestFrame();
+    });
 
     self.gl = WebGLUtils.setupWebGL(canvas);
 
@@ -116,29 +121,7 @@ function RenderPath(canvas, shadersReady) {
             return;
         linkRasterizePathProgram();
         linkRenderHeightMapProgram();
-        shadersReady();
-    }
-
-    if (self.gl) {
-        loadShader("js/rasterizePathVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
-            rasterizePathVertexShader = shader;
-            loadedShader();
-        });
-
-        loadShader("js/rasterizePathFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
-            rasterizePathFragmentShader = shader;
-            loadedShader();
-        });
-
-        loadShader("js/renderHeightMapVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
-            renderHeightMapVertexShader = shader;
-            loadedShader();
-        });
-
-        loadShader("js/renderHeightMapFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
-            renderHeightMapFragmentShader = shader;
-            loadedShader();
-        });
+        shadersReady(self);
     }
 
     var pathBuffer;
@@ -149,6 +132,9 @@ function RenderPath(canvas, shadersReady) {
     self.totalTime = 0;
 
     self.fillPathBuffer = function (path, cutterDiameter) {
+        if (!rasterizePathProgram || !renderHeightMapProgram)
+            return;
+
         cutterDia = cutterDiameter;
         needToCreatePathTexture = true;
         requestFrame();
@@ -211,12 +197,17 @@ function RenderPath(canvas, shadersReady) {
         var size = Math.max(maxX - minX + 4 * cutterDia, maxY - minY + 4 * cutterDia);
         pathScale = 2 / size;
         pathMinZ = minZ;
+
+        requestFrame();
     }
 
     self.drawPath = function () {
+        if (!rasterizePathProgram || !renderHeightMapProgram)
+            return;
+
         self.gl.useProgram(rasterizePathProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        self.gl.enable(renderPath.gl.DEPTH_TEST);
+        self.gl.enable(self.gl.DEPTH_TEST);
         self.gl.viewport(0, 0, resolution, resolution);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
@@ -226,7 +217,7 @@ function RenderPath(canvas, shadersReady) {
         self.gl.uniform1f(rasterizePathProgram.pathScale, pathScale);
         self.gl.uniform1f(rasterizePathProgram.pathMinZ, pathMinZ);
         self.gl.uniform1f(rasterizePathProgram.pathTopZ, pathTopZ);
-        self.gl.uniform1f(rasterizePathProgram.stopAtTime, self.stopAtTime);
+        self.gl.uniform1f(rasterizePathProgram.stopAtTime, stopAtTime);
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
         self.gl.vertexAttribPointer(rasterizePathProgram.pos1, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 0);
         self.gl.vertexAttribPointer(rasterizePathProgram.pos2, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
@@ -254,6 +245,8 @@ function RenderPath(canvas, shadersReady) {
     var pathRgbaTexture = null;
 
     self.createPathTexture = function () {
+        if (!rasterizePathProgram || !renderHeightMapProgram)
+            return;
         if (!pathFramebuffer) {
             pathFramebuffer = self.gl.createFramebuffer();
             self.gl.bindFramebuffer(self.gl.FRAMEBUFFER, pathFramebuffer);
@@ -357,10 +350,14 @@ function RenderPath(canvas, shadersReady) {
     }
 
     self.drawHeightMap = function () {
+        if (!rasterizePathProgram || !renderHeightMapProgram)
+            return;
+
         self.gl.useProgram(renderHeightMapProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        self.gl.enable(renderPath.gl.DEPTH_TEST);
-        self.gl.viewport(0, 0, resolution, resolution);
+        self.gl.enable(self.gl.DEPTH_TEST);
+        var canvasSize = Math.max(canvas.width, canvas.height);
+        self.gl.viewport((canvasSize - canvas.width) / 2, (canvas.height - canvasSize) / 2, canvasSize, canvasSize);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
         self.gl.activeTexture(self.gl.TEXTURE0);
@@ -370,7 +367,7 @@ function RenderPath(canvas, shadersReady) {
         self.gl.uniform1f(renderHeightMapProgram.pathScale, pathScale);
         self.gl.uniform1f(renderHeightMapProgram.pathMinZ, pathMinZ);
         self.gl.uniform1f(renderHeightMapProgram.pathTopZ, pathTopZ);
-        self.gl.uniformMatrix4fv(renderHeightMapProgram.rotate, false, self.rotate);
+        self.gl.uniformMatrix4fv(renderHeightMapProgram.rotate, false, rotate);
         self.gl.uniform1i(renderHeightMapProgram.heightMap, 0);
 
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, meshBuffer);
@@ -403,6 +400,8 @@ function RenderPath(canvas, shadersReady) {
 
     var pendingRequest = false;
     requestFrame = function () {
+        if (!rasterizePathProgram || !renderHeightMapProgram)
+            return;
         if (!pendingRequest) {
             window.requestAnimFrame(self.render, canvas);
             pendingRequest = true;
@@ -410,6 +409,9 @@ function RenderPath(canvas, shadersReady) {
     }
 
     self.render = function () {
+        if (!rasterizePathProgram || !renderHeightMapProgram)
+            return;
+
         pendingRequest = true;
         if (needToCreatePathTexture)
             self.createPathTexture();
@@ -419,26 +421,57 @@ function RenderPath(canvas, shadersReady) {
 
         //needToCreatePathTexture = true;
         //needToDrawHeightMap = true;
-        //self.stopAtTime += .2;
+        //stopAtTime += .2;
         //requestFrame();
     }
 
-    self.timeChanged = function () {
+    self.getStopAtTime = function () {
+        return stopAtTime;
+    }
+
+    self.setStopAtTime = function (t) {
+        stopAtTime = t;
         needToCreatePathTexture = true;
         requestFrame();
     }
 
-    self.viewChanged = function () {
+    self.getRotate = function () {
+        return rotate;
+    }
+
+    self.setRotate = function (rot) {
+        rotate = rot;
         needToDrawHeightMap = true;
         requestFrame();
     }
+
+    if (self.gl) {
+        loadShader("js/rasterizePathVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+            rasterizePathVertexShader = shader;
+            loadedShader();
+        });
+
+        loadShader("js/rasterizePathFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+            rasterizePathFragmentShader = shader;
+            loadedShader();
+        });
+
+        loadShader("js/renderHeightMapVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+            renderHeightMapVertexShader = shader;
+            loadedShader();
+        });
+
+        loadShader("js/renderHeightMapFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+            renderHeightMapFragmentShader = shader;
+            loadedShader();
+        });
+    }
 }
 
-var canvas;
-var renderPath;
-var timeSlider;
+function startRenderPath(canvas, ready) {
+    var renderPath;
+    var timeSlider;
 
-function webGLStart() {
     timeSlider = $('#timeSlider').slider({
         formater: function (value) {
             if (renderPath)
@@ -448,41 +481,50 @@ function webGLStart() {
         }
     });
 
-    canvas = document.getElementById("canvas");
-    renderPath = new RenderPath(canvas, function () {
+    renderPath = new RenderPath(canvas, function (renderPath) {
+        renderPath.fillPathBuffer([], 0);
+
+        var mouseDown = false;
+        var lastX = 0;
+        var lastY = 0;
+
+        var origRotate = mat4.create();
+        $(canvas).mousedown(function (e) {
+            mouseDown = true;
+            lastX = e.pageX;
+            lastY = e.pageY;
+            mat4.copy(origRotate, renderPath.getRotate());
+        });
+
+        $(document).mousemove(function (e) {
+            if (!mouseDown)
+                return;
+            var m = mat4.create();
+            mat4.rotateY(m, m, (e.pageX - lastX) / 200);
+            mat4.rotateX(m, m, (e.pageY - lastY) / 200);
+            mat4.multiply(m, m, origRotate);
+            renderPath.setRotate(m);
+        });
+
+        $(document).mouseup(function (e) {
+            mouseDown = false;
+        });
+
+        timeSlider.on('slide', function () {
+            renderPath.setStopAtTime(timeSlider.val() / 1000 * renderPath.totalTime);
+        });
+
+        ready(renderPath);
+    });
+
+    return renderPath;
+}
+
+function startRenderPathDemo() {
+    var renderPath;
+    renderPath = startRenderPath($("#renderPathCanvas")[0], function (renderPath) {
         $.get("logo-gcode.txt", function (gcode) {
             renderPath.fillPathBuffer(parseGcode(gcode), .125);
-
-            var mouseDown = false;
-            var lastX = 0;
-            var lastY = 0;
-
-            var origRotate = mat4.create();
-            $(canvas).mousedown(function (e) {
-                mouseDown = true;
-                lastX = e.pageX;
-                lastY = e.pageY;
-                mat4.copy(origRotate, renderPath.rotate);
-            });
-
-            $(document).mousemove(function (e) {
-                if (!mouseDown)
-                    return;
-                var m = mat4.create();
-                mat4.rotateY(m, m, (e.pageX - lastX) / 200);
-                mat4.rotateX(m, m, (e.pageY - lastY) / 200);
-                mat4.multiply(renderPath.rotate, m, origRotate);
-                renderPath.viewChanged();
-            });
-
-            $(document).mouseup(function (e) {
-                mouseDown = false;
-            });
-
-            timeSlider.on('slide', function () {
-                renderPath.stopAtTime = timeSlider.val() / 1000 * renderPath.totalTime;
-                renderPath.timeChanged();
-            });
         });
     });
 }
