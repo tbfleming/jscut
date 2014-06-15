@@ -66,7 +66,7 @@ function UnitConverter(units) {
             return units();
         }
         observable.toInch = function () {
-            return self.toInch(observable());
+            return self.toInch(Number(observable()));
         }
     }
 }
