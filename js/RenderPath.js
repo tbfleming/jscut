@@ -131,10 +131,11 @@ function RenderPath(canvas, shadersReady) {
     var pathNumVertexes = 0;
     self.totalTime = 0;
 
-    self.fillPathBuffer = function (path, cutterDiameter) {
+    self.fillPathBuffer = function (path, topZ, cutterDiameter) {
         if (!rasterizePathProgram || !renderHeightMapProgram)
             return;
 
+        pathTopZ = topZ;
         cutterDia = cutterDiameter;
         needToCreatePathTexture = true;
         requestFrame();
@@ -482,7 +483,7 @@ function startRenderPath(canvas, ready) {
     });
 
     renderPath = new RenderPath(canvas, function (renderPath) {
-        renderPath.fillPathBuffer([], 0);
+        renderPath.fillPathBuffer([], 0, 0);
 
         var mouseDown = false;
         var lastX = 0;
@@ -524,7 +525,7 @@ function startRenderPathDemo() {
     var renderPath;
     renderPath = startRenderPath($("#renderPathCanvas")[0], function (renderPath) {
         $.get("logo-gcode.txt", function (gcode) {
-            renderPath.fillPathBuffer(parseGcode(gcode), .125);
+            renderPath.fillPathBuffer(parseGcode(gcode), 0, .125);
         });
     });
 }

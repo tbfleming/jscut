@@ -127,7 +127,10 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
         self.gcodeUrl(URL.createObjectURL(new Blob([gcode])));
 
         if (renderPath) {
-            renderPath.fillPathBuffer(parseGcode(gcode), self.unitConverter.fromInch(toolModel.diameter.toInch()));
+            renderPath.fillPathBuffer(
+                parseGcode(gcode),
+                self.unitConverter.fromInch(materialViewModel.matTopZ.toInch()),
+                self.unitConverter.fromInch(toolModel.diameter.toInch()));
             renderPath.setStopAtTime(renderPath.totalTime);
         }
 
