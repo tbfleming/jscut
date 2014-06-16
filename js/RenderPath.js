@@ -501,8 +501,7 @@ function startRenderPath(canvas, ready) {
             if (!mouseDown)
                 return;
             var m = mat4.create();
-            mat4.rotateY(m, m, (e.pageX - lastX) / 200);
-            mat4.rotateX(m, m, (e.pageY - lastY) / 200);
+            mat4.rotate(m, m, Math.sqrt((e.pageX - lastX) * (e.pageX - lastX) + (e.pageY - lastY) * (e.pageY - lastY)) / 100, [e.pageY - lastY, e.pageX - lastX, 0]);
             mat4.multiply(m, m, origRotate);
             renderPath.setRotate(m);
         });
