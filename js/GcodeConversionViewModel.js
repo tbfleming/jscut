@@ -130,7 +130,8 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
             renderPath.fillPathBuffer(
                 parseGcode(gcode),
                 self.unitConverter.fromInch(materialViewModel.matTopZ.toInch()),
-                self.unitConverter.fromInch(toolModel.diameter.toInch()));
+                self.unitConverter.fromInch(toolModel.diameter.toInch()),
+                self.unitConverter.fromInch(1));
             renderPath.setStopAtTime(renderPath.totalTime);
         }
 

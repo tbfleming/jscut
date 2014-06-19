@@ -25,6 +25,7 @@ function RenderPath(canvas, shadersReady) {
 
     var resolution = 1024;
     var cutterDia = .125;
+    var cutterH = 0;
     var pathXOffset = 0;
     var pathYOffset = 0;
     var pathScale = 1;
@@ -116,14 +117,42 @@ function RenderPath(canvas, shadersReady) {
         self.gl.useProgram(null);
     }
 
+    var basicVertexShader;
+    var basicFragmentShader;
+    var basicProgram;
+
+    function linkBasicProgram() {
+        basicProgram = self.gl.createProgram();
+        self.gl.attachShader(basicProgram, basicVertexShader);
+        self.gl.attachShader(basicProgram, basicFragmentShader);
+        self.gl.linkProgram(basicProgram);
+
+        if (!self.gl.getProgramParameter(basicProgram, self.gl.LINK_STATUS)) {
+            alert("Could not initialise RenderHeightMap shaders");
+        }
+
+        self.gl.useProgram(basicProgram);
+
+        basicProgram.scale = self.gl.getUniformLocation(basicProgram, "scale");
+        basicProgram.translate = self.gl.getUniformLocation(basicProgram, "translate");
+        basicProgram.rotate = self.gl.getUniformLocation(basicProgram, "rotate");
+        basicProgram.vPos = self.gl.getAttribLocation(basicProgram, "vPos");
+        basicProgram.vColor = self.gl.getAttribLocation(basicProgram, "vColor");
+
+        self.gl.useProgram(null);
+    }
+
     function loadedShader() {
-        if (!rasterizePathVertexShader || !rasterizePathFragmentShader || !renderHeightMapVertexShader || !renderHeightMapFragmentShader)
+        if (!rasterizePathVertexShader || !rasterizePathFragmentShader || !renderHeightMapVertexShader || !renderHeightMapFragmentShader ||
+            !basicVertexShader || !basicFragmentShader)
             return;
         linkRasterizePathProgram();
         linkRenderHeightMapProgram();
+        linkBasicProgram();
         shadersReady(self);
     }
 
+    var pathBufferContent;
     var pathBuffer;
     var pathNumPoints = 0;
     var pathStride = 9;
@@ -131,18 +160,20 @@ function RenderPath(canvas, shadersReady) {
     var pathNumVertexes = 0;
     self.totalTime = 0;
 
-    self.fillPathBuffer = function (path, topZ, cutterDiameter) {
-        if (!rasterizePathProgram || !renderHeightMapProgram)
+    self.fillPathBuffer = function (path, topZ, cutterDiameter, cutterHeight) {
+        if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
 
         pathTopZ = topZ;
         cutterDia = cutterDiameter;
+        cutterH = cutterHeight;
         needToCreatePathTexture = true;
         requestFrame();
         var inputStride = 4;
         pathNumPoints = path.length / inputStride;
         pathNumVertexes = pathNumPoints * pathVertexesPerLine;
         var bufferContent = new Float32Array(pathNumPoints * pathStride * pathVertexesPerLine);
+        pathBufferContent = bufferContent;
 
         var minX = path[0];
         var maxX = path[0];
@@ -203,7 +234,7 @@ function RenderPath(canvas, shadersReady) {
     }
 
     self.drawPath = function () {
-        if (!rasterizePathProgram || !renderHeightMapProgram)
+        if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
 
         self.gl.useProgram(rasterizePathProgram);
@@ -246,7 +277,7 @@ function RenderPath(canvas, shadersReady) {
     var pathRgbaTexture = null;
 
     self.createPathTexture = function () {
-        if (!rasterizePathProgram || !renderHeightMapProgram)
+        if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
         if (!pathFramebuffer) {
             pathFramebuffer = self.gl.createFramebuffer();
@@ -351,7 +382,7 @@ function RenderPath(canvas, shadersReady) {
     }
 
     self.drawHeightMap = function () {
-        if (!rasterizePathProgram || !renderHeightMapProgram)
+        if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
 
         self.gl.useProgram(renderHeightMapProgram);
@@ -399,9 +430,125 @@ function RenderPath(canvas, shadersReady) {
         needToDrawHeightMap = false;
     }
 
+    var cylBuffer;
+    var cylStride = 6;
+    var cylNumVertexes = 0;
+
+    if (self.gl) (function () {
+        var numDivisions = 40;
+        var numTriangles = numDivisions * 4;
+        cylNumVertexes = numTriangles * 3;
+        var bufferContent = new Float32Array(cylNumVertexes * cylStride);
+        var r = 0.7, g = 0.7, b = 0.0;
+
+        var pos = 0;
+        function addVertex(x, y, z) {
+            bufferContent[pos++] = x;
+            bufferContent[pos++] = y;
+            bufferContent[pos++] = z;
+            bufferContent[pos++] = r;
+            bufferContent[pos++] = g;
+            bufferContent[pos++] = b;
+        }
+
+        var lastX = .5 * Math.cos(0);
+        var lastY = .5 * Math.sin(0);
+        for (var i = 0; i < numDivisions; ++i) {
+            var j = i + 1;
+            if (j == numDivisions)
+                j = 0;
+            var x = .5 * Math.cos(j * 2 * Math.PI / numDivisions);
+            var y = .5 * Math.sin(j * 2 * Math.PI / numDivisions);
+
+            addVertex(lastX, lastY, 0);
+            addVertex(x, y, 0);
+            addVertex(lastX, lastY, 1);
+            addVertex(x, y, 0);
+            addVertex(x, y, 1);
+            addVertex(lastX, lastY, 1);
+            addVertex(0, 0, 0);
+            addVertex(x, y, 0);
+            addVertex(lastX, lastY, 0);
+            addVertex(0, 0, 1);
+            addVertex(lastX, lastY, 1);
+            addVertex(x, y, 1);
+
+            lastX = x;
+            lastY = y;
+        }
+
+        cylBuffer = self.gl.createBuffer();
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, cylBuffer);
+        self.gl.bufferData(self.gl.ARRAY_BUFFER, bufferContent, self.gl.STATIC_DRAW);
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+    })();
+
+    function lowerBound(data, offset, stride, begin, end, value) {
+        while (begin < end) {
+            var i = Math.floor((begin + end) / 2);
+            if (data[offset + i * stride] < value)
+                begin = i + 1;
+            else
+                end = i;
+        };
+        return end;
+    }
+
+    function mix(v0, v1, a) {
+        return v0 + (v1 - v0) * a;
+    }
+
+    self.drawCutter = function () {
+        if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram || pathNumPoints == 0)
+            return;
+
+        var i = lowerBound(pathBufferContent, 7, pathStride * pathVertexesPerLine, 0, pathNumPoints, stopAtTime);
+        var x, y, z;
+        if (i < pathNumPoints) {
+            var offset = i * pathStride * pathVertexesPerLine;
+            var beginTime = pathBufferContent[offset + 6];
+            var endTime = pathBufferContent[offset + 7];
+            var ratio;
+            if (endTime == beginTime)
+                ratio = 0;
+            else
+                ratio = (stopAtTime - beginTime) / (endTime - beginTime);
+            x = mix(pathBufferContent[offset + 0], pathBufferContent[offset + 3], ratio);
+            y = mix(pathBufferContent[offset + 1], pathBufferContent[offset + 4], ratio);
+            z = mix(pathBufferContent[offset + 2], pathBufferContent[offset + 5], ratio);
+        }
+        else {
+            var offset = (i-1) * pathStride * pathVertexesPerLine;
+            x = pathBufferContent[offset + 3];
+            y = pathBufferContent[offset + 4];
+            z = pathBufferContent[offset + 5];
+        }
+
+        self.gl.useProgram(basicProgram);
+
+        self.gl.uniform3f(basicProgram.scale, cutterDia * pathScale, cutterDia * pathScale, cutterH * pathScale);
+        self.gl.uniform3f(basicProgram.translate, (x+pathXOffset) * pathScale, (y+pathYOffset) * pathScale, z * pathScale);
+        self.gl.uniformMatrix4fv(basicProgram.rotate, false, rotate);
+
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, cylBuffer);
+        self.gl.vertexAttribPointer(basicProgram.vPos, 3, self.gl.FLOAT, false, cylStride * Float32Array.BYTES_PER_ELEMENT, 0);
+        self.gl.vertexAttribPointer(basicProgram.vColor, 3, self.gl.FLOAT, false, cylStride * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+
+        self.gl.enableVertexAttribArray(basicProgram.vPos);
+        self.gl.enableVertexAttribArray(basicProgram.vColor);
+
+        self.gl.drawArrays(self.gl.TRIANGLES, 0, cylNumVertexes);
+
+        self.gl.disableVertexAttribArray(basicProgram.vPos);
+        self.gl.disableVertexAttribArray(basicProgram.vColor);
+
+        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+        self.gl.useProgram(null);
+    }
+
     var pendingRequest = false;
     requestFrame = function () {
-        if (!rasterizePathProgram || !renderHeightMapProgram)
+        if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
         if (!pendingRequest) {
             window.requestAnimFrame(self.render, canvas);
@@ -410,14 +557,16 @@ function RenderPath(canvas, shadersReady) {
     }
 
     self.render = function () {
-        if (!rasterizePathProgram || !renderHeightMapProgram)
+        if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
 
         pendingRequest = true;
         if (needToCreatePathTexture)
             self.createPathTexture();
-        if (needToDrawHeightMap)
+        if (needToDrawHeightMap) {
             self.drawHeightMap();
+            self.drawCutter();
+        }
         pendingRequest = false;
 
         //needToCreatePathTexture = true;
@@ -466,6 +615,16 @@ function RenderPath(canvas, shadersReady) {
             renderHeightMapFragmentShader = shader;
             loadedShader();
         });
+
+        loadShader("js/basicVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+            basicVertexShader = shader;
+            loadedShader();
+        });
+
+        loadShader("js/basicFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+            basicFragmentShader = shader;
+            loadedShader();
+        });
     }
 }
 
@@ -483,7 +642,7 @@ function startRenderPath(canvas, ready) {
     });
 
     renderPath = new RenderPath(canvas, function (renderPath) {
-        renderPath.fillPathBuffer([], 0, 0);
+        renderPath.fillPathBuffer([], 0, 0, 0);
 
         var mouseDown = false;
         var lastX = 0;
@@ -524,7 +683,7 @@ function startRenderPathDemo() {
     var renderPath;
     renderPath = startRenderPath($("#renderPathCanvas")[0], function (renderPath) {
         $.get("logo-gcode.txt", function (gcode) {
-            renderPath.fillPathBuffer(parseGcode(gcode), 0, .125);
+            renderPath.fillPathBuffer(parseGcode(gcode), 0, .125, 1);
         });
     });
 }
