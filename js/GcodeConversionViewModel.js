@@ -99,6 +99,7 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
                 "\r\n; Operation:    " + opIndex +
                 "\r\n; Type:         " + op.camOp() +
                 "\r\n; Paths:        " + op.toolPaths().length +
+                "\r\n; Direction:    " + op.direction() +
                 "\r\n; Cut Depth:    " + cutDepth +
                 "\r\n; Pass Depth:   " + passDepth +
                 "\r\n; Plunge rate:  " + plungeRate +

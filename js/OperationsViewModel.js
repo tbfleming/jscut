@@ -61,6 +61,7 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
     self.selected = ko.observable("off");
     self.combineOp = ko.observable("Union");
     self.camOp = ko.observable("Pocket");
+    self.direction = ko.observable("Conventional");
     self.cutDepth = ko.observable(0);
     self.margin = ko.observable("0.0");
     self.width = ko.observable("0.0");
@@ -89,6 +90,8 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
             self.toolPaths([]);
         }
     }
+
+    self.direction.subscribe(self.removeToolPaths);
 
     self.selected.subscribe(function (newValue) {
         if (newValue == "on")
@@ -194,12 +197,12 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
             geometry = Path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
-            self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap));
+            self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap, self.direction() == "Climb"));
         else if (self.camOp() == "Outline") {
             var width = self.width.toInch() * Path.inchToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
-            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap));
+            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap, self.direction() == "Climb"));
         }
         var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
         if (path != null && path.length > 0) {

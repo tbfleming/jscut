@@ -105,11 +105,14 @@ var Cam = new function () {
 
     // Compute paths for pocket operation on Clipper geometry. Returns array
     // of CamPath. cutterDia is in Clipper units. overlap is in the range [0, 1).
-    Cam.pocket = function (geometry, cutterDia, overlap) {
+    Cam.pocket = function (geometry, cutterDia, overlap, climb) {
         var current = Path.offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
         var allPaths = [];
         while (current.length != 0) {
+            if (climb)
+                for (var i = 0; i < current.length; ++i)
+                    current[i].reverse();
             allPaths = current.concat(allPaths);
             current = Path.offset(current, -cutterDia * (1 - overlap));
         }
@@ -119,17 +122,23 @@ var Cam = new function () {
     // Compute paths for outline operation on Clipper geometry. Returns array
     // of CamPath. cutterDia and width are in Clipper units. overlap is in the 
     // range [0, 1).
-    Cam.outline = function (geometry, cutterDia, width, overlap) {
+    Cam.outline = function (geometry, cutterDia, width, overlap, climb) {
         var current = Path.offset(geometry, cutterDia / 2);
         var currentWidth = cutterDia;
         var bounds = Path.diff(Path.offset(geometry, width - cutterDia / 2), current);
         var allPaths = [];
         var eachOffset = cutterDia * (1 - overlap);
         while (currentWidth <= width) {
+            if (!climb)
+                for (var i = 0; i < current.length; ++i)
+                    current[i].reverse();
             allPaths = current.concat(allPaths);
             var nextWidth = currentWidth + eachOffset;
             if (nextWidth > width && width - currentWidth > 0) {
                 current = Path.offset(current, width - currentWidth);
+                if (!climb)
+                    for (var i = 0; i < current.length; ++i)
+                        current[i].reverse();
                 allPaths = current.concat(allPaths);
                 break;
             }
