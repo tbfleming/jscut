@@ -49,6 +49,7 @@ code {
 .choose-file {
     position: relative;
     overflow: hidden;
+    display: inline-block;
 }
 
 .choose-file input[type=file] {

@@ -46,8 +46,11 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                     </div>
                     <div id="collapseFile" class="panel-collapse collapse in">
                         <div class="panel-body">
-                            <div><a class="choose-file btn btn-default">Open SVG<input type="file" id="choose-svg-file" multiple></a></div>
-                            <div><button class="btn btn-default" onclick="openSvgDropbox()">Open SVG From Dropbox</button></div>
+                            <table class="table">
+                                <tr><td><a href="#" class="choose-file">Open SVG<input type="file" id="choose-svg-file" multiple></a></tr>
+                                <tr><td><a href="#" onclick="openSvgDropbox()">Open SVG From Dropbox</a></tr>
+                                <tr id="FileGetGcode" data-bind="visible:gcodeUrl()!=null"><td><a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get Gcode</a></tr>
+                            </table>
                         </div>
                     </div>
                 </div>

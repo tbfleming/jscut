@@ -37,6 +37,7 @@ ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
 ko.applyBindings(operationsViewModel, $("#Operation")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
+ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
 
 function updateSvgAutoHeight() {
@@ -98,11 +99,6 @@ Snap.load("Material.svg", function (f) {
     materialSvg.append(f);
     materialViewModel.materialSvg(materialSvg);
 });
-
-//Snap.load("test.svg", function (f) {
-//    contentGroup.append(f);
-//    updateSvgSize();
-//});
 
 var tutorialAlert = null;
 var nextTutorialStep = 0;
