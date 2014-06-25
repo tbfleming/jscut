@@ -117,6 +117,15 @@ function tutorial(step, message) {
 
 tutorial(1, 'Click "Open SVG" and select an SVG file.');
 
+function loadSvg(alert, filename, content) {
+    svg = Snap.parse(content);
+    contentGroup.append(svg);
+    updateSvgSize();
+    alert.remove();
+    showAlert("loaded " + filename, "alert-success");
+    tutorial(2, 'Click 1 or more objects.');
+}
+
 $(document).on('change', '#choose-svg-file', function (event) {
     var files = event.target.files;
     for (var i = 0, file; file = files[i]; ++i) {
@@ -124,12 +133,7 @@ $(document).on('change', '#choose-svg-file', function (event) {
             var alert = showAlert("loading " + file.name, "alert-info", false);
             var reader = new FileReader();
             reader.onload = function (e) {
-                svg = Snap.parse(e.target.result);
-                contentGroup.append(svg);
-                updateSvgSize();
-                alert.remove();
-                showAlert("loaded " + file.name, "alert-success");
-                tutorial(2, 'Click 1 or more objects.');
+                loadSvg(alert, file.name, e.target.result);
             };
             reader.onabort = function (e) {
                 alert.remove();
@@ -144,6 +148,21 @@ $(document).on('change', '#choose-svg-file', function (event) {
     }
     $(event.target).replaceWith(control = $(event.target).clone(true));
 });
+
+function openSvgDropbox() {
+    Dropbox.choose({
+        success: function (files) {
+            var alert = showAlert("loading " + files[0].name, "alert-info", false);
+            $.get(files[0].link, function (content) {
+                loadSvg(alert, files[0].name, content);
+            }, "text").fail(function () {
+                alert.remove();
+                showAlert("load " + files[0].name + " failed", "alert-danger");
+            });
+        },
+        linkType: "direct",
+    });
+}
 
 $("#MainSvg").click(function (e) {
     var element = Snap.getElementByPoint(e.pageX, e.pageY);
