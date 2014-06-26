@@ -53,7 +53,7 @@ function ToolModel() {
     }
 }
 
-function Operation(svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths) {
+function Operation(svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged) {
     var self = this;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
@@ -157,7 +157,6 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
                     var width = self.width.toInch() * Path.inchToClipperScale;
                     if (width < toolCamArgs.diameterClipper)
                         width = toolCamArgs.diameterClipper;
-                    self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap));
                     previewGeometry = Path.diff(Path.offset(previewGeometry, width), previewGeometry);
                 }
             }
@@ -182,12 +181,15 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
     self.width.subscribe(self.recombine);
     self.recombine();
 
-    self.generateToolPath = function () {
-        self.removeToolPaths();
 
+    var generatingToolpath = false;
+    self.generateToolPath = function () {
         var toolCamArgs = toolModel.getCamArgs();
         if (toolCamArgs == null)
             return;
+
+        generatingToolpath = true;
+        self.removeToolPaths();
 
         var geometry = self.combinedGeometry;
         var offset = self.margin.toInch() * Path.inchToClipperScale;
@@ -205,17 +207,28 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
             self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap, self.direction() == "Climb"));
         }
         var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
-        if (path != null && path.length > 0) {
+        if (path != null && path.length > 0)
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
-            tutorial(5, 'After you finished adding and editing toolpaths, click "Generate Gcode"');
-        }
         self.enabled(true);
+
+        generatingToolpath = false;
+        toolPathsChanged();
     }
+
+    self.toolPaths.subscribe(function () {
+        if (!generatingToolpath)
+            toolPathsChanged();
+    });
+
+    self.enabled.subscribe(function () {
+        if (!generatingToolpath)
+            toolPathsChanged();
+    });
 
     self.selected("on");
 }
 
-function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup) {
+function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, toolPathsChanged) {
     var self = this;
     self.svgViewModel = svgViewModel;
     self.operations = ko.observableArray();
@@ -265,11 +278,11 @@ function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
         selectionViewModel.clearSelection();
-        var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths);
+        var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged);
         self.operations.push(op);
         op.enabled.subscribe(findMinMax);
         op.toolPaths.subscribe(findMinMax);
-        tutorial(4, 'Change settings in "Material," "Tool," and "Selected Operation" then click "Generate Toolpath".');
+        tutorial(4, 'Click "Generate Toolpath".');
     }
 
     self.removeOperation = function (operation) {

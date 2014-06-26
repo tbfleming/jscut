@@ -24,12 +24,21 @@ var toolPathsGroup = mainSvg.g();
 var selectionGroup = mainSvg.g();
 var renderPath;
 
-var svgViewModel = new SvgViewModel();
-var materialViewModel = new MaterialViewModel();
-var selectionViewModel = new SelectionViewModel(svgViewModel, materialViewModel, selectionGroup);
-var toolModel = new ToolModel();
-var operationsViewModel = new OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup);
-var gcodeConversionViewModel = new GcodeConversionViewModel(materialViewModel, toolModel, operationsViewModel);
+var svgViewModel;
+var materialViewModel;
+var selectionViewModel;
+var toolModel;
+var operationsViewModel;
+var gcodeConversionViewModel;
+
+svgViewModel = new SvgViewModel();
+materialViewModel = new MaterialViewModel();
+selectionViewModel = new SelectionViewModel(svgViewModel, materialViewModel, selectionGroup);
+toolModel = new ToolModel();
+operationsViewModel = new OperationsViewModel(
+    svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup,
+    function () { gcodeConversionViewModel.generateGcode(); });
+gcodeConversionViewModel = new GcodeConversionViewModel(materialViewModel, toolModel, operationsViewModel);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);
@@ -113,7 +122,7 @@ function tutorial(step, message) {
     }
 }
 
-tutorial(1, 'Click "Open SVG" and select an SVG file.');
+tutorial(1, 'Open an SVG file.');
 
 function loadSvg(alert, filename, content) {
     svg = Snap.parse(content);

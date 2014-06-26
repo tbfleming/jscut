@@ -43,24 +43,15 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
 
     self.generateGcode = function () {
         ops = [];
-        if (operationsViewModel.operations().length == 0) {
-            showAlert("There are no operations. Use the \"Create Operation\" button.", "alert-danger");
-            return;
-        }
         for (var i = 0; i < operationsViewModel.operations().length; ++i) {
             op = operationsViewModel.operations()[i];
             if (op.enabled()) {
-                if (op.toolPaths() == null || op.toolPaths().length == 0) {
-                    showAlert("An operation is missing toolpaths; click \"Generate\" by all visible operations.", "alert-danger");
-                    return;
-                }
-                ops.push(op);
+                if (op.toolPaths() != null && op.toolPaths().length > 0)
+                    ops.push(op);
             }
         }
-        if (ops.length == 0) {
-            showAlert("No operations are visible. Select the checkboxes by the operations you wish to convert.", "alert-danger");
+        if (ops.length == 0)
             return;
-        }
 
         var safeZ = self.unitConverter.fromInch(materialViewModel.matZSafeMove.toInch());
         var rapidRate = self.unitConverter.fromInch(toolModel.rapidRate.toInch());
@@ -140,6 +131,6 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
             renderPath.setStopAtTime(renderPath.totalTime);
         }
 
-        tutorial(6, 'You\'re done! Look at the "Simulate GCODE" tab. Right-click "Get Gcode" and select "Save link as..." to save your gcode.');
+        tutorial(5, 'You\'re done! Look at the "Simulate GCODE" tab. Save your gcode.');
     }
 }

@@ -228,7 +228,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                             <ul>
                                 <li>Use mouse to rotate view</li>
                                 <li>Use slider control to set simulation time</li>
-                                <li>Simulation remains blank until you <a data-bind="click:generateGcode" href="#">Generate Gcode</a></li>
+                                <li>Simulation remains blank until you generate toolpaths</li>
                             </ul>
                         </div>
                     </div>
@@ -326,13 +326,6 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <tr><td><label class="control-label">Max X</label><td><span data-bind="text: units" /><td><span data-bind="text: maxX" />
                                     <tr><td><label class="control-label">Min Y</label><td><span data-bind="text: units" /><td><span data-bind="text: minY" />
                                     <tr><td><label class="control-label">Max Y</label><td><span data-bind="text: units" /><td><span data-bind="text: maxY" />
-                                    <tr><td><a data-bind="click:generateGcode" href="#">Generate Gcode</a>
-                                    <tr>
-                                        <td data-bind="visible:gcodeUrl()!=null">
-                                            <a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get Gcode</a>
-                                            <p>
-                                                The "Get Gcode" link sometimes doesn't work under IE 11; please help me fix this.
-                                                Firefox 29 and Chrome 35 work.
                                 </table>
                             </div>
                         </div>
