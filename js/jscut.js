@@ -304,8 +304,10 @@ function openSvgGoogle() {
 } // openSvgGoogle()
 
 function saveGcodeGoogle() {
-    if (gcodeConversionViewModel.gcode() == "")
+    if (gcodeConversionViewModel.gcode() == "") {
+        showAlert('Click "Generate Gcode" first', "alert-danger");
         return;
+    }
     googleDriveAuthWrite(function () {
         if (googlePickerApiLoaded && googleDriveApiLoaded && googleDriveWriteToken) {
             const boundary = '-------53987238478475486734879872344353478123';
