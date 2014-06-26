@@ -49,6 +49,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                             <table class="table">
                                 <tr><td><a href="#" class="choose-file">Open SVG<input type="file" id="choose-svg-file" multiple></a></tr>
                                 <tr><td><a href="#" onclick="openSvgDropbox()">Open SVG From Dropbox</a></tr>
+                                <tr><td><a href="#" onclick="openSvgGoogle()">Open SVG From Google Drive</a></tr>
                                 <tr id="FileGetGcode" data-bind="visible:gcodeUrl()!=null"><td><a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get Gcode</a></tr>
                             </table>
                         </div>
@@ -354,5 +355,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
     <script src="js/OperationsViewModel.js"></script>
     <script src="js/GcodeConversionViewModel.js"></script>
     <script src="js/jscut.js"></script>
+    <script type="text/javascript" src="https://apis.google.com/js/api.js?onload=onGoogleApiLoad"></script>
+    <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=onGoogleClientLoad"></script>
 </body>
 </html>

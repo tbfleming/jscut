@@ -193,3 +193,90 @@ $('#createOperationButton').parent().hover(
             $('#createOperationButton').popover('show');
     },
     function () { $('#createOperationButton').popover('hide'); });
+
+var googleDeveloperKey = 'AIzaSyABOorNywzgSXQ8Waffle8zAhfgkHUBw0M';
+var googleClientId = '103921723157-leb9b5b4i79euhnn96nlpeeev1m3pvg0.apps.googleusercontent.com';
+var googleScope = ['https://www.googleapis.com/auth/drive.readonly'];
+var googleAuthApiLoaded = false;
+var googlePickerApiLoaded = false;
+var googleDriveApiLoaded = false;
+var googlePickerOauthToken;
+
+function onGoogleApiLoad() {
+    gapi.load('auth', function () { googleAuthApiLoaded = true; });
+    gapi.load('picker', function () { googlePickerApiLoaded = true; });
+}
+
+function onGoogleClientLoad() {
+    gapi.client.load('drive', 'v2', function () { googleDriveApiLoaded = true; });
+}
+
+function googlePickerAuth(callback) {
+    if (!googleAuthApiLoaded)
+        return;
+    else if (googlePickerOauthToken)
+        callback();
+    else
+        window.gapi.auth.authorize({
+            'client_id': googleClientId,
+            'scope': googleScope,
+            'immediate': false
+        }, function (authResult) {
+            if (authResult && !authResult.error) {
+                googlePickerOauthToken = authResult.access_token;
+                callback();
+            }
+        });
+}
+
+function openSvgGoogle() {
+    googlePickerAuth(function () {
+        if (googlePickerApiLoaded && googleDriveApiLoaded && googlePickerOauthToken) {
+            var picker = new google.picker.PickerBuilder().
+                addView(new google.picker.DocsView(google.picker.ViewId.DOCS).
+                    setQuery('*.svg')).
+                enableFeature(google.picker.Feature.NAV_HIDDEN).
+                setOAuthToken(googlePickerOauthToken).
+                setDeveloperKey(googleDeveloperKey).
+                setCallback(function (data) {
+                    if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
+                        var doc = data[google.picker.Response.DOCUMENTS][0];
+                        var name = doc[google.picker.Document.NAME];
+                        //var url = doc[google.picker.Document.URL];
+                        var id = doc[google.picker.Document.ID];
+
+                        var alert = showAlert("loading " + name, "alert-info", false);
+
+                        gapi.client.drive.files.get({
+                            'fileId': id
+                        }).execute(function (resp) {
+                            if (resp.error) {
+                                alert.remove();
+                                showAlert(resp.error.message, "alert-danger");
+                            } else {
+                                var xhr = new XMLHttpRequest();
+                                xhr.open('GET', resp.downloadUrl);
+                                xhr.setRequestHeader('Authorization', 'Bearer ' + googlePickerOauthToken);
+                                xhr.onload = function (content) {
+                                    if (this.status == 200)
+                                        loadSvg(alert, name, this.responseText);
+                                    else {
+                                        alert.remove();
+                                        showAlert(this.statusText, "alert-danger");
+                                    }
+                                };
+                                xhr.onerror = function () {
+                                    alert.remove();
+                                    showAlert("load " + name + " failed", "alert-danger");
+                                };
+                                xhr.overrideMimeType('text');
+                                xhr.send();
+                            }
+                        });
+                    }
+                }).
+                build();
+            picker.setVisible(true);
+        }
+    });
+}
