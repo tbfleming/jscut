@@ -47,10 +47,16 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                     <div id="collapseFile" class="panel-collapse collapse in">
                         <div class="panel-body">
                             <table class="table">
-                                <tr><td><a href="#" class="choose-file">Open SVG<input type="file" id="choose-svg-file" multiple></a></tr>
-                                <tr><td><a href="#" onclick="openSvgDropbox()">Open SVG From Dropbox</a></tr>
-                                <tr><td><a href="#" onclick="openSvgGoogle()">Open SVG From Google Drive</a></tr>
-                                <tr id="FileGetGcode" data-bind="visible:gcodeUrl()!=null"><td><a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get Gcode</a></tr>
+                                <tr><td><b>Open SVG</b></td></tr>
+                                <tr><td><a href="#" class="choose-file">Local<input type="file" id="choose-svg-file" multiple></a></tr>
+                                <tr><td><a href="#" onclick="openSvgGoogle()">Google Drive</a></tr>
+                                <tr><td><a href="#" onclick="openSvgDropbox()">Dropbox</a></tr>
+                                <tr><td>&nbsp;</tr>
+
+                                <tr><td><b>Save GCODE</b></td></tr>
+                                <tr id="FileGetGcode1"><td><input data-bind="value: gcodeFilename"></tr>
+                                <tr id="FileGetGcode2"><td><a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get</a></tr>
+                                <tr id="FileGetGcode3"><td><a href="#" onclick="saveGcodeGoogle()">Google Drive</a></tr>
                             </table>
                         </div>
                     </div>

@@ -37,7 +37,9 @@ ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
 ko.applyBindings(operationsViewModel, $("#Operation")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
-ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode")[0]);
+ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode1")[0]);
+ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode2")[0]);
+ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode3")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
 
 function updateSvgAutoHeight() {
@@ -196,11 +198,9 @@ $('#createOperationButton').parent().hover(
 
 var googleDeveloperKey = 'AIzaSyABOorNywzgSXQ8Waffle8zAhfgkHUBw0M';
 var googleClientId = '103921723157-leb9b5b4i79euhnn96nlpeeev1m3pvg0.apps.googleusercontent.com';
-var googleScope = ['https://www.googleapis.com/auth/drive.readonly'];
 var googleAuthApiLoaded = false;
 var googlePickerApiLoaded = false;
 var googleDriveApiLoaded = false;
-var googlePickerOauthToken;
 
 function onGoogleApiLoad() {
     gapi.load('auth', function () { googleAuthApiLoaded = true; });
@@ -211,42 +211,63 @@ function onGoogleClientLoad() {
     gapi.client.load('drive', 'v2', function () { googleDriveApiLoaded = true; });
 }
 
-function googlePickerAuth(callback) {
+var googleDriveReadToken;
+function googleDriveAuthRead(callback) {
     if (!googleAuthApiLoaded)
         return;
-    else if (googlePickerOauthToken)
+    else if (googleDriveReadToken)
         callback();
     else
         window.gapi.auth.authorize({
             'client_id': googleClientId,
-            'scope': googleScope,
+            'scope': ['https://www.googleapis.com/auth/drive.readonly'],
             'immediate': false
         }, function (authResult) {
             if (authResult && !authResult.error) {
-                googlePickerOauthToken = authResult.access_token;
+                googleDriveReadToken = authResult.access_token;
                 callback();
             }
         });
 }
 
+var googleDriveWriteToken;
+function googleDriveAuthWrite(callback) {
+    if (!googleAuthApiLoaded)
+        return;
+    else if (googleDriveWriteToken)
+        callback();
+    else
+        window.gapi.auth.authorize({
+            'client_id': googleClientId,
+            'scope': ['https://www.googleapis.com/auth/drive'],
+            'immediate': false
+        }, function (authResult) {
+            if (authResult && !authResult.error) {
+                googleDriveWriteToken = authResult.access_token;
+                callback();
+            }
+        });
+}
+
+var googleOpenSvgPicker = null;
 function openSvgGoogle() {
-    googlePickerAuth(function () {
-        if (googlePickerApiLoaded && googleDriveApiLoaded && googlePickerOauthToken) {
-            var picker = new google.picker.PickerBuilder().
-                addView(new google.picker.DocsView(google.picker.ViewId.DOCS).
-                    setQuery('*.svg')).
-                enableFeature(google.picker.Feature.NAV_HIDDEN).
-                setOAuthToken(googlePickerOauthToken).
-                setDeveloperKey(googleDeveloperKey).
-                setCallback(function (data) {
+    googleDriveAuthRead(function () {
+        if (googlePickerApiLoaded && googleDriveApiLoaded) {
+            if (googleOpenSvgPicker == null) {
+                googleOpenSvgPicker = new google.picker.PickerBuilder();
+                googleOpenSvgPicker.addView(
+                    new google.picker.DocsView(google.picker.ViewId.DOCS).
+                        setQuery('*.svg'));
+                googleOpenSvgPicker.enableFeature(google.picker.Feature.NAV_HIDDEN);
+                googleOpenSvgPicker.setOAuthToken(googleDriveReadToken);
+                googleOpenSvgPicker.setDeveloperKey(googleDeveloperKey);
+                googleOpenSvgPicker.setCallback(function (data) {
                     if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
                         var doc = data[google.picker.Response.DOCUMENTS][0];
                         var name = doc[google.picker.Document.NAME];
-                        //var url = doc[google.picker.Document.URL];
                         var id = doc[google.picker.Document.ID];
 
                         var alert = showAlert("loading " + name, "alert-info", false);
-
                         gapi.client.drive.files.get({
                             'fileId': id
                         }).execute(function (resp) {
@@ -256,7 +277,7 @@ function openSvgGoogle() {
                             } else {
                                 var xhr = new XMLHttpRequest();
                                 xhr.open('GET', resp.downloadUrl);
-                                xhr.setRequestHeader('Authorization', 'Bearer ' + googlePickerOauthToken);
+                                xhr.setRequestHeader('Authorization', 'Bearer ' + googleDriveReadToken);
                                 xhr.onload = function (content) {
                                     if (this.status == 200)
                                         loadSvg(alert, name, this.responseText);
@@ -274,9 +295,60 @@ function openSvgGoogle() {
                             }
                         });
                     }
-                }).
-                build();
-            picker.setVisible(true);
+                });
+                googleOpenSvgPicker = googleOpenSvgPicker.build();
+            }
+            googleOpenSvgPicker.setVisible(true);
         }
     });
-}
+} // openSvgGoogle()
+
+function saveGcodeGoogle() {
+    if (gcodeConversionViewModel.gcode() == "")
+        return;
+    googleDriveAuthWrite(function () {
+        if (googlePickerApiLoaded && googleDriveApiLoaded && googleDriveWriteToken) {
+            const boundary = '-------53987238478475486734879872344353478123';
+            const delimiter = "\r\n--" + boundary + "\r\n";
+            const close_delim = "\r\n--" + boundary + "--";
+            filename = gcodeConversionViewModel.gcodeFilename();
+
+            var contentType = 'text/plain';
+            var metadata = {
+                'title': filename,
+                'mimeType': contentType
+            };
+
+            var multipartRequestBody =
+                delimiter +
+                'Content-Type: application/json\r\n\r\n' +
+                JSON.stringify(metadata) +
+                delimiter +
+                'Content-Type: ' + contentType + '\r\n' +
+                '\r\n' +
+                gcodeConversionViewModel.gcode() +
+                close_delim;
+
+            var request = gapi.client.request({
+                'path': '/upload/drive/v2/files',
+                'method': 'POST',
+                'params': { 'uploadType': 'multipart' },
+                'headers': {
+                    'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
+                },
+                'body': multipartRequestBody
+            });
+
+            var alert = showAlert("saving " + filename, "alert-info", false);
+            request.execute(function (result) {
+                if (result.error) {
+                    alert.remove();
+                    showAlert(result.error.message, "alert-danger");
+                } else {
+                    alert.remove();
+                    showAlert("saved " + filename, "alert-success");
+                }
+            });
+        }
+    });
+} // saveGcodeGoogle()

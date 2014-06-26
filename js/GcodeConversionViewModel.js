@@ -19,6 +19,8 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
     var self = this;
     self.units = ko.observable("mm");
     self.unitConverter = new UnitConverter(self.units);
+    self.gcode = ko.observable("");
+    self.gcodeFilename = ko.observable("gcode.gcode");
     self.gcodeUrl = ko.observable(null);
     self.offsetX = ko.observable(0);
     self.offsetY = ko.observable(0);
@@ -122,6 +124,8 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
                 rapidFeed:      rapidRate
             });
         }
+
+        self.gcode(gcode);
 
         if (self.gcodeUrl() != null)
             URL.revokeObjectURL(self.gcodeUrl());
