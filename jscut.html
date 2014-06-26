@@ -130,15 +130,15 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <td>[0, 1)
                                     <td><input type="number" data-bind="value: overlap">
                                 <tr>
-                                    <td><label class="control-label">Rapid Rate</label>
+                                    <td><label class="control-label">Rapid</label>
                                     <td><span data-bind="text: units"></span>/min
                                     <td><input type="number" data-bind="value: rapidRate">
                                 <tr>
-                                    <td><label class="control-label">Plunge Rate</label>
+                                    <td><label class="control-label">Plunge</label>
                                     <td><span data-bind="text: units"></span>/min
                                     <td><input type="number" data-bind="value: plungeRate">
                                 <tr>
-                                    <td><label class="control-label">Cut Rate</label>
+                                    <td><label class="control-label">Cut</label>
                                     <td><span data-bind="text: units"></span>/min
                                     <td><input type="number" data-bind="value: cutRate">
                             </table>
@@ -322,10 +322,10 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><label for="gcodeOffsetY">Y Offset</label>
                                         <td><span data-bind="text: units" />
                                         <td><input type="number" id="gcodeOffsetY" data-bind="value: offsetY">
-                                    <tr><td><label class="control-label">Minimum X</label><td><span data-bind="text: units" /><td><span data-bind="text: minX" />
-                                    <tr><td><label class="control-label">Maximum X</label><td><span data-bind="text: units" /><td><span data-bind="text: maxX" />
-                                    <tr><td><label class="control-label">Minimum Y</label><td><span data-bind="text: units" /><td><span data-bind="text: minY" />
-                                    <tr><td><label class="control-label">Maximum Y</label><td><span data-bind="text: units" /><td><span data-bind="text: maxY" />
+                                    <tr><td><label class="control-label">Min X</label><td><span data-bind="text: units" /><td><span data-bind="text: minX" />
+                                    <tr><td><label class="control-label">Max X</label><td><span data-bind="text: units" /><td><span data-bind="text: maxX" />
+                                    <tr><td><label class="control-label">Min Y</label><td><span data-bind="text: units" /><td><span data-bind="text: minY" />
+                                    <tr><td><label class="control-label">Max Y</label><td><span data-bind="text: units" /><td><span data-bind="text: maxY" />
                                     <tr><td><a data-bind="click:generateGcode" href="#">Generate Gcode</a>
                                     <tr>
                                         <td data-bind="visible:gcodeUrl()!=null">
