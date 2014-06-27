@@ -93,8 +93,15 @@ var Path = new function () {
             return null;
         else if (element.type == "path")
             path = element.attr("d");
+        else if (element.type == "rect") {
+            x = Number(element.attr("x"));
+            y = Number(element.attr("y"));
+            w = Number(element.attr("width"));
+            h = Number(element.attr("height"));
+            path = 'm' + x + ',' + y + ' ' + w + ',' + 0 + ' ' + 0 + ',' + h + ' ' + (-w) + ',' + 0 + ' ' + 0 + ',' + (-h) + ' ';
+        }
         else {
-            alertFn(element.type + " is not supported; try Inkscape's <strong>Object to Path</strong> command");
+            alertFn("<b>" + element.type + "</b> is not supported; try Inkscape's <strong>Object to Path</strong> command");
             return null;
         }
 

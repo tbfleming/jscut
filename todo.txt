@@ -15,7 +15,6 @@ Unordered unprioritized todo list.
   * unload
 * Support these primitives directly instead of requiring conversion to Path
   * Polygon
-  * Square & Rectangle
   * Circle & Ellipse
 * V-shaped bits
 * Ramped plunge

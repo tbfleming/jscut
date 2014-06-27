@@ -174,5 +174,21 @@
        sodipodi:ry="55"
        d="m 180,145 c 0,30.37566 -20.14719,55 -45,55 -24.85281,0 -45,-24.62434 -45,-55 0,-30.37566 20.14719,-55 45,-55 24.85281,0 45,24.62434 45,55 z"
        transform="matrix(1.1020352,-0.87285612,1.4851287,1.3676574,652.93744,66.305344)" />
+    <rect
+       style="fill:#000080;fill-rule:evenodd;stroke-width:0.99921262;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect3115"
+       width="223.22835"
+       height="99.212601"
+       x="346.38327"
+       y="118.53801"
+       transform="translate(75.270261,24.375428)" />
+    <rect
+       style="fill:#000080;fill-rule:evenodd;stroke-width:0.99921262;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect3117"
+       width="234.00095"
+       height="175.98958"
+       x="710.23157"
+       y="145.17403"
+       transform="matrix(0.95887735,0.28382076,-0.86003695,0.51023176,0,0)" />
   </g>
 </svg>
