@@ -386,6 +386,12 @@ function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel
 
     self.fromJson = function (json) {
         if (json && (typeof json.operations !== "undefined")) {
+            var oldOps = self.operations();
+            for (var i = 0; i < oldOps.length; ++i) {
+                oldOps[i].removeCombinedGeometrySvg();
+                oldOps[i].removeToolPaths();
+            }
+
             self.operations.removeAll();
             self.selectedOperation(null);
 
