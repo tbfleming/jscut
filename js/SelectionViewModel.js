@@ -56,7 +56,6 @@ function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
         return {
             'minNumSegments': self.selMinNumSegments(),
             'minSegmentLength': self.selMinSegmentLength(),
-            'numSelected': self.selNumSelected(),
         };
     }
 
@@ -69,7 +68,6 @@ function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
         if (json) {
             f(json.minNumSegments, self.selMinNumSegments);
             f(json.minSegmentLength, self.selMinSegmentLength);
-            f(json.numSelected, self.selNumSelected);
         }
     }
 }
