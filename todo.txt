@@ -1,6 +1,6 @@
 Unordered unprioritized todo list.
 
-* SVG view doesn't resize if "Edit Toolpaths" tab is selected
+* SVG view doesn't resize if "Simulate GCODE" tab is selected
   while opening an SVG
 * Pay attention to fill-rule on source SVG
   * SelectionViewModel is creating default (nonzero)
@@ -20,7 +20,7 @@ Unordered unprioritized todo list.
 * V-shaped bits
 * Ramped plunge
 * tabs (cutting tabs; not UI tabs)
-* Save session
+* Save/Load session: support local files
 * Code cleanup
   * Replace alertFn callback with exception
 * Trim gcode of tiny moves

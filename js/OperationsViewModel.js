@@ -51,9 +51,38 @@ function ToolModel() {
         }
         return result;
     }
+
+    self.toJson = function () {
+        return {
+            'units': self.units(),
+            'diameter': self.diameter(),
+            'passDepth': self.passDepth(),
+            'overlap': self.overlap(),
+            'rapidRate': self.rapidRate(),
+            'plungeRate': self.plungeRate(),
+            'cutRate': self.cutRate(),
+        };
+    }
+
+    self.fromJson = function (json) {
+        function f(j, o) {
+            if (typeof j !== "undefined")
+                o(j);
+        }
+
+        if (json) {
+            f(json.units, self.units);
+            f(json.diameter, self.diameter);
+            f(json.passDepth, self.passDepth);
+            f(json.overlap, self.overlap);
+            f(json.rapidRate, self.rapidRate);
+            f(json.plungeRate, self.plungeRate);
+            f(json.cutRate, self.cutRate);
+        }
+    }
 }
 
-function Operation(svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged) {
+function Operation(svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, loading) {
     var self = this;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
@@ -115,6 +144,9 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
     });
 
     self.recombine = function () {
+        if (loading)
+            return;
+
         self.removeCombinedGeometrySvg();
         self.removeToolPaths();
 
@@ -181,7 +213,6 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
     self.width.subscribe(self.recombine);
     self.recombine();
 
-
     var generatingToolpath = false;
     self.generateToolPath = function () {
         var toolCamArgs = toolModel.getCamArgs();
@@ -225,7 +256,46 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
             toolPathsChanged();
     });
 
-    self.selected("on");
+    if(!loading)
+        self.selected("on");
+
+    self.toJson = function () {
+        return {
+            'rawPaths': self.rawPaths,
+            'enabled': self.enabled(),
+            'selected': self.selected(),
+            'combineOp': self.combineOp(),
+            'camOp': self.camOp(),
+            'direction': self.direction(),
+            'cutDepth': self.cutDepth(),
+            'margin': self.margin(),
+            'width': self.width(),
+        };
+    }
+
+    self.fromJson = function (json) {
+        function f(j, o) {
+            if (typeof j !== "undefined")
+                o(j);
+        }
+
+        if (json) {
+            loading = true;
+            self.rawPaths = json.rawPaths;
+            f(json.selected, self.selected);
+            f(json.combineOp, self.combineOp);
+            f(json.camOp, self.camOp);
+            f(json.direction, self.direction);
+            f(json.cutDepth, self.cutDepth);
+            f(json.margin, self.margin);
+            f(json.width, self.width);
+
+            loading = false;
+            self.recombine();
+
+            f(json.enabled, self.enabled);
+        }
+    }
 }
 
 function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, toolPathsChanged) {
@@ -278,7 +348,7 @@ function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel
             rawPaths.push(Snap.parsePathString(element.attr('d')));
         });
         selectionViewModel.clearSelection();
-        var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged);
+        var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, false);
         self.operations.push(op);
         op.enabled.subscribe(findMinMax);
         op.toolPaths.subscribe(findMinMax);
@@ -302,5 +372,32 @@ function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel
         if (elem.attr("class") == "combinedGeometry" || elem.attr("class") == "toolPath")
             return true;
         return false;
+    }
+
+    self.toJson = function () {
+        var ops = self.operations();
+        var jsonOps = [];
+        for (var i = 0; i < ops.length; ++i)
+            jsonOps.push(ops[i].toJson());
+        return {
+            'operations': jsonOps,
+        };
+    }
+
+    self.fromJson = function (json) {
+        if (json && (typeof json.operations !== "undefined")) {
+            self.operations.removeAll();
+            self.selectedOperation(null);
+
+            for (var i = 0; i < json.operations.length; ++i) {
+                var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, [], toolPathsChanged, true);
+                self.operations.push(op);
+                op.fromJson(json.operations[i]);
+                op.enabled.subscribe(findMinMax);
+                op.toolPaths.subscribe(findMinMax);
+            }
+
+            findMinMax();
+        }
     }
 }

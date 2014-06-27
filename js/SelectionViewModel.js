@@ -51,4 +51,25 @@ function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
         selectionGroup.selectAll("path").remove();
         self.selNumSelected(0);
     }
+
+    self.toJson = function () {
+        return {
+            'minNumSegments': self.selMinNumSegments(),
+            'minSegmentLength': self.selMinSegmentLength(),
+            'numSelected': self.selNumSelected(),
+        };
+    }
+
+    self.fromJson = function (json) {
+        function f(j, o) {
+            if (typeof j !== "undefined")
+                o(j);
+        }
+
+        if (json) {
+            f(json.minNumSegments, self.selMinNumSegments);
+            f(json.minSegmentLength, self.selMinSegmentLength);
+            f(json.numSelected, self.selNumSelected);
+        }
+    }
 }

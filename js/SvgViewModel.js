@@ -18,4 +18,21 @@
 function SvgViewModel() {
     var self = this;
     self.pxPerInch = ko.observable("90");
+
+    self.toJson = function () {
+        return {
+            'pxPerInch': self.pxPerInch(),
+        };
+    }
+
+    self.fromJson = function (json) {
+        function f(j, o) {
+            if (typeof j !== "undefined")
+                o(j);
+        }
+
+        if (json) {
+            f(json.pxPerInch, self.pxPerInch);
+        }
+    }
 }

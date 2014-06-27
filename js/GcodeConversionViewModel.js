@@ -133,4 +133,27 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
 
         tutorial(5, 'You\'re done! Look at the "Simulate GCODE" tab. Save your gcode.');
     }
+
+    self.toJson = function () {
+        return {
+            'units': self.units(),
+            'gcodeFilename': self.gcodeFilename(),
+            'offsetX': self.offsetX(),
+            'offsetY': self.offsetY(),
+        };
+    }
+
+    self.fromJson = function (json) {
+        function f(j, o) {
+            if (typeof j !== "undefined")
+                o(j);
+        }
+
+        if (json) {
+            f(json.units, self.units);
+            f(json.gcodeFilename, self.gcodeFilename);
+            f(json.offsetX, self.offsetX);
+            f(json.offsetY, self.offsetY);
+        }
+    }
 }

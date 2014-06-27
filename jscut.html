@@ -37,30 +37,6 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
         <div class="row">
             <!-- left -->
             <div class="col-sm-3 left-column">
-                <!-- File -->
-                <div class="panel panel-default" id="File">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">
-                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseFile">File</a>
-                        </h3>
-                    </div>
-                    <div id="collapseFile" class="panel-collapse collapse in">
-                        <div class="panel-body">
-                            <table class="table">
-                                <tr><td><b>Open SVG</b></td></tr>
-                                <tr><td><a href="#" class="choose-file">Local<input type="file" id="choose-svg-file" multiple></a></tr>
-                                <tr><td><a href="#" onclick="openSvgGoogle()">Google Drive</a></tr>
-                                <tr><td><a href="#" onclick="openSvgDropbox()">Dropbox</a></tr>
-                                <tr><td>&nbsp;</tr>
-
-                                <tr><td><b>Save GCODE</b></td></tr>
-                                <tr id="FileGetGcode1"><td><input data-bind="value: gcodeFilename"></tr>
-                                <tr id="FileGetGcode2"><td><a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get</a></tr>
-                                <tr id="FileGetGcode3"><td><a href="#" onclick="saveGcodeGoogle()">Google Drive</a></tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
                 <!-- operations -->
                 <div class="panel panel-default" id="Operations">
                     <div class="panel-heading">
@@ -237,6 +213,39 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
             <!-- right -->
             <div class="col-sm-3 right-column">
                 <div id="alert_placeholder"></div>
+                <!-- File -->
+                <div class="panel panel-default" id="File">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseFile">File</a>
+                        </h3>
+                    </div>
+                    <div id="collapseFile" class="panel-collapse collapse in">
+                        <div class="panel-body">
+                            <table class="table">
+                                <tr><td><b>Open SVG</b></td></tr>
+                                <tr><td><a href="#" class="choose-file">Local<input type="file" id="choose-svg-file" multiple></a></tr>
+                                <tr><td><a href="#" onclick="openSvgGoogle()">Google Drive</a></tr>
+                                <tr><td><a href="#" onclick="openSvgDropbox()">Dropbox</a></tr>
+                                <tr><td>&nbsp;</tr>
+
+                                <tr><td><b>Save GCODE</b></td></tr>
+                                <tr id="FileGetGcode1"><td><input data-bind="value: gcodeFilename"></tr>
+                                <tr id="FileGetGcode2"><td><a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get</a></tr>
+                                <tr id="FileGetGcode3"><td><a href="#" onclick="saveGcodeGoogle()">Google Drive</a></tr>
+                                <tr><td>&nbsp;</tr>
+
+                                <tr><td><b>Save Settings</b></td></tr>
+                                <tr id="SaveSettings"><td><input data-bind="value: saveSettingsFilename"></tr>
+                                <tr><td><a href="#" onclick="saveSettingsGoogle()">Google Drive</a></tr>
+                                <tr><td>&nbsp;</tr>
+
+                                <tr><td><b>Load Settings</b></td></tr>
+                                <tr><td><a href="#" onclick="loadSettingsGoogle()">Google Drive</a></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
                 <!-- material -->
                 <div class="panel panel-default" id="Material">
                     <div class="panel-heading">

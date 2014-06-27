@@ -15,6 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
+function MiscViewModel() {
+    var self = this;
+    self.saveSettingsFilename = ko.observable("settings.jscut");
+}
+
 var mainSvg = Snap("#MainSvg");
 var materialSvg = Snap("#MaterialSvg");
 var contentGroup = mainSvg.group();
@@ -30,6 +35,7 @@ var selectionViewModel;
 var toolModel;
 var operationsViewModel;
 var gcodeConversionViewModel;
+var miscViewModel;
 
 svgViewModel = new SvgViewModel();
 materialViewModel = new MaterialViewModel();
@@ -39,6 +45,7 @@ operationsViewModel = new OperationsViewModel(
     svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup,
     function () { gcodeConversionViewModel.generateGcode(); });
 gcodeConversionViewModel = new GcodeConversionViewModel(materialViewModel, toolModel, operationsViewModel);
+miscViewModel = new MiscViewModel();
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);
@@ -50,6 +57,7 @@ ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode1")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode2")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode3")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
+ko.applyBindings(miscViewModel, $("#SaveSettings")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -205,6 +213,29 @@ $('#createOperationButton').parent().hover(
     },
     function () { $('#createOperationButton').popover('hide'); });
 
+function toJson() {
+    return {
+        'svg': svgViewModel.toJson(),
+        'material': materialViewModel.toJson(),
+        'curveToLineConversion': selectionViewModel.toJson(),
+        'tool': toolModel.toJson(),
+        'operations': operationsViewModel.toJson(),
+        'gcodeConversion': gcodeConversionViewModel.toJson(),
+    };
+}
+
+function fromJson(json) {
+    if (json) {
+        svgViewModel.fromJson(json.svg);
+        materialViewModel.fromJson(json.material);
+        selectionViewModel.fromJson(json.curveToLineConversion);
+        toolModel.fromJson(json.tool);
+        operationsViewModel.fromJson(json.operations);
+        gcodeConversionViewModel.fromJson(json.gcodeConversion);
+        updateSvgSize();
+    }
+}
+
 var googleDeveloperKey = 'AIzaSyABOorNywzgSXQ8Waffle8zAhfgkHUBw0M';
 var googleClientId = '103921723157-leb9b5b4i79euhnn96nlpeeev1m3pvg0.apps.googleusercontent.com';
 var googleAuthApiLoaded = false;
@@ -258,19 +289,18 @@ function googleDriveAuthWrite(callback) {
         });
 }
 
-var googleOpenSvgPicker = null;
-function openSvgGoogle() {
+function openGoogle(picker, wildcard, callback) {
     googleDriveAuthRead(function () {
         if (googlePickerApiLoaded && googleDriveApiLoaded) {
-            if (googleOpenSvgPicker == null) {
-                googleOpenSvgPicker = new google.picker.PickerBuilder();
-                googleOpenSvgPicker.addView(
+            if (!picker.picker) {
+                picker.picker = new google.picker.PickerBuilder();
+                picker.picker.addView(
                     new google.picker.DocsView(google.picker.ViewId.DOCS).
-                        setQuery('*.svg'));
-                googleOpenSvgPicker.enableFeature(google.picker.Feature.NAV_HIDDEN);
-                googleOpenSvgPicker.setOAuthToken(googleDriveReadToken);
-                googleOpenSvgPicker.setDeveloperKey(googleDeveloperKey);
-                googleOpenSvgPicker.setCallback(function (data) {
+                        setQuery(wildcard));
+                picker.picker.enableFeature(google.picker.Feature.NAV_HIDDEN);
+                picker.picker.setOAuthToken(googleDriveReadToken);
+                picker.picker.setDeveloperKey(googleDeveloperKey);
+                picker.picker.setCallback(function (data) {
                     if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
                         var doc = data[google.picker.Response.DOCUMENTS][0];
                         var name = doc[google.picker.Document.NAME];
@@ -289,7 +319,7 @@ function openSvgGoogle() {
                                 xhr.setRequestHeader('Authorization', 'Bearer ' + googleDriveReadToken);
                                 xhr.onload = function (content) {
                                     if (this.status == 200)
-                                        loadSvg(alert, name, this.responseText);
+                                        callback(alert, name, this.responseText);
                                     else {
                                         alert.remove();
                                         showAlert(this.statusText, "alert-danger");
@@ -305,24 +335,19 @@ function openSvgGoogle() {
                         });
                     }
                 });
-                googleOpenSvgPicker = googleOpenSvgPicker.build();
+                picker.picker = picker.picker.build();
             }
-            googleOpenSvgPicker.setVisible(true);
+            picker.picker.setVisible(true);
         }
     });
-} // openSvgGoogle()
+} // openGoogle()
 
-function saveGcodeGoogle() {
-    if (gcodeConversionViewModel.gcode() == "") {
-        showAlert('Click "Generate Gcode" first', "alert-danger");
-        return;
-    }
+function saveGoogle(filename, content) {
     googleDriveAuthWrite(function () {
         if (googlePickerApiLoaded && googleDriveApiLoaded && googleDriveWriteToken) {
             const boundary = '-------53987238478475486734879872344353478123';
             const delimiter = "\r\n--" + boundary + "\r\n";
             const close_delim = "\r\n--" + boundary + "--";
-            filename = gcodeConversionViewModel.gcodeFilename();
 
             var contentType = 'text/plain';
             var metadata = {
@@ -337,7 +362,7 @@ function saveGcodeGoogle() {
                 delimiter +
                 'Content-Type: ' + contentType + '\r\n' +
                 '\r\n' +
-                gcodeConversionViewModel.gcode() +
+                content +
                 close_delim;
 
             var request = gapi.client.request({
@@ -362,4 +387,30 @@ function saveGcodeGoogle() {
             });
         }
     });
-} // saveGcodeGoogle()
+} // saveGoogle()
+
+var googleOpenSvgPicker = {};
+function openSvgGoogle() {
+    openGoogle(googleOpenSvgPicker, '*.svg', loadSvg);
+}
+
+function saveGcodeGoogle() {
+    if (gcodeConversionViewModel.gcode() == "") {
+        showAlert('Click "Generate Gcode" first', "alert-danger");
+        return;
+    }
+    saveGoogle(gcodeConversionViewModel.gcodeFilename(), gcodeConversionViewModel.gcode());
+}
+
+var googleOpenSettingsPicker = {};
+function loadSettingsGoogle() {
+    openGoogle(googleOpenSettingsPicker, '*.jscut', function (alert, filename, content) {
+        fromJson(JSON.parse(content));
+        alert.remove();
+        showAlert("loaded " +filename, "alert-success");
+});
+}
+
+function saveSettingsGoogle() {
+    saveGoogle(miscViewModel.saveSettingsFilename(), JSON.stringify(toJson()));
+}

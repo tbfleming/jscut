@@ -76,4 +76,27 @@ function MaterialViewModel() {
         newValue.select("#matBotZ").node.textContent = formatZ(self.matBotZ());
         newValue.select("#matZSafeMove").node.textContent = formatZ(self.matZSafeMove());
     });
+
+    self.toJson = function () {
+        return {
+            'units': self.matUnits(),
+            'thickness': self.matThickness(),
+            'zOrigin': self.matZOrigin(),
+            'clearance': self.matClearance(),
+        };
+    }
+
+    self.fromJson = function (json) {
+        function f(j, o) {
+            if (typeof j !== "undefined")
+                o(j);
+        }
+
+        if (json) {
+            f(json.units, self.matUnits);
+            f(json.thickness, self.matThickness);
+            f(json.zOrigin, self.matZOrigin);
+            f(json.clearance, self.matClearance);
+        }
+    }
 }
