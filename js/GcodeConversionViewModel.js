@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewModel) {
+function GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel) {
     var self = this;
     self.units = ko.observable("mm");
     self.unitConverter = new UnitConverter(self.units);
@@ -42,6 +42,10 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
     });
 
     self.generateGcode = function () {
+        var startTime = Date.now();
+        if (options.profile)
+            console.log("generateGcode...");
+
         ops = [];
         for (var i = 0; i < operationsViewModel.operations().length; ++i) {
             op = operationsViewModel.operations()[i];
@@ -122,9 +126,12 @@ function GcodeConversionViewModel(materialViewModel, toolModel, operationsViewMo
             URL.revokeObjectURL(self.gcodeUrl());
         self.gcodeUrl(URL.createObjectURL(new Blob([gcode])));
 
+        if (options.profile)
+            console.log("generateGcode: " + (Date.now() - startTime));
+
         if (renderPath) {
             renderPath.fillPathBuffer(
-                parseGcode(gcode),
+                parseGcode(options, gcode),
                 self.unitConverter.fromInch(materialViewModel.matTopZ.toInch()),
                 self.unitConverter.fromInch(toolModel.diameter.toInch()),
                 self.unitConverter.fromInch(1));

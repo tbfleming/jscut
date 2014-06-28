@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
+var options = {
+    'profile': false,
+};
+
 function MiscViewModel() {
     var self = this;
     self.saveSettingsFilename = ko.observable("settings.jscut");
@@ -42,9 +46,9 @@ materialViewModel = new MaterialViewModel();
 selectionViewModel = new SelectionViewModel(svgViewModel, materialViewModel, selectionGroup);
 toolModel = new ToolModel();
 operationsViewModel = new OperationsViewModel(
-    svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup,
+    options, svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup,
     function () { gcodeConversionViewModel.generateGcode(); });
-gcodeConversionViewModel = new GcodeConversionViewModel(materialViewModel, toolModel, operationsViewModel);
+gcodeConversionViewModel = new GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel);
 miscViewModel = new MiscViewModel();
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
@@ -98,7 +102,7 @@ function updateRenderPathSize() {
 $(function () {
     updateRenderPathSize();
     $(window).resize(updateRenderPathSize);
-    renderPath = startRenderPath($("#renderPathCanvas")[0], function () { });
+    renderPath = startRenderPath(options, $("#renderPathCanvas")[0], function () { });
 });
 
 var nextAlertNum = 1;

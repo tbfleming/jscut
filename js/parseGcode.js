@@ -15,7 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function parseGcode(gcode) {
+function parseGcode(options, gcode) {
+    var startTime = Date.now();
+    if (options.profile)
+        console.log("parseGcode...");
+
     var path = [];
     var lastX = NaN, lastY = NaN, lastZ = NaN, lastF = NaN;
     var stride = 4;
@@ -80,5 +84,9 @@ function parseGcode(gcode) {
         while (i < gcode.length && (gcode[i] == '\r' || gcode[i] == '\n'))
             ++i;
     }
+
+    if (options.profile)
+        console.log("parseGcode: " + (Date.now() - startTime));
+
     return path;
 }

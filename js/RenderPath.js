@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function RenderPath(canvas, shadersReady) {
+function RenderPath(options, canvas, shadersReady) {
     "use strict";
     var self = this;
 
@@ -164,6 +164,10 @@ function RenderPath(canvas, shadersReady) {
         if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
 
+        var startTime = Date.now();
+        if (options.profile)
+            console.log("fillPathBuffer...");
+
         pathTopZ = topZ;
         cutterDia = cutterDiameter;
         cutterH = cutterHeight;
@@ -229,6 +233,9 @@ function RenderPath(canvas, shadersReady) {
         var size = Math.max(maxX - minX + 4 * cutterDia, maxY - minY + 4 * cutterDia);
         pathScale = 2 / size;
         pathMinZ = minZ;
+
+        if (options.profile)
+            console.log("fillPathBuffer: " + (Date.now() - startTime));
 
         requestFrame();
     }
@@ -628,7 +635,7 @@ function RenderPath(canvas, shadersReady) {
     }
 }
 
-function startRenderPath(canvas, ready) {
+function startRenderPath(options, canvas, ready) {
     var renderPath;
     var timeSlider;
 
@@ -641,7 +648,7 @@ function startRenderPath(canvas, ready) {
         }
     });
 
-    renderPath = new RenderPath(canvas, function (renderPath) {
+    renderPath = new RenderPath(options, canvas, function (renderPath) {
         renderPath.fillPathBuffer([], 0, 0, 0);
 
         var mouseDown = false;
@@ -681,9 +688,9 @@ function startRenderPath(canvas, ready) {
 
 function startRenderPathDemo() {
     var renderPath;
-    renderPath = startRenderPath($("#renderPathCanvas")[0], function (renderPath) {
+    renderPath = startRenderPath({}, $("#renderPathCanvas")[0], function (renderPath) {
         $.get("logo-gcode.txt", function (gcode) {
-            renderPath.fillPathBuffer(parseGcode(gcode), 0, .125, 1);
+            renderPath.fillPathBuffer(parseGcode({}, gcode), 0, .125, 1);
         });
     });
 }

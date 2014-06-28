@@ -82,7 +82,7 @@ function ToolModel() {
     }
 }
 
-function Operation(svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, loading) {
+function Operation(options, svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, loading) {
     var self = this;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
@@ -147,6 +147,10 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
         if (loading)
             return;
 
+        var startTime = Date.now();
+        if (options.profile)
+            console.log("recombine...");
+
         self.removeCombinedGeometrySvg();
         self.removeToolPaths();
 
@@ -206,6 +210,9 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
                 self.combinedGeometrySvg = combinedGeometryGroup.path(path).attr("class", "combinedGeometry");
         }
 
+        if (options.profile)
+            console.log("recombine: " + (Date.now() - startTime));
+
         self.enabled(true);
     }
 
@@ -224,6 +231,10 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
         var toolCamArgs = toolModel.getCamArgs();
         if (toolCamArgs == null)
             return;
+
+        var startTime = Date.now();
+        if (options.profile)
+            console.log("generateToolPath...");
 
         generatingToolpath = true;
         self.removeToolPaths();
@@ -246,8 +257,11 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
         var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
         if (path != null && path.length > 0)
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
-        self.enabled(true);
 
+        if (options.profile)
+            console.log("generateToolPath: " + (Date.now() - startTime));
+
+        self.enabled(true);
         generatingToolpath = false;
         toolPathsChanged();
     }
@@ -312,7 +326,7 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
     }
 }
 
-function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, toolPathsChanged) {
+function OperationsViewModel(options, svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, toolPathsChanged) {
     var self = this;
     self.svgViewModel = svgViewModel;
     self.operations = ko.observableArray();
@@ -365,7 +379,7 @@ function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel
             });
         });
         selectionViewModel.clearSelection();
-        var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, false);
+        var op = new Operation(options, svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, false);
         self.operations.push(op);
         op.enabled.subscribe(findMinMax);
         op.toolPaths.subscribe(findMinMax);
@@ -413,7 +427,7 @@ function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel
             self.selectedOperation(null);
 
             for (var i = 0; i < json.operations.length; ++i) {
-                var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, [], toolPathsChanged, true);
+                var op = new Operation(options, svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, [], toolPathsChanged, true);
                 self.operations.push(op);
                 op.fromJson(json.operations[i]);
                 op.enabled.subscribe(findMinMax);
