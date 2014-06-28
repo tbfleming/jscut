@@ -152,11 +152,17 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
 
         var all = [];
         for (var i = 0; i < self.rawPaths.length; ++i) {
-            var geometry = Path.getClipperPathsFromSnapPath(self.rawPaths[i], svgViewModel.pxPerInch(), function (msg) {
+            var geometry = Path.getClipperPathsFromSnapPath(self.rawPaths[i].path, svgViewModel.pxPerInch(), function (msg) {
                 showAlert(msg, "alert-warning");
             });
-            if (geometry != null)
-                all.push(Path.simplifyAndClean(geometry));
+            if (geometry != null) {
+                var fillRule;
+                if (self.rawPaths[i].nonzero)
+                    fillRule = ClipperLib.PolyFillType.pftNonZero;
+                else
+                    fillRule = ClipperLib.PolyFillType.pftEvenOdd;
+                all.push(Path.simplifyAndClean(geometry, fillRule));
+            }
         }
 
         if (all.length == 0)
@@ -290,6 +296,14 @@ function Operation(svgViewModel, materialViewModel, operationsViewModel, toolMod
             f(json.margin, self.margin);
             f(json.width, self.width);
 
+            // backwards compat: each rawPaths[i] used to be an array instead of an object
+            for (var i = 0; i < self.rawPaths.length; ++i)
+                if (self.rawPaths[i] instanceof Array)
+                    self.rawPaths[i] = {
+                        'path': self.rawPaths[i],
+                        'nonzero': false,
+                    };
+
             loading = false;
             self.recombine();
 
@@ -345,7 +359,10 @@ function OperationsViewModel(svgViewModel, materialViewModel, selectionViewModel
     self.addOperation = function () {
         rawPaths = [];
         selectionViewModel.getSelection().forEach(function (element) {
-            rawPaths.push(Snap.parsePathString(element.attr('d')));
+            rawPaths.push({
+                'path': Snap.parsePathString(element.attr('d')),
+                'nonzero': element.attr("fill-rule") != "evenodd",
+            });
         });
         selectionViewModel.clearSelection();
         var op = new Operation(svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, false);

@@ -180,10 +180,10 @@ var Path = new function () {
         return result;
     };
 
-    // Simplify and clean up Clipper geometry
-    Path.simplifyAndClean = function (geometry) {
+    // Simplify and clean up Clipper geometry. fillRule is ClipperLib.PolyFillType.
+    Path.simplifyAndClean = function (geometry, fillRule) {
         geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
-        geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, ClipperLib.PolyFillType.pftEvenOdd);
+        geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, fillRule);
         return geometry;
     }
 

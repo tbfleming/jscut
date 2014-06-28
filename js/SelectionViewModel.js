@@ -36,7 +36,10 @@ function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
         });
 
         if (path != null) {
-            selectionGroup.path(path).attr("class", "selectedPath");
+            newPath = selectionGroup.path(path);
+            newPath.attr("class", "selectedPath");
+            if (elem.attr("fill-rule") == "evenodd")
+                newPath.attr("fill-rule", "evenodd");
             self.selNumSelected(self.selNumSelected() + 1);
         }
 

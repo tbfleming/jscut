@@ -2,9 +2,6 @@ Unordered unprioritized todo list.
 
 * SVG view doesn't resize if "Simulate GCODE" tab is selected
   while opening an SVG
-* Pay attention to fill-rule on source SVG
-  * SelectionViewModel is creating default (nonzero)
-  * Operation is assuming evenodd
 * Multiple tools
 * Highlight selected operation in main view
 * Force non-boundary paths before boundary ones when combining
