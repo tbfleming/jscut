@@ -657,6 +657,7 @@ function startRenderPath(options, canvas, ready) {
 
         var origRotate = mat4.create();
         $(canvas).mousedown(function (e) {
+            e.preventDefault();
             mouseDown = true;
             lastX = e.pageX;
             lastY = e.pageY;
