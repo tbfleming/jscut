@@ -115,5 +115,5 @@ void main(void) {
 
     float nearZ = -pathTopZ;
     float farZ = -bottom;
-    gl_Position.z = gl_Position.z * 2.0 / (farZ - nearZ) + (farZ + nearZ) / (farZ - nearZ);
+    gl_Position.z = gl_Position.z * 1.9999 / (farZ - nearZ) + (farZ + nearZ) / (farZ - nearZ);
 }
