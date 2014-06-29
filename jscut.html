@@ -72,6 +72,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <select data-bind="value: camOp">
                                             <option>Pocket</option>
                                             <option>Outline</option>
+                                            <option>Engrave</option>
                                         </select>
                                     </td>
                                     <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
@@ -155,6 +156,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <select data-bind="value: camOp">
                                                 <option>Pocket</option>
                                                 <option>Outline</option>
+                                                <option>Engrave</option>
                                             </select>
                                     <tr>
                                         <td><label class="control-label">Direction</label>
@@ -168,7 +170,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><label class="control-label">Cut Depth</label>
                                         <td><span data-bind="text: materialViewModel.matUnits" />
                                         <td><input type="number" data-bind="value: cutDepth">
-                                    <tr>
+                                    <tr data-bind="visible: camOp()!='Engrave'">
                                         <td><label class="control-label">Margin</label>
                                         <td><span data-bind="text: materialViewModel.matUnits" />
                                         <td><input type="number" data-bind="value: margin">

@@ -20,6 +20,8 @@ var Cam = new function () {
 
     // Does the line from p1 to p2 cross outside of bounds?
     function crosses(bounds, p1, p2) {
+        if (bounds == null)
+            return true;
         if(p1.X == p2.X && p1.Y == p2.Y)
             return false;
         var clipper = new ClipperLib.Clipper();
@@ -146,6 +148,23 @@ var Cam = new function () {
             current = Path.offset(current, eachOffset);
         }
         return mergePaths(bounds, allPaths);
+    };
+
+    // Compute paths for engrave operation on Clipper geometry. Returns array
+    // of CamPath.
+    Cam.engrave = function (geometry, climb) {
+        var allPaths = [];
+        for (var i = 0; i < geometry.length; ++i) {
+            var path = geometry[i].slice(0);
+            if (!climb)
+                path.reverse();
+            path.push(path[0]);
+            allPaths.push(path);
+        }
+        result = mergePaths(null, allPaths);
+        for (var i = 0; i < result.length; ++i)
+            result[i].safeToClose = true;
+        return result;
     };
 
     // Convert array of CamPath to array of Clipper path

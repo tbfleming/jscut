@@ -190,7 +190,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             var offset = self.margin.toInch() * Path.inchToClipperScale;
             if (self.camOp() == "Pocket")
                 offset = -offset;
-            if (offset != 0)
+            if (self.camOp() != "Engrave" && offset != 0)
                 previewGeometry = Path.offset(previewGeometry, offset);
 
             if (self.camOp() == "Outline") {
@@ -243,7 +243,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         var offset = self.margin.toInch() * Path.inchToClipperScale;
         if (self.camOp() == "Pocket")
             offset = -offset;
-        if (offset != 0)
+        if (self.camOp() != "Engrave" && offset != 0)
             geometry = Path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
@@ -254,6 +254,9 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
                 width = toolCamArgs.diameterClipper;
             self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap, self.direction() == "Climb"));
         }
+        else if (self.camOp() == "Engrave")
+            self.toolPaths(Cam.engrave(geometry, self.direction() == "Climb"));
+
         var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
         if (path != null && path.length > 0)
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
@@ -280,7 +283,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         self.selected("on");
 
     self.toJson = function () {
-        return {
+        result = {
             'rawPaths': self.rawPaths,
             'enabled': self.enabled(),
             'selected': self.selected(),
@@ -288,9 +291,12 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             'camOp': self.camOp(),
             'direction': self.direction(),
             'cutDepth': self.cutDepth(),
-            'margin': self.margin(),
-            'width': self.width(),
         };
+        if (self.camOp() != 'Engrave')
+            result.margin = self.margin();
+        if (self.camOp() == 'Outline')
+            result.width = self.width();
+        return result;
     }
 
     self.fromJson = function (json) {
