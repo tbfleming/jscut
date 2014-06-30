@@ -140,7 +140,8 @@ function loadSvg(alert, filename, content) {
     svg = Snap.parse(content);
     contentGroup.append(svg);
     updateSvgSize();
-    alert.remove();
+    if(alert)
+        alert.remove();
     showAlert("loaded " + filename, "alert-success");
     tutorial(2, 'Click 1 or more objects.');
 }
@@ -419,26 +420,54 @@ function saveSettingsGoogle() {
     saveGoogle(miscViewModel.saveSettingsFilename(), JSON.stringify(toJson()));
 }
 
+function loadGist(gist) {
+    var url = 'https://api.github.com/gists/' + gist;
+    var alert = showAlert("loading " + url, "alert-info", false);
+    $.get(url, function (content) {
+        var jscutFiles = [], svgFiles = [], otherFiles = [];
+        alert.remove();
+        for (var filename in content.files) {
+            if (filename.indexOf('.jscut', filename.length - 6) !== -1)
+                jscutFiles.push(filename);
+            else if (filename.indexOf('.svg', filename.length - 4) !== -1)
+                svgFiles.push(filename);
+            else
+                otherFiles.push(filename);
+        }
+
+        if (jscutFiles.length == 0) {
+            if (svgFiles.length > 0)
+                showAlert("No .jscut files found in gist", "alert-info");
+            else if (otherFiles.length == 0)
+                showAlert("No files found in gist", "alert-danger");
+            else if (otherFiles.length == 1)
+                jscutFiles = otherFiles;
+            else
+                showAlert("No .jscut files or .svg files found in gist", "alert-danger");
+        } else if (jscutFiles.length > 1)
+            showAlert("Multiple .jscut files found; ignoring them", "alert-danger");
+
+        for (var i = 0; i < svgFiles.length; ++i)
+            loadSvg(null, svgFiles[i], content.files[svgFiles[i]].content);
+
+        if (jscutFiles.length == 1) {
+            try {
+                fromJson(JSON.parse(content.files[jscutFiles[0]].content));
+                showAlert("loaded " +jscutFiles[0], "alert-success");
+                operationsViewModel.tutorialGenerateToolpath();
+            } catch (e) {
+                showAlert(e.message, "alert-danger");
+            }
+        }
+    }, "json").fail(function (e) {
+        alert.remove();
+        showAlert("load " + url + " failed", "alert-danger");
+    });
+}
+
 var searchArgs = window.location.search.substr(1).split('&');
 for (var i = 0; i < searchArgs.length; ++i) {
     var arg = searchArgs[0];
     if (arg.substr(0, 5) == 'gist=')
-        (function () {
-            var url = 'https://api.github.com/gists/' + arg.substr(5);
-            var alert = showAlert("loading " + url, "alert-info", false);
-
-            $.get(url, function (content) {
-                alert.remove();
-                for (var x in content.files) {
-                    fromJson(JSON.parse(content.files[x].content));
-                    alert.remove();
-                    showAlert("loaded " + url, "alert-success");
-                    operationsViewModel.tutorialGenerateToolpath();
-                    break;
-                }
-            }, "json").fail(function (e) {
-                alert.remove();
-                showAlert("load " + url + " failed", "alert-danger");
-            });
-        })();
+        loadGist(arg.substr(5));
 }
