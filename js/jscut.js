@@ -418,3 +418,29 @@ function loadSettingsGoogle() {
 function saveSettingsGoogle() {
     saveGoogle(miscViewModel.saveSettingsFilename(), JSON.stringify(toJson()));
 }
+
+var searchArgs = window.location.search.substr(1).split('&');
+for (var i = 0; i < searchArgs.length; ++i) {
+    var arg = searchArgs[0];
+    if (arg.substr(0, 5) == 'gist=')
+        (function () {
+            var url = 'https://api.github.com/gists/' + arg.substr(5);
+            var alert = showAlert("loading " + url, "alert-info", false);
+
+            $.get(url, function (content) {
+                alert.remove();
+                for (var x in content.files) {
+                    fromJson(JSON.parse(content.files[x].content));
+                    var ops = operationsViewModel.operations();
+                    for (var opI = 0; opI < ops.length; ++opI)
+                        ops[opI].generateToolPath();
+                    alert.remove();
+                    showAlert("loaded " + url, "alert-success");
+                    break;
+                }
+            }, "json").fail(function (e) {
+                alert.remove();
+                showAlert("load " + url + " failed", "alert-danger");
+            });
+        })();
+}
