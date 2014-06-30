@@ -376,6 +376,11 @@ function OperationsViewModel(options, svgViewModel, materialViewModel, selection
         self.maxY(maxY);
     }
 
+    self.tutorialGenerateToolpath = function () {
+        if (self.operations().length > 0)
+            tutorial(4, 'Click "Generate".');
+    }
+
     self.addOperation = function () {
         rawPaths = [];
         selectionViewModel.getSelection().forEach(function (element) {
@@ -389,7 +394,7 @@ function OperationsViewModel(options, svgViewModel, materialViewModel, selection
         self.operations.push(op);
         op.enabled.subscribe(findMinMax);
         op.toolPaths.subscribe(findMinMax);
-        tutorial(4, 'Click "Generate Toolpath".');
+        self.tutorialGenerateToolpath();
     }
 
     self.removeOperation = function (operation) {

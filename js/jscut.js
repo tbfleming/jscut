@@ -431,11 +431,9 @@ for (var i = 0; i < searchArgs.length; ++i) {
                 alert.remove();
                 for (var x in content.files) {
                     fromJson(JSON.parse(content.files[x].content));
-                    var ops = operationsViewModel.operations();
-                    for (var opI = 0; opI < ops.length; ++opI)
-                        ops[opI].generateToolPath();
                     alert.remove();
                     showAlert("loaded " + url, "alert-success");
+                    operationsViewModel.tutorialGenerateToolpath();
                     break;
                 }
             }, "json").fail(function (e) {
