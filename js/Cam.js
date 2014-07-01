@@ -124,21 +124,37 @@ var Cam = new function () {
     // Compute paths for outline operation on Clipper geometry. Returns array
     // of CamPath. cutterDia and width are in Clipper units. overlap is in the 
     // range [0, 1).
-    Cam.outline = function (geometry, cutterDia, width, overlap, climb) {
-        var current = Path.offset(geometry, cutterDia / 2);
+    Cam.outline = function (geometry, cutterDia, isInside, width, overlap, climb) {
         var currentWidth = cutterDia;
-        var bounds = Path.diff(Path.offset(geometry, width - cutterDia / 2), current);
         var allPaths = [];
-        var eachOffset = cutterDia * (1 - overlap);
+        var eachWidth = cutterDia * (1 - overlap);
+
+        var current;
+        var bounds;
+        var eachOffset;
+        var needReverse;
+
+        if (isInside) {
+            current = Path.offset(geometry, -cutterDia / 2);
+            bounds = Path.diff(current, Path.offset(geometry, -(width - cutterDia / 2)));
+            eachOffset = -eachWidth;
+            needReverse = climb;
+        } else {
+            current = Path.offset(geometry, cutterDia / 2);
+            bounds = Path.diff(Path.offset(geometry, width - cutterDia / 2), current);
+            eachOffset = eachWidth;
+            needReverse = !climb;
+        }
+
         while (currentWidth <= width) {
-            if (!climb)
+            if (needReverse)
                 for (var i = 0; i < current.length; ++i)
                     current[i].reverse();
             allPaths = current.concat(allPaths);
-            var nextWidth = currentWidth + eachOffset;
+            var nextWidth = currentWidth + eachWidth;
             if (nextWidth > width && width - currentWidth > 0) {
                 current = Path.offset(current, width - currentWidth);
-                if (!climb)
+                if (needReverse)
                     for (var i = 0; i < current.length; ++i)
                         current[i].reverse();
                 allPaths = current.concat(allPaths);

@@ -188,18 +188,21 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
 
         if (previewGeometry.length != 0) {
             var offset = self.margin.toInch() * Path.inchToClipperScale;
-            if (self.camOp() == "Pocket")
+            if (self.camOp() == "Pocket" || self.camOp() == "Inside")
                 offset = -offset;
             if (self.camOp() != "Engrave" && offset != 0)
                 previewGeometry = Path.offset(previewGeometry, offset);
 
-            if (self.camOp() == "Outline") {
+            if (self.camOp() == "Inside" || self.camOp() == "Outside") {
                 var toolCamArgs = toolModel.getCamArgs();
                 if (toolCamArgs != null) {
                     var width = self.width.toInch() * Path.inchToClipperScale;
                     if (width < toolCamArgs.diameterClipper)
                         width = toolCamArgs.diameterClipper;
-                    previewGeometry = Path.diff(Path.offset(previewGeometry, width), previewGeometry);
+                    if (self.camOp() == "Inside")
+                        previewGeometry = Path.diff(previewGeometry, Path.offset(previewGeometry, -width));
+                    else
+                        previewGeometry = Path.diff(Path.offset(previewGeometry, width), previewGeometry);
                 }
             }
         }
@@ -241,18 +244,18 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
 
         var geometry = self.combinedGeometry;
         var offset = self.margin.toInch() * Path.inchToClipperScale;
-        if (self.camOp() == "Pocket")
+        if (self.camOp() == "Pocket" || self.camOp() == "Inside")
             offset = -offset;
         if (self.camOp() != "Engrave" && offset != 0)
             geometry = Path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
             self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap, self.direction() == "Climb"));
-        else if (self.camOp() == "Outline") {
+        else if (self.camOp() == "Inside" || self.camOp() == "Outside") {
             var width = self.width.toInch() * Path.inchToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
-            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, width, toolCamArgs.overlap, self.direction() == "Climb"));
+            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, self.camOp() == "Inside", width, toolCamArgs.overlap, self.direction() == "Climb"));
         }
         else if (self.camOp() == "Engrave")
             self.toolPaths(Cam.engrave(geometry, self.direction() == "Climb"));
@@ -294,7 +297,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         };
         if (self.camOp() != 'Engrave')
             result.margin = self.margin();
-        if (self.camOp() == 'Outline')
+        if (self.camOp() == 'Inside' || self.camOp() == 'Outside')
             result.width = self.width();
         return result;
     }
@@ -310,7 +313,10 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             self.rawPaths = json.rawPaths;
             f(json.selected, self.selected);
             f(json.combineOp, self.combineOp);
-            f(json.camOp, self.camOp);
+            if (json.camOp == "Outline")
+                self.camOp('Outside');
+            else
+                f(json.camOp, self.camOp);
             f(json.direction, self.direction);
             f(json.cutDepth, self.cutDepth);
             f(json.margin, self.margin);

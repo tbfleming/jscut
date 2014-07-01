@@ -71,7 +71,8 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <td>
                                         <select data-bind="value: camOp">
                                             <option>Pocket</option>
-                                            <option>Outline</option>
+                                            <option>Inside</option>
+                                            <option>Outside</option>
                                             <option>Engrave</option>
                                         </select>
                                     </td>
@@ -155,7 +156,8 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td>
                                             <select data-bind="value: camOp">
                                                 <option>Pocket</option>
-                                                <option>Outline</option>
+                                                <option>Inside</option>
+                                                <option>Outside</option>
                                                 <option>Engrave</option>
                                             </select>
                                     <tr>
@@ -174,7 +176,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><label class="control-label">Margin</label>
                                         <td><span data-bind="text: materialViewModel.matUnits" />
                                         <td><input type="number" data-bind="value: margin">
-                                    <tr data-bind="visible: camOp()=='Outline'">
+                                    <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
                                         <td><label class="control-label">Width</label>
                                         <td><span data-bind="text: materialViewModel.matUnits" />
                                         <td><input type="number" data-bind="value: width">
