@@ -90,16 +90,16 @@ void main(void) {
         gl_Position = vec4(thisPos.xy + offset, thisPos.z, 1.0);
     } else {
         radius = 0.0;
-        vec3 delta = normalize(lower - upper) * r;
+        vec2 delta = normalize(lower.xy - upper.xy) * r;
         float l = length(delta);
         if(i == 12)
-            gl_Position = vec4(upper.x+delta.y, upper.y-delta.x, lower.z, 1.0);
+            gl_Position = vec4(upper.x+delta.y, upper.y-delta.x, upper.z, 1.0);
         else if(i == 13)
             gl_Position = vec4(lower.x+delta.y, lower.y-delta.x, lower.z, 1.0);
         else if(i == 14)
-            gl_Position = vec4(upper.x-delta.y, upper.y+delta.x, lower.z, 1.0);
+            gl_Position = vec4(upper.x-delta.y, upper.y+delta.x, upper.z, 1.0);
         else if(i == 15)
-            gl_Position = vec4(upper.x-delta.y, upper.y+delta.x, lower.z, 1.0);
+            gl_Position = vec4(upper.x-delta.y, upper.y+delta.x, upper.z, 1.0);
         else if(i == 16)
             gl_Position = vec4(lower.x+delta.y, lower.y-delta.x, lower.z, 1.0);
         else if(i == 17)
