@@ -105,6 +105,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
 
             gcode += Cam.getGcode({
                 paths:          op.toolPaths(),
+                ramp:           op.ramp(),
                 scale:          scale,
                 offsetX:        Number(self.offsetX()),
                 offsetY:        Number(self.offsetY()),

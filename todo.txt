@@ -14,7 +14,6 @@ Unordered unprioritized todo list.
   * Polygon
   * Circle & Ellipse
 * V-shaped bits
-* Ramped plunge
 * tabs (cutting tabs; not UI tabs)
 * Save/Load session: support local files
 * Code cleanup

@@ -23,7 +23,7 @@ function ToolModel() {
     self.passDepth = ko.observable(.125);
     self.overlap = ko.observable(.6);
     self.rapidRate = ko.observable(100);
-    self.plungeRate = ko.observable(20);
+    self.plungeRate = ko.observable(5);
     self.cutRate = ko.observable(40);
 
     self.unitConverter.add(self.diameter);
@@ -87,6 +87,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
     self.enabled = ko.observable(true);
+    self.ramp = ko.observable(false);
     self.selected = ko.observable("off");
     self.combineOp = ko.observable("Union");
     self.camOp = ko.observable("Pocket");
@@ -289,6 +290,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         result = {
             'rawPaths': self.rawPaths,
             'enabled': self.enabled(),
+            'ramp': self.ramp(),
             'selected': self.selected(),
             'combineOp': self.combineOp(),
             'camOp': self.camOp(),
@@ -312,6 +314,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             loading = true;
             self.rawPaths = json.rawPaths;
             f(json.selected, self.selected);
+            f(json.ramp, self.ramp);
             f(json.combineOp, self.combineOp);
             if (json.camOp == "Outline")
                 self.camOp('Outside');

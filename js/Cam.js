@@ -196,6 +196,7 @@ var Cam = new function () {
     // getGcode()'s gcode returns Z to this position at the end.
     // namedArgs must have:
     //      paths:          Array of CamPath
+    //      ramp:           Ramp these paths?
     //      scale:          Factor to convert Clipper units to gcode units
     //      offsetX:        Offset X (gcode units)
     //      offsetY:        Offset Y (gcode units)
@@ -210,6 +211,7 @@ var Cam = new function () {
     //      rapidFeed:      Feedrate for rapid moves (gcode units)
     Cam.getGcode = function (namedArgs) {
         var paths = namedArgs.paths;
+        var ramp = namedArgs.ramp;
         var scale = namedArgs.scale;
         var offsetX = namedArgs.offsetX;
         var offsetY = namedArgs.offsetY;
@@ -227,6 +229,18 @@ var Cam = new function () {
         var retractGcode =
             '; Retract\r\n' +
             'G1 Z' + safeZ.toFixed(decimal) + rapidFeedGcode + '\r\n';
+
+        function getX(p) {
+            return p.X * scale + offsetX;
+        }
+
+        function getY(p) {
+            return -p.Y * scale + offsetY;
+        }
+
+        function dist(x1, y1, x2, y2) {
+            return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+        }
 
         function convertPoint(p) {
             return " X" + (p.X * scale + offsetX).toFixed(decimal) + ' Y' + (-p.Y * scale + offsetY).toFixed(decimal);
@@ -247,13 +261,44 @@ var Cam = new function () {
                     '; Rapid to initial position\r\n' +
                     'G1' + convertPoint(path.path[0]) + rapidFeedGcode + '\r\n' +
                     'G1 Z' + currentZ.toFixed(decimal) + '\r\n';
-                currentZ -= passDepth;
-                if (currentZ < botZ)
-                    currentZ = botZ;
-                gcode +=
-                    '; plunge\r\n' +
-                    'G1 Z' + currentZ.toFixed(decimal) + plungeFeedGcode + '\r\n' +
-                    '; cut\r\n';
+                var nextZ = Math.max(currentZ - passDepth, botZ);
+
+                var executedRamp = false;
+                if (ramp) {
+                    var minPlungeTime = (currentZ - nextZ) / namedArgs.plungeFeed;
+                    var idealDist = namedArgs.cutFeed * minPlungeTime;
+                    var end;
+                    var totalDist = 0;
+                    for (end = 1; end < path.path.length; ++end) {
+                        if (totalDist > idealDist)
+                            break;
+                        totalDist += 2 * dist(getX(path.path[end - 1]), getY(path.path[end - 1]), getX(path.path[end]), getY(path.path[end]));
+                    }
+                    if (totalDist > 0) {
+                        gcode += '; ramp\r\n'
+                        executedRamp = true;
+                        var rampPath = path.path.slice(0, end).concat(path.path.slice(0, end - 1).reverse());
+                        var distTravelled = 0;
+                        for (var i = 1; i < rampPath.length; ++i) {
+                            distTravelled += dist(getX(rampPath[i - 1]), getY(rampPath[i - 1]), getX(rampPath[i]), getY(rampPath[i]));
+                            var newZ = currentZ + distTravelled / totalDist * (nextZ - currentZ);
+                            gcode += 'G1' + convertPoint(rampPath[i]) + ' Z' + newZ.toFixed(decimal);
+                            if (i == 1)
+                                gcode += ' F' + Math.min(totalDist / minPlungeTime, namedArgs.cutFeed).toFixed(decimal) + '\r\n';
+                            else
+                                gcode += '\r\n';
+                        }
+                    }
+                }
+
+                if (!executedRamp)
+                    gcode +=
+                        '; plunge\r\n' +
+                        'G1 Z' + nextZ.toFixed(decimal) + plungeFeedGcode + '\r\n';
+
+                currentZ = nextZ;
+                gcode += '; cut\r\n';
+
                 for (var i = 1; i < path.path.length; ++i) {
                     gcode += 'G1' + convertPoint(path.path[i]);
                     if (i == 1)
