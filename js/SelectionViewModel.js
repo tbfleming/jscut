@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
+    "use strict";
     var self = this;
 
     self.selMinNumSegments = ko.observable("1");
@@ -36,7 +37,7 @@ function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
         });
 
         if (path != null) {
-            newPath = selectionGroup.path(path);
+            var newPath = selectionGroup.path(path);
             newPath.attr("class", "selectedPath");
             if (elem.attr("fill-rule") == "evenodd")
                 newPath.attr("fill-rule", "evenodd");

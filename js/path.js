@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 var Path = new function () {
+    "use strict";
     Path = this;
     Path.inchToClipperScale = 100000;                           // Scale inch to Clipper
     Path.cleanPolyDist = Path.inchToClipperScale / 100000;
@@ -37,7 +38,7 @@ var Path = new function () {
             var y = p1y;
             var result = ['L'];
             for (var i = 1; i <= numSegments; ++i) {
-                t = 1.0 * i / numSegments;
+                var t = 1.0 * i / numSegments;
                 var nextX = bez(p1x, c1x, c2x, p2x, t);
                 var nextY = bez(p1y, c1y, c2y, p2y, t);
                 if ((nextX - x) * (nextX - x) + (nextY - y) * (nextY - y) > minSegmentLength * minSegmentLength) {
@@ -65,7 +66,7 @@ var Path = new function () {
         var y = path[0][2];
         var result = [path[0]];
         for (var i = 1; i < path.length; ++i) {
-            subpath = path[i];
+            var subpath = path[i];
             if (subpath[0] == 'C' && subpath.length == 7) {
                 result.push(linearizeCubicBezier(
                     x, y, subpath[1], subpath[2], subpath[3], subpath[4], subpath[5], subpath[6], minNumSegments, minSegmentLength));
@@ -94,10 +95,10 @@ var Path = new function () {
         else if (element.type == "path")
             path = element.attr("d");
         else if (element.type == "rect") {
-            x = Number(element.attr("x"));
-            y = Number(element.attr("y"));
-            w = Number(element.attr("width"));
-            h = Number(element.attr("height"));
+            var x = Number(element.attr("x"));
+            var y = Number(element.attr("y"));
+            var w = Number(element.attr("width"));
+            var h = Number(element.attr("height"));
             path = 'm' + x + ',' + y + ' ' + w + ',' + 0 + ' ' + 0 + ',' + h + ' ' + (-w) + ',' + 0 + ' ' + 0 + ',' + (-h) + ' ';
         }
         else {
@@ -144,7 +145,7 @@ var Path = new function () {
         var currentPath = [getClipperPointFromSnapPoint(path[0][1], path[0][2])];
         var result = [currentPath];
         for (var i = 1; i < path.length; ++i) {
-            subpath = path[i];
+            var subpath = path[i];
             if (subpath[0] == 'M' && subpath.length == 3) {
                 currentPath = [getClipperPointFromSnapPoint(subpath[1], subpath[2])];
                 result.push(currentPath);
@@ -192,7 +193,7 @@ var Path = new function () {
         var clipper = new ClipperLib.Clipper();
         clipper.AddPaths(paths1, ClipperLib.PolyType.ptSubject, true);
         clipper.AddPaths(paths2, ClipperLib.PolyType.ptClip, true);
-        result = [];
+        var result = [];
         clipper.Execute(clipType, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
         return result;
     }

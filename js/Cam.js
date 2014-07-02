@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 var Cam = new function () {
+    "use strict";
     var Cam = this;
 
     // Does the line from p1 to p2 cross outside of bounds?
@@ -31,7 +32,7 @@ var Cam = new function () {
         clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
         if (result.ChildCount() == 1) {
             var child = result.Childs()[0];
-            points = child.Contour();
+            var points = child.Contour();
             if (points.length == 2) {
                 if (points[0].X == p1.X && points[1].X == p2.X && points[0].Y == p1.Y && points[1].Y == p2.Y)
                     return false;
@@ -52,12 +53,12 @@ var Cam = new function () {
         if (paths.length == 0)
             return null;
 
-        currentPath = paths[0];
+        var currentPath = paths[0];
         currentPath.push(currentPath[0]);
-        currentPoint = currentPath[currentPath.length-1];
+        var currentPoint = currentPath[currentPath.length-1];
         paths[0] = [];
 
-        mergedPaths = [];
+        var mergedPaths = [];
         var numLeft = paths.length - 1;
         while (numLeft > 0) {
             var closestPathIndex = null;
@@ -66,8 +67,8 @@ var Cam = new function () {
             for (var pathIndex = 0; pathIndex < paths.length; ++pathIndex) {
                 path = paths[pathIndex];
                 for (var pointIndex = 0; pointIndex < path.length; ++pointIndex) {
-                    point = path[pointIndex];
-                    dist = (currentPoint.X - point.X) * (currentPoint.X - point.X) + (currentPoint.Y - point.Y) * (currentPoint.Y - point.Y);
+                    var point = path[pointIndex];
+                    var dist = (currentPoint.X - point.X) * (currentPoint.X - point.X) + (currentPoint.Y - point.Y) * (currentPoint.Y - point.Y);
                     if (closestPointDist == null || dist < closestPointDist) {
                         closestPathIndex = pathIndex;
                         closestPointIndex = pointIndex;
@@ -94,7 +95,7 @@ var Cam = new function () {
         }
         mergedPaths.push(currentPath);
 
-        camPaths = [];
+        var camPaths = [];
         for(var i = 0; i < mergedPaths.length; ++i) {
             var path = mergedPaths[i];
             camPaths.push({

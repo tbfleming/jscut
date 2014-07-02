@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function SvgViewModel() {
+    "use strict";
     var self = this;
     self.pxPerInch = ko.observable("90");
 

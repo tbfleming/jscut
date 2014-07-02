@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function UnitConverter(units) {
+    "use strict";
     var self = this;
     self.unitsObservables = [];
 

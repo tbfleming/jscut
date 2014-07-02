@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel) {
+    "use strict";
     var self = this;
     self.units = ko.observable("mm");
     self.unitConverter = new UnitConverter(self.units);
@@ -46,7 +47,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
         if (options.profile)
             console.log("generateGcode...");
 
-        ops = [];
+        var ops = [];
         for (var i = 0; i < operationsViewModel.operations().length; ++i) {
             op = operationsViewModel.operations()[i];
             if (op.enabled()) {
