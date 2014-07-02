@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function MaterialViewModel() {
+    "use strict";
     var self = this;
     self.matUnits = ko.observable("inch");
     self.unitConverter = new UnitConverter(self.matUnits);

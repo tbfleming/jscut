@@ -16,6 +16,7 @@
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
 function parseGcode(options, gcode) {
+    "use strict";
     var startTime = Date.now();
     if (options.profile)
         console.log("parseGcode...");
@@ -24,7 +25,7 @@ function parseGcode(options, gcode) {
     var lastX = NaN, lastY = NaN, lastZ = NaN, lastF = NaN;
     var stride = 4;
     var i = 0;
-    while (i < gcode.length) {
+    while (i < gcode.length) (function () {
         function parse() {
             ++i;
             while (i < gcode.length && (gcode[i] == ' ' || gcode[i] == '\t'))
@@ -83,7 +84,7 @@ function parseGcode(options, gcode) {
             ++i;
         while (i < gcode.length && (gcode[i] == '\r' || gcode[i] == '\n'))
             ++i;
-    }
+    })();
 
     if (options.profile)
         console.log("parseGcode: " + (Date.now() - startTime));
