@@ -113,7 +113,5 @@ void main(void) {
     // color.r = normalized cut depth
     color.r = (gl_Position.z - pathTopZ) / (bottom - pathTopZ);
 
-    float nearZ = -pathTopZ;
-    float farZ = -bottom;
-    gl_Position.z = gl_Position.z * 1.9 / (farZ - nearZ) + (farZ + nearZ) / (farZ - nearZ);
+    gl_Position.z = 1.9999 * (gl_Position.z - bottom) / (pathTopZ - bottom) - 1.0;
 }

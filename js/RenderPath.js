@@ -534,7 +534,7 @@ function RenderPath(options, canvas, shadersReady) {
         self.gl.useProgram(basicProgram);
 
         self.gl.uniform3f(basicProgram.scale, cutterDia * pathScale, cutterDia * pathScale, cutterH * pathScale);
-        self.gl.uniform3f(basicProgram.translate, (x+pathXOffset) * pathScale, (y+pathYOffset) * pathScale, z * pathScale);
+        self.gl.uniform3f(basicProgram.translate, (x + pathXOffset) * pathScale, (y + pathYOffset) * pathScale, (z - pathTopZ) * pathScale);
         self.gl.uniformMatrix4fv(basicProgram.rotate, false, rotate);
 
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, cylBuffer);
