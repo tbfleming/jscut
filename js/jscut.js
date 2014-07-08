@@ -59,7 +59,6 @@ ko.applyBindings(operationsViewModel, $("#Operation")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode1")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode2")[0]);
-ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode3")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
 ko.applyBindings(miscViewModel, $("#SaveSettings")[0]);
 
@@ -347,7 +346,7 @@ function openGoogle(picker, wildcard, callback) {
     });
 } // openGoogle()
 
-function saveGoogle(filename, content) {
+function saveGoogle(filename, content, callback) {
     googleDriveAuthWrite(function () {
         if (googlePickerApiLoaded && googleDriveApiLoaded && googleDriveWriteToken) {
             const boundary = '-------53987238478475486734879872344353478123';
@@ -388,6 +387,7 @@ function saveGoogle(filename, content) {
                 } else {
                     alert.remove();
                     showAlert("saved " + filename, "alert-success");
+                    callback();
                 }
             });
         }
@@ -399,12 +399,12 @@ function openSvgGoogle() {
     openGoogle(googleOpenSvgPicker, '*.svg', loadSvg);
 }
 
-function saveGcodeGoogle() {
+function saveGcodeGoogle(callback) {
     if (gcodeConversionViewModel.gcode() == "") {
         showAlert('Click "Generate Gcode" first', "alert-danger");
         return;
     }
-    saveGoogle(gcodeConversionViewModel.gcodeFilename(), gcodeConversionViewModel.gcode());
+    saveGoogle(gcodeConversionViewModel.gcodeFilename(), gcodeConversionViewModel.gcode(), callback);
 }
 
 var googleOpenSettingsPicker = {};
@@ -416,8 +416,8 @@ function loadSettingsGoogle() {
 });
 }
 
-function saveSettingsGoogle() {
-    saveGoogle(miscViewModel.saveSettingsFilename(), JSON.stringify(toJson()));
+function saveSettingsGoogle(callback) {
+    saveGoogle(miscViewModel.saveSettingsFilename(), JSON.stringify(toJson()), callback);
 }
 
 function loadGist(gist) {

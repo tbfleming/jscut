@@ -32,6 +32,50 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
     <link href="jscut.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Save Settings Modal -->
+    <div class="modal fade" id="save-settings-modal" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Save Settings
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <input id="SaveSettings" data-bind="value: saveSettingsFilename">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSettingsGoogle(function () { $('#save-settings-modal').modal('hide') })">Google Drive</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save GCODE Modal -->
+    <div class="modal fade" id="save-gcode-modal" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Save GCODE
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <input id="FileGetGcode1" data-bind="value: gcodeFilename">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveGcodeGoogle(function () { $('#save-gcode-modal').modal('hide') })">Google Drive</button>
+                    <a id="FileGetGcode2" class="btn btn-primary" target="_blank" data-bind="attr:{href:gcodeUrl()}">Get</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
     <div class="container-fluid">
         <!-- Begin page content -->
         <div class="row">
@@ -192,6 +236,36 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
             </div>
             <!-- center -->
             <div id="MainSvgDiv" class="col-sm-6">
+                <nav class="navbar navbar-default" role="navigation">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                            <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button> <a class="navbar-brand" href="index.html" target="_blank">jscut</a>
+                    </div>
+
+                    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                        <ul class="nav navbar-nav">
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Open SVG<strong class="caret"></strong></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" class="choose-file">Local<input type="file" id="choose-svg-file" multiple></a></li>
+                                    <li><a href="#" onclick="openSvgGoogle()">Google Drive</a></li>
+                                    <li><a href="#" onclick="openSvgDropbox()">Dropbox</a></li>
+                                </ul>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Open Settings<strong class="caret"></strong></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" onclick="loadSettingsGoogle()">Google Drive</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="#save-settings-modal" data-toggle="modal">Save Settings</a></li>
+                            <li><a href="#save-gcode-modal" data-toggle="modal">Save GCODE</a></li>
+                        </ul>
+                    </div>
+                </nav>
+
                 <div class="tabbable" id="tabs-139888">
                     <ul class="nav nav-tabs">
                         <li class="active">
@@ -221,39 +295,6 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
             <!-- right -->
             <div class="col-sm-3 right-column">
                 <div id="alert_placeholder"></div>
-                <!-- File -->
-                <div class="panel panel-default" id="File">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">
-                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseFile">File</a>
-                        </h3>
-                    </div>
-                    <div id="collapseFile" class="panel-collapse collapse in">
-                        <div class="panel-body">
-                            <table class="table">
-                                <tr><td><b>Open SVG</b></td></tr>
-                                <tr><td><a href="#" class="choose-file">Local<input type="file" id="choose-svg-file" multiple></a></tr>
-                                <tr><td><a href="#" onclick="openSvgGoogle()">Google Drive</a></tr>
-                                <tr><td><a href="#" onclick="openSvgDropbox()">Dropbox</a></tr>
-                                <tr><td>&nbsp;</tr>
-
-                                <tr><td><b>Save GCODE</b></td></tr>
-                                <tr id="FileGetGcode1"><td><input data-bind="value: gcodeFilename"></tr>
-                                <tr id="FileGetGcode2"><td><a href="#" target=" _blank" data-bind="attr:{href:gcodeUrl()}">Get</a></tr>
-                                <tr id="FileGetGcode3"><td><a href="#" onclick="saveGcodeGoogle()">Google Drive</a></tr>
-                                <tr><td>&nbsp;</tr>
-
-                                <tr><td><b>Save Settings</b></td></tr>
-                                <tr id="SaveSettings"><td><input data-bind="value: saveSettingsFilename"></tr>
-                                <tr><td><a href="#" onclick="saveSettingsGoogle()">Google Drive</a></tr>
-                                <tr><td>&nbsp;</tr>
-
-                                <tr><td><b>Load Settings</b></td></tr>
-                                <tr><td><a href="#" onclick="loadSettingsGoogle()">Google Drive</a></tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
                 <!-- material -->
                 <div class="panel panel-default" id="Material">
                     <div class="panel-heading">
