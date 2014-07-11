@@ -1,5 +1,10 @@
 Unordered unprioritized todo list.
 
+See something here that you want? Create an issue or add a "me too" comment
+to an already-existing issue at
+https://github.com/tbfleming/jscut/issues?state=open . Issues let me know
+what users want; the TODO list doesn't.
+
 * SVG view doesn't resize if "Simulate GCODE" tab is selected
   while opening an SVG
 * Multiple tools
