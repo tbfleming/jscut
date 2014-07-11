@@ -20,9 +20,8 @@ what users want; the TODO list doesn't.
   * Circle & Ellipse
 * V-shaped bits
 * tabs (cutting tabs; not UI tabs)
-* Save/Load session: support local files
 * Code cleanup
-  * Replace alertFn callback with exception
+  * Replace alertFn callback with exception?
 * Trim gcode of tiny moves
 * UI cleanup
   * add scroll & zoom

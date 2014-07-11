@@ -22,6 +22,8 @@ var options = {
 function MiscViewModel() {
     var self = this;
     self.saveSettingsFilename = ko.observable("settings.jscut");
+    self.saveSettingsContent = ko.observable("");
+    self.saveSettingsUrl = ko.observable(null);
 }
 
 var mainSvg = Snap("#MainSvg");
@@ -60,7 +62,8 @@ ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode1")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode2")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
-ko.applyBindings(miscViewModel, $("#SaveSettings")[0]);
+ko.applyBindings(miscViewModel, $("#SaveSettings1")[0]);
+ko.applyBindings(miscViewModel, $("#SaveSettings2")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -240,6 +243,42 @@ function fromJson(json) {
     }
 }
 
+function showSaveSettingsModal() {
+    "use strict";
+    miscViewModel.saveSettingsContent(JSON.stringify(toJson()));
+
+    if (miscViewModel.saveSettingsUrl() != null)
+        URL.revokeObjectURL(miscViewModel.saveSettingsUrl());
+    miscViewModel.saveSettingsUrl(URL.createObjectURL(new Blob([miscViewModel.saveSettingsContent()])));
+
+    $('#save-settings-modal').modal('show');
+}
+
+$(document).on('change', '#choose-settings-file', function (event) {
+    var files = event.target.files;
+    for (var i = 0, file; file = files[i]; ++i) {
+        (function (file) {
+            var alert = showAlert("loading " + file.name, "alert-info", false);
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                fromJson(JSON.parse(e.target.result));
+                alert.remove();
+                showAlert("loaded " + file.name, "alert-success");
+            };
+            reader.onabort = function (e) {
+                alert.remove();
+                showAlert("aborted reading " + file.name, "alert-danger");
+            };
+            reader.onerror = function (e) {
+                alert.remove();
+                showAlert("error reading " + file.name, "alert-danger");
+            };
+            reader.readAsText(file);
+        })(file);
+    }
+    $(event.target).replaceWith(control = $(event.target).clone(true));
+});
+
 var googleDeveloperKey = 'AIzaSyABOorNywzgSXQ8Waffle8zAhfgkHUBw0M';
 var googleClientId = '103921723157-leb9b5b4i79euhnn96nlpeeev1m3pvg0.apps.googleusercontent.com';
 var googleAuthApiLoaded = false;
@@ -417,7 +456,7 @@ function loadSettingsGoogle() {
 }
 
 function saveSettingsGoogle(callback) {
-    saveGoogle(miscViewModel.saveSettingsFilename(), JSON.stringify(toJson()), callback);
+    saveGoogle(miscViewModel.saveSettingsFilename(), miscViewModel.saveSettingsContent(), callback);
 }
 
 function loadGist(gist) {
