@@ -510,3 +510,52 @@ for (var i = 0; i < searchArgs.length; ++i) {
     if (arg.substr(0, 5) == 'gist=')
         loadGist(arg.substr(5));
 }
+
+function chiliGetUser(callback) {
+    "use strict";
+    $.getJSON("http://www.chilipeppr.com/datalogin?callback=?")
+    .done(function (content) {
+        if (typeof content.CurrentUser === "undefined")
+            showAlert("Can't get current user from http://chilipeppr.com/", "alert-danger");
+        else if (content.CurrentUser == null)
+            showAlert("Not logged into http://chilipeppr.com/", "alert-danger");
+        else if (typeof content.CurrentUser.ID === "undefined")
+            showAlert("Can't get current user from http://chilipeppr.com/", "alert-danger");
+        else
+            callback(content.CurrentUser.ID);
+    })
+    .fail(function (e) {
+        showAlert("Can't get current user from http://chilipeppr.com/", "alert-danger");
+    });
+}
+
+function chiliSaveGcode() {
+    chiliGetUser(function (userId) {
+        var alert = showAlert("Sending gcode to chilipeppr.com", "alert-info", false);
+        $.ajax({
+            url: "http://www.chilipeppr.com/dataput",
+            type: "POST",
+            crossDomain: true,
+            xhrFields: {
+                withCredentials: true
+            },
+            data: { key: 'org-jscut-gcode-' + userId, val: gcodeConversionViewModel.gcode() },
+            dataType: "json",
+        })
+        .done(function (content) {
+            alert.remove();
+            if(content.Error)
+                showAlert(content.msg);
+            else if (typeof content.Value !== "undefined") {
+                $('#save-gcode-modal').modal('hide');
+                $('#launch-chilipeppr-modal').modal('show');
+            }
+            else
+                showAlert("Can't save gcode to http://chilipeppr.com/", "alert-danger");
+        })
+        .fail(function (e) {
+            alert.remove();
+            showAlert("Can't save gcode to http://chilipeppr.com/", "alert-danger");
+        });
+    });
+}

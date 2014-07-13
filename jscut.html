@@ -1,4 +1,4 @@
-<!--
+﻿<!--
 Copyright 2014 Todd Fleming
 
 This file is part of jscut.
@@ -70,7 +70,29 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" onclick="saveGcodeGoogle(function () { $('#save-gcode-modal').modal('hide') })">Google Drive</button>
+                    <button type="button" class="btn btn-primary" onclick="chiliSaveGcode()">ChiliPeppr</button>
                     <a id="FileGetGcode2" class="btn btn-primary" target="_blank" data-bind="attr:{href:gcodeUrl()}">Get</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Launch ChiliPeppr Modal -->
+    <div class="modal fade" id="launch-chilipeppr-modal" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Save GCODE
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    gcode saved to temporary area on chilipeppr.com.
+                    <a target="_blank" href="http://chilipeppr.com/tinyg?loadJscut=true">Launch ChiliPeppr TinyG</a>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
