@@ -24,6 +24,7 @@ function MiscViewModel() {
     self.saveSettingsFilename = ko.observable("settings.jscut");
     self.saveSettingsContent = ko.observable("");
     self.saveSettingsUrl = ko.observable(null);
+    self.launchChiliUrl = ko.observable(null);
 }
 
 var mainSvg = Snap("#MainSvg");
@@ -64,6 +65,7 @@ ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode2")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
 ko.applyBindings(miscViewModel, $("#SaveSettings1")[0]);
 ko.applyBindings(miscViewModel, $("#SaveSettings2")[0]);
+ko.applyBindings(miscViewModel, $("#LaunchChiliPeppr")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -530,6 +532,7 @@ function chiliGetUser(callback) {
 }
 
 function chiliSaveGcode() {
+    var key = 'org-jscut-gcode-' + gcodeConversionViewModel.gcodeFilename();
     chiliGetUser(function (userId) {
         var alert = showAlert("Sending gcode to chilipeppr.com", "alert-info", false);
         $.ajax({
@@ -539,7 +542,7 @@ function chiliSaveGcode() {
             xhrFields: {
                 withCredentials: true
             },
-            data: { key: 'org-jscut-gcode-' + userId, val: gcodeConversionViewModel.gcode() },
+            data: { key: key, val: gcodeConversionViewModel.gcode() },
             dataType: "json",
         })
         .done(function (content) {
@@ -547,6 +550,7 @@ function chiliSaveGcode() {
             if(content.Error)
                 showAlert(content.msg);
             else if (typeof content.Value !== "undefined") {
+                miscViewModel.launchChiliUrl('http://chilipeppr.com/tinyg?loadJscut=' + encodeURIComponent(key));
                 $('#save-gcode-modal').modal('hide');
                 $('#launch-chilipeppr-modal').modal('show');
             }
