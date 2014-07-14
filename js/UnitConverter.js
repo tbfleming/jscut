@@ -23,12 +23,12 @@ function UnitConverter(units) {
     units.subscribe(function (newValue) {
         if (newValue == "inch")
             for (var i = 0; i < self.unitsObservables.length ; ++i) {
-                o = self.unitsObservables[i];
+                var o = self.unitsObservables[i];
                 o(o() / 25.4);
             }
         else
             for (var i = 0; i < self.unitsObservables.length ; ++i) {
-                o = self.unitsObservables[i];
+                var o = self.unitsObservables[i];
                 o(o() * 25.4);
             }
     });
