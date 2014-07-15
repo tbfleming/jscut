@@ -240,12 +240,16 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                                 <option>Climb</option>
                                             </select>
                                     <tr>
+                                        <td><label class="control-label">Units</label>
+                                        <td>
+                                        <td><select data-bind="value: units"><option>inch<option>mm</select>
+                                    <tr>
                                         <td><label class="control-label">Cut Depth</label>
-                                        <td><span data-bind="text: materialViewModel.matUnits" />
+                                        <td><span data-bind="text: units" />
                                         <td><input type="number" data-bind="value: cutDepth">
                                     <tr data-bind="visible: camOp()!='Engrave'">
                                         <td><label class="control-label">Margin</label>
-                                        <td><span data-bind="text: materialViewModel.matUnits" />
+                                        <td><span data-bind="text: units" />
                                         <td><input type="number" data-bind="value: margin">
                                     <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
                                         <td><label class="control-label">Width</label>

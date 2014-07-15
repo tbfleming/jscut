@@ -86,6 +86,8 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     var self = this;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
+    self.units = ko.observable("inch");
+    self.unitConverter = new UnitConverter(self.units);
     self.enabled = ko.observable(true);
     self.ramp = ko.observable(false);
     self.selected = ko.observable("off");
@@ -100,9 +102,9 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     self.toolPaths = ko.observable([]);
     self.toolPathSvg = null;
 
-    materialViewModel.unitConverter.add(self.cutDepth);
-    materialViewModel.unitConverter.add(self.margin);
-    materialViewModel.unitConverter.add(self.width);
+    self.unitConverter.add(self.cutDepth);
+    self.unitConverter.add(self.margin);
+    self.unitConverter.add(self.width);
 
     self.cutDepth.fromInch(toolModel.passDepth.toInch());
 
@@ -289,6 +291,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     self.toJson = function () {
         result = {
             'rawPaths': self.rawPaths,
+            'units': self.units(),
             'enabled': self.enabled(),
             'ramp': self.ramp(),
             'selected': self.selected(),
@@ -313,6 +316,8 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         if (json) {
             loading = true;
             self.rawPaths = json.rawPaths;
+            self.units(materialViewModel.matUnits()); // backwards compat: operation used to use materialViewModel's units
+            f(json.units, self.units);
             f(json.selected, self.selected);
             f(json.ramp, self.ramp);
             f(json.combineOp, self.combineOp);
