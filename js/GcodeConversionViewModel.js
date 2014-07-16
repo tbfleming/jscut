@@ -105,6 +105,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
             gcode +=
                 "\r\n;" +
                 "\r\n; Operation:    " + opIndex +
+                "\r\n; Name:         " + op.name() +
                 "\r\n; Type:         " + op.camOp() +
                 "\r\n; Paths:        " + op.toolPaths().length +
                 "\r\n; Direction:    " + op.direction() +
