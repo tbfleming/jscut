@@ -86,7 +86,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     var self = this;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
-    self.units = ko.observable("inch");
+    self.units = ko.observable(materialViewModel.matUnits());
     self.unitConverter = new UnitConverter(self.units);
     self.enabled = ko.observable(true);
     self.ramp = ko.observable(false);

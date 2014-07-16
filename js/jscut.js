@@ -199,6 +199,17 @@ $("#MainSvg").click(function (e) {
     }
 });
 
+function makeAllSameUnit(val) {
+    "use strict";
+    materialViewModel.matUnits(val);
+    toolModel.units(val);
+    gcodeConversionViewModel.units(val);
+
+    var ops = operationsViewModel.operations();
+    for (var i = 0; i < ops.length; ++i)
+        ops[i].units(val);
+}
+
 $('#pxPerInch').popover({
     trigger: "hover",
     html: true,
