@@ -47,6 +47,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="$('#save-settings-modal').modal('hide');$('#save-gist-warning').modal('show')">Gist</button>
                     <button type="button" class="btn btn-primary" onclick="saveSettingsGoogle(function () { $('#save-settings-modal').modal('hide') })">Google Drive</button>
                     <a id="SaveSettings2" class="btn btn-primary" href="#" target="_blank" data-bind="attr:{href:saveSettingsUrl()}">Get</a>
                 </div>
@@ -92,6 +93,56 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                 </div>
                 <div class="modal-footer">
                     <a id="LaunchChiliPeppr" class="btn btn-primary" href="#" target="_blank" data-bind="attr:{href:launchChiliUrl()}">Launch ChiliPeppr TinyG</a>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Gist Warning -->
+    <div class="modal fade" id="save-gist-warning" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Create Anonymous Gist
+                    </h4>
+                </div>
+                <div class="modal-body alert alert-warning">
+                    <b>Warning</b>: This will create an Anonymous Gist which includes your settings and your SVG files.
+                    Anonymous Gists are public. Anonymous Gists can not be deleted.
+                    <br /><br />
+                    <table class="table">
+                        <tr>
+                            <td><label for="saveGistDescriptionField">Description</label>
+                            <td><input id="saveGistDescriptionField" data-bind="value: saveGistDescription">
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSettingsGist()">Create Gist</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Gist Result -->
+    <div class="modal fade" id="save-gist-result" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Saved Gist
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <a href="#" target="_blank" data-bind="attr:{href:savedGistUrl()}">View Gist</a>
+                    <br/>
+                    <a href="#" target="_blank" data-bind="attr:{href:savedGistLaunchUrl()}">Launch jscut with Gist</a>
+                </div>
+                <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>

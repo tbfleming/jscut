@@ -25,6 +25,9 @@ function MiscViewModel() {
     self.saveSettingsContent = ko.observable("");
     self.saveSettingsUrl = ko.observable(null);
     self.launchChiliUrl = ko.observable(null);
+    self.saveGistDescription = ko.observable("jscut settings");
+    self.savedGistUrl = ko.observable("");
+    self.savedGistLaunchUrl = ko.observable("");
 }
 
 var mainSvg = Snap("#MainSvg");
@@ -66,6 +69,8 @@ ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
 ko.applyBindings(miscViewModel, $("#SaveSettings1")[0]);
 ko.applyBindings(miscViewModel, $("#SaveSettings2")[0]);
 ko.applyBindings(miscViewModel, $("#LaunchChiliPeppr")[0]);
+ko.applyBindings(miscViewModel, $("#save-gist-warning")[0]);
+ko.applyBindings(miscViewModel, $("#save-gist-result")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -470,6 +475,39 @@ function loadSettingsGoogle() {
 
 function saveSettingsGoogle(callback) {
     saveGoogle(miscViewModel.saveSettingsFilename(), miscViewModel.saveSettingsContent(), callback);
+}
+
+function saveSettingsGist() {
+    var alert = showAlert("Saving Anonymous Gist", "alert-info", false);
+    var files = { "settings.jscut": { "content": JSON.stringify(toJson()) } };
+
+    var svgs = contentGroup.node.children;
+    for (var i = 0; i < svgs.length; ++i)
+        files['svg' + i + '.svg'] = {"content":new XMLSerializer().serializeToString(svgs[i])};
+
+    $.ajax({
+        url: "https://api.github.com/gists",
+        type: "POST",
+        dataType: "json",
+        crossDomain: true,
+        data: JSON.stringify({
+            "description": miscViewModel.saveGistDescription(),
+            "public": true,
+            "files": files,
+        })
+    })
+    .done(function (content) {
+        alert.remove();
+        showAlert("Saved Anonymous Gist", "alert-success");
+        $('#save-gist-warning').modal('hide');
+        $('#save-gist-result').modal('show');
+        miscViewModel.savedGistUrl(content.html_url);
+        miscViewModel.savedGistLaunchUrl("http://jscut.org/jscut.html?gist="+content.id);
+    })
+    .fail(function (e) {
+        alert.remove();
+        showAlert("Can't save Anonymous Gist: " + e.responseText, "alert-danger");
+    });
 }
 
 function loadGist(gist) {
