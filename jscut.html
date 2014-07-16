@@ -407,6 +407,12 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><label class="control-label">Gcode Units</label>
                                         <td><select data-bind="value: units"><option>inch<option>mm</select>
                                     <tr>
+                                        <td>
+                                        <td colspan="2"><a href="#" data-bind="click: zeroLowerLeft">Zero lower left</a>
+                                    <tr>
+                                        <td>
+                                        <td colspan="2"><a href="#" data-bind="click: zeroCenter">Zero center</a>
+                                    <tr>
                                         <td><label for="gcodeOffsetX">X Offset</label>
                                         <td><span data-bind="text: units" />
                                         <td><input type="number" id="gcodeOffsetX" data-bind="value: offsetX">

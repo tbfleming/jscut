@@ -42,6 +42,16 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
         return (-self.unitConverter.fromInch(operationsViewModel.minY() / Path.inchToClipperScale) + Number(self.offsetY())).toFixed(4);
     });
 
+    self.zeroLowerLeft = function () {
+        self.offsetX(-self.unitConverter.fromInch(operationsViewModel.minX() / Path.inchToClipperScale));
+        self.offsetY(-self.unitConverter.fromInch(-operationsViewModel.maxY() / Path.inchToClipperScale));
+    }
+
+    self.zeroCenter = function () {
+        self.offsetX(-self.unitConverter.fromInch((operationsViewModel.minX() + operationsViewModel.maxX()) / 2 / Path.inchToClipperScale));
+        self.offsetY(-self.unitConverter.fromInch(-(operationsViewModel.minY() + operationsViewModel.maxY()) / 2 / Path.inchToClipperScale));
+    }
+
     self.generateGcode = function () {
         var startTime = Date.now();
         if (options.profile)
