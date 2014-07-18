@@ -3,10 +3,15 @@
 <head>
     <title>test</title>
     <script src="bower_components/platform/platform.js"></script>
+    <link rel="import" href="bower_components/core-localstorage/core-localstorage.html">
     <link rel="import" href="elements/jscut-simulate-gcode.html">
 </head>
 <body>
     <template id="top" is="auto-binding">
+        <core-localstorage name="test-jscut-simulate-gcode-cutterDiameter" value="{{cutterDiameter}}"></core-localstorage>
+        <core-localstorage name="test-jscut-simulate-gcode-cutterHeight" value="{{cutterHeight}}"></core-localstorage>
+        <core-localstorage name="test-jscut-simulate-gcode-gcode" value="{{gcode}}"></core-localstorage>
+
         <jscut-simulate-gcode gcode="{{gcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}"></jscut-simulate-gcode>
         <br />
         <input type="number" value="{{cutterDiameter}}" />
