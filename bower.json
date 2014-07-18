@@ -1,0 +1,19 @@
+{
+  "name": "jscut",
+  "version": "0.0.0",
+  "homepage": "https://github.com/tbfleming/jscut",
+  "authors": [
+    "Todd Fleming"
+  ],
+  "license": "GPL3",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#~0.3.4"
+  }
+}
