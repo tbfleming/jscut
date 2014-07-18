@@ -111,7 +111,7 @@ function updateRenderPathSize() {
 $(function () {
     updateRenderPathSize();
     $(window).resize(updateRenderPathSize);
-    renderPath = startRenderPath(options, $("#renderPathCanvas")[0], $('#timeSlider'), function () { });
+    renderPath = startRenderPath(options, $("#renderPathCanvas")[0], $('#timeSlider'), 'js', function () { });
 });
 
 var nextAlertNum = 1;

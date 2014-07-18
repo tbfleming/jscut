@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function RenderPath(options, canvas, shadersReady) {
+function RenderPath(options, canvas, shaderDir, shadersReady) {
     "use strict";
     var self = this;
 
@@ -603,39 +603,39 @@ function RenderPath(options, canvas, shadersReady) {
     }
 
     if (self.gl) {
-        loadShader("js/rasterizePathVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+        loadShader(shaderDir + "/rasterizePathVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
             rasterizePathVertexShader = shader;
             loadedShader();
         });
 
-        loadShader("js/rasterizePathFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+        loadShader(shaderDir + "/rasterizePathFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
             rasterizePathFragmentShader = shader;
             loadedShader();
         });
 
-        loadShader("js/renderHeightMapVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+        loadShader(shaderDir + "/renderHeightMapVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
             renderHeightMapVertexShader = shader;
             loadedShader();
         });
 
-        loadShader("js/renderHeightMapFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+        loadShader(shaderDir + "/renderHeightMapFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
             renderHeightMapFragmentShader = shader;
             loadedShader();
         });
 
-        loadShader("js/basicVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
+        loadShader(shaderDir + "/basicVertexShader.txt", self.gl.VERTEX_SHADER, function (shader) {
             basicVertexShader = shader;
             loadedShader();
         });
 
-        loadShader("js/basicFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
+        loadShader(shaderDir + "/basicFragmentShader.txt", self.gl.FRAGMENT_SHADER, function (shader) {
             basicFragmentShader = shader;
             loadedShader();
         });
     }
 }
 
-function startRenderPath(options, canvas, timeSliderElement, ready) {
+function startRenderPath(options, canvas, timeSliderElement, shaderDir, ready) {
     var renderPath;
     var timeSlider;
 
@@ -649,7 +649,7 @@ function startRenderPath(options, canvas, timeSliderElement, ready) {
             }
         });
 
-    renderPath = new RenderPath(options, canvas, function (renderPath) {
+    renderPath = new RenderPath(options, canvas, shaderDir, function (renderPath) {
         renderPath.fillPathBuffer([], 0, 0, 0);
 
         var mouseDown = false;
@@ -691,7 +691,7 @@ function startRenderPath(options, canvas, timeSliderElement, ready) {
 
 function startRenderPathDemo() {
     var renderPath;
-    renderPath = startRenderPath({}, $("#renderPathCanvas")[0], $('#timeSlider'), function (renderPath) {
+    renderPath = startRenderPath({}, $("#renderPathCanvas")[0], $('#timeSlider'), 'js', function (renderPath) {
         $.get("logo-gcode.txt", function (gcode) {
             renderPath.fillPathBuffer(parseGcode({}, gcode), 0, .125, 1);
         });

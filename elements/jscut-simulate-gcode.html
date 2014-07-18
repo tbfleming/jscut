@@ -1,6 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
-<polymer-element name="jscut-simulate-gcode" attributes="gcode cutterDiameter cutterHeight">
+<polymer-element name="jscut-simulate-gcode" attributes="gcode cutterDiameter cutterHeight elementsUrl">
     <script src="../lib/jquery-2.1.1.min.js"></script>
     <script src="../lib/bootstrap-3.1.1/js/bootstrap.min.js"></script>
     <script src="../lib/gl-matrix-2.2.0-min.js"></script>
@@ -39,14 +39,16 @@
                 gcode: '',
                 cutterDiameter: 0,
                 cutterHeight: 0,
+                elementsUrl: "elements",
 
                 ready: function () {
                     self = this;
                     // Chrome 36: the ready event fires after this object's shadow-root is created,
                     // but before parent shadow-roots are created. That causes WebGL initialization to
                     // fail. requestAnimationFrame works around this. Firefox doesn't have this problem.
+
                     window.requestAnimationFrame(function () {
-                        renderPath = startRenderPath({}, self.$.renderPathCanvas, null, function (renderPath) {
+                        renderPath = startRenderPath({}, self.$.renderPathCanvas, null, self.elementsUrl + '/../js', function (renderPath) {
                             renderPath.fillPathBuffer(parseGcode({}, self.gcode), 0, self.cutterDiameter, self.cutterHeight);
                             filled = true;
                         });
