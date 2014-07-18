@@ -6,6 +6,29 @@
     <link rel="import" href="elements/jscut-simulate-gcode.html">
 </head>
 <body>
-    <jscut-simulate-gcode></jscut-simulate-gcode>
+    <template id="top" is="auto-binding">
+        <jscut-simulate-gcode gcode="{{gcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}"></jscut-simulate-gcode>
+        <br />
+        <input type="number" value="{{cutterDiameter}}" />
+        <br />
+        <input type="number" value="{{cutterHeight}}" />
+        <br />
+        <textarea value="{{gcode}}" rows="20" cols="60"></textarea>
+    </template>
+
+    <script>
+        document.addEventListener('polymer-ready', function () {
+            var top = document.querySelector('#top');
+            top.cutterDiameter = .125;
+            top.cutterHeight = 1;
+            top.gcode = '\
+G1 Z0.1 F100\n\
+G1 X0 Y0 F100\n\
+G1 Z0.0000\n\
+G1 Z-0.1250 F20\n\
+G1 X1 Y1 F40\n\
+';
+        });
+    </script>
 </body>
 </html>
