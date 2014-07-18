@@ -635,18 +635,19 @@ function RenderPath(options, canvas, shadersReady) {
     }
 }
 
-function startRenderPath(options, canvas, ready) {
+function startRenderPath(options, canvas, timeSliderElement, ready) {
     var renderPath;
     var timeSlider;
 
-    timeSlider = $('#timeSlider').slider({
-        formater: function (value) {
-            if (renderPath)
-                return 'Time: ' + Math.round(value / 1000 * renderPath.totalTime) + 's';
-            else
-                return value;
-        }
-    });
+    if (timeSliderElement)
+        timeSlider = timeSliderElement.slider({
+            formater: function (value) {
+                if (renderPath)
+                    return 'Time: ' + Math.round(value / 1000 * renderPath.totalTime) + 's';
+                else
+                    return value;
+            }
+        });
 
     renderPath = new RenderPath(options, canvas, function (renderPath) {
         renderPath.fillPathBuffer([], 0, 0, 0);
@@ -677,9 +678,10 @@ function startRenderPath(options, canvas, ready) {
             mouseDown = false;
         });
 
-        timeSlider.on('slide', function () {
-            renderPath.setStopAtTime(timeSlider.val() / 1000 * renderPath.totalTime);
-        });
+        if (timeSlider)
+            timeSlider.on('slide', function () {
+                renderPath.setStopAtTime(timeSlider.val() / 1000 * renderPath.totalTime);
+            });
 
         ready(renderPath);
     });
@@ -689,7 +691,7 @@ function startRenderPath(options, canvas, ready) {
 
 function startRenderPathDemo() {
     var renderPath;
-    renderPath = startRenderPath({}, $("#renderPathCanvas")[0], function (renderPath) {
+    renderPath = startRenderPath({}, $("#renderPathCanvas")[0], $('#timeSlider'), function (renderPath) {
         $.get("logo-gcode.txt", function (gcode) {
             renderPath.fillPathBuffer(parseGcode({}, gcode), 0, .125, 1);
         });
