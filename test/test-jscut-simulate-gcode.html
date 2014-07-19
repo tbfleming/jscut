@@ -4,6 +4,7 @@
     <title>test</title>
     <script src="../bower_components/platform/platform.js"></script>
     <link rel="import" href="../bower_components/core-localstorage/core-localstorage.html">
+    <link rel="import" href="../bower_components/paper-slider/paper-slider.html">
     <link rel="import" href="../elements/jscut-simulate-gcode.html">
 </head>
 <body>
@@ -13,11 +14,13 @@
         <core-localstorage name="test-jscut-simulate-gcode-gcode" value="{{gcode}}"></core-localstorage>
 
         <jscut-parse-gcode gcode="{{gcode}}" parsedgcode="{{parsedGcode}}"></jscut-parse-gcode>
-        <jscut-simulate-gcode parsedGcode="{{parsedGcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}" elementsurl="../elements"></jscut-simulate-gcode>
+        <jscut-simulate-gcode parsedgcode="{{parsedGcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}" time1="{{time1}}" time2="{{time2}}" maxtimeRounded="{{maxTime}}" elementsurl="../elements"></jscut-simulate-gcode>
         <br />
-        <input type="number" value="{{cutterDiameter}}" />
+        <paper-slider pin editable value="{{time1}}" immediatevalue="{{time2}}" max="{{maxTime}}" step="0.1" id="paper_slider"></paper-slider>
         <br />
-        <input type="number" value="{{cutterHeight}}" />
+        <input type="number" step="any" value="{{cutterDiameter}}" />
+        <br />
+        <input type="number" step="any" value="{{cutterHeight}}" />
         <br />
         <textarea value="{{gcode}}" rows="20" cols="60"></textarea>
     </template>

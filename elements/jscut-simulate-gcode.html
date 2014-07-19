@@ -1,7 +1,12 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
+<script src="../lib/jquery-2.1.1.min.js"></script>
+<script src="../lib/gl-matrix-2.2.0-min.js"></script>
+<script src="../lib/webgl-utils.js"></script>
+<script src="../js/parseGcode.js"></script>
+<script src="../js/RenderPath.js"></script>
+
 <polymer-element name="jscut-parse-gcode" attributes="gcode parsedGcode">
-    <script src="../js/parseGcode.js"></script>
     <script>
         Polymer('jscut-parse-gcode', {
             gcode: '',
@@ -14,11 +19,7 @@
     </script>
 </polymer-element>
 
-<polymer-element name="jscut-simulate-gcode" attributes="gcode parsedGcode cutterDiameter cutterHeight elementsUrl">
-    <script src="../lib/jquery-2.1.1.min.js"></script>
-    <script src="../lib/gl-matrix-2.2.0-min.js"></script>
-    <script src="../lib/webgl-utils.js"></script>
-    <script src="../js/RenderPath.js"></script>
+<polymer-element name="jscut-simulate-gcode" attributes="gcode parsedGcode cutterDiameter cutterHeight time1 time2 maxTime maxTimeRounded elementsUrl">
     <template>
         <link href="../lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
         <link href="../lib/bootstrap-slider.min.css" rel="stylesheet">
@@ -32,8 +33,18 @@
             var filled = false;
 
             function fill() {
-                if (filled)
+                if (filled) {
                     renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterHeight);
+                    self.maxTime = renderPath.totalTime;
+                    self.maxTimeRounded = Math.ceil(renderPath.totalTime * 10) / 10;
+                    self.time1 = self.maxTimeRounded;
+                    self.time2 = self.maxTimeRounded;
+                }
+            }
+
+            function timeChanged(oldValue, newValue) {
+                if (renderPath)
+                    renderPath.setStopAtTime(newValue);
             }
 
             Polymer('jscut-simulate-gcode', {
@@ -41,6 +52,10 @@
                 parsedGcode: [],
                 cutterDiameter: 0,
                 cutterHeight: 0,
+                time1: 0,
+                time2: 0,
+                maxTime: 0,
+                maxTimeRounded: 0,
                 elementsUrl: "elements",
 
                 ready: function () {
@@ -52,6 +67,10 @@
                     window.requestAnimationFrame(function () {
                         renderPath = startRenderPath({}, self.$.renderPathCanvas, null, self.elementsUrl + '/../js', function (renderPath) {
                             renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterHeight);
+                            self.maxTime = renderPath.totalTime;
+                            self.maxTimeRounded = Math.ceil(renderPath.totalTime * 10) / 10;
+                            self.time1 = self.maxTimeRounded;
+                            self.time2 = self.maxTimeRounded;
                             filled = true;
                         });
                     });
@@ -65,6 +84,8 @@
                 parsedGcodeChanged: fill,
                 cutterDiameterChanged: fill,
                 cutterHeightChanged: fill,
+                time1Changed: timeChanged,
+                time2Changed: timeChanged,
             });
         })();
     </script>
