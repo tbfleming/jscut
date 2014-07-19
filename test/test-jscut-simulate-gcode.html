@@ -15,14 +15,10 @@
 
         <jscut-parse-gcode gcode="{{gcode}}" parsedgcode="{{parsedGcode}}"></jscut-parse-gcode>
         <jscut-simulate-gcode parsedgcode="{{parsedGcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}" time1="{{time1}}" time2="{{time2}}" maxtimeRounded="{{maxTime}}" elementsurl="../elements"></jscut-simulate-gcode>
-        <br />
-        <paper-slider pin editable value="{{time1}}" immediatevalue="{{time2}}" max="{{maxTime}}" step="0.1" id="paper_slider"></paper-slider>
-        <br />
-        <input type="number" step="any" value="{{cutterDiameter}}" />
-        <br />
-        <input type="number" step="any" value="{{cutterHeight}}" />
-        <br />
-        <textarea value="{{gcode}}" rows="20" cols="60"></textarea>
+        <br><paper-slider pin editable value="{{time1}}" immediatevalue="{{time2}}" max="{{maxTime}}" step="0.1" id="paper_slider"></paper-slider>
+        <br><input type="number" step="any" value="{{cutterDiameter}}">
+        <br><input type="number" step="any" value="{{cutterHeight}}">
+        <br><textarea value="{{gcode}}" rows="20" cols="60"></textarea>
     </template>
 
     <script>
@@ -30,13 +26,12 @@
             var top = document.querySelector('#top');
             top.cutterDiameter = .125;
             top.cutterHeight = 1;
-            top.gcode = '\
-G1 Z0.1 F100\n\
-G1 X0 Y0 F100\n\
-G1 Z0.0000\n\
-G1 Z-0.1250 F20\n\
-G1 X1 Y1 F40\n\
-';
+            top.gcode =
+                'G1 Z0.1 F100\n'+
+                'G1 X0 Y0 F100\n'+
+                'G1 Z0.0000\n'+
+                'G1 Z-0.1250 F20\n'+
+                'G1 X1 Y1 F40\n';
         });
     </script>
 </body>
