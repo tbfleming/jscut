@@ -167,7 +167,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                             <table class="table">
                                 <tr>
                                     <td><label for="pxPerInch">px per inch</label>
-                                    <td><input type="number" id="pxPerInch" data-bind="value: svgViewModel.pxPerInch">
+                                    <td><input type="number" step="any" id="pxPerInch" data-bind="value: svgViewModel.pxPerInch">
                             </table>
                             <div style="display: inline-block">
                                 <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
@@ -216,27 +216,27 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                 <tr>
                                     <td><label class="control-label">Diameter</label>
                                     <td><span data-bind="text: units"></span>
-                                    <td><input type="number" data-bind="value: diameter">
+                                    <td><input type="number" step="any" data-bind="value: diameter">
                                 <tr>
                                     <td><label class="control-label">Pass Depth</label>
                                     <td><span data-bind="text: units"></span>
-                                    <td><input type="number" data-bind="value: passDepth">
+                                    <td><input type="number" step="any" data-bind="value: passDepth">
                                 <tr>
                                     <td><label class="control-label">Overlap</label>
                                     <td>[0, 1)
-                                    <td><input type="number" data-bind="value: overlap">
+                                    <td><input type="number" step="any" data-bind="value: overlap">
                                 <tr>
                                     <td><label class="control-label">Rapid</label>
                                     <td><span data-bind="text: units"></span>/min
-                                    <td><input type="number" data-bind="value: rapidRate">
+                                    <td><input type="number" step="any" data-bind="value: rapidRate">
                                 <tr>
                                     <td><label class="control-label">Plunge</label>
                                     <td><span data-bind="text: units"></span>/min
-                                    <td><input type="number" data-bind="value: plungeRate">
+                                    <td><input type="number" step="any" data-bind="value: plungeRate">
                                 <tr>
                                     <td><label class="control-label">Cut</label>
                                     <td><span data-bind="text: units"></span>/min
-                                    <td><input type="number" data-bind="value: cutRate">
+                                    <td><input type="number" step="any" data-bind="value: cutRate">
                             </table>
                         </div>
                     </div>
@@ -301,15 +301,15 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <tr>
                                         <td><label class="control-label">Cut Depth</label>
                                         <td><span data-bind="text: units" />
-                                        <td><input type="number" data-bind="value: cutDepth">
+                                        <td><input type="number" step="any" data-bind="value: cutDepth">
                                     <tr data-bind="visible: camOp()!='Engrave'">
                                         <td><label class="control-label">Margin</label>
                                         <td><span data-bind="text: units" />
-                                        <td><input type="number" data-bind="value: margin">
+                                        <td><input type="number" step="any" data-bind="value: margin">
                                     <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
                                         <td><label class="control-label">Width</label>
                                         <td><span data-bind="text: materialViewModel.matUnits" />
-                                        <td><input type="number" data-bind="value: width">
+                                        <td><input type="number" step="any" data-bind="value: width">
                                 </table>
                             </div>
                         </div>
@@ -410,7 +410,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         </select>
                                 <tr>
                                     <td><label for="inputMatThickness">Thickness</label>
-                                    <td><input type="number" id="inputMatThickness" data-bind="value: matThickness" placeholder="Thickness">
+                                    <td><input type="number" step="any" id="inputMatThickness" data-bind="value: matThickness" placeholder="Thickness">
                                 <tr>
                                     <td><label for="selectMatZOrigin">Z Origin</label>
                                     <td>
@@ -420,7 +420,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         </select>
                                 <tr>
                                     <td><label for="inputMatClearance">Clearance</label>
-                                    <td><input type="number" id="inputMatClearance" data-bind="value: matClearance" placeholder="Clearance">
+                                    <td><input type="number" step="any" id="inputMatClearance" data-bind="value: matClearance" placeholder="Clearance">
                             </table>
                         </div>
                     </div>
@@ -441,7 +441,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><input type="number" id="inputSelMinNumSegments" data-bind="value: selMinNumSegments" placeholder="Segments">
                                     <tr>
                                         <td><label for="inputSelMinSegmentLength">Minimum Segment Length (<span data-bind="text: selMinSegmentLength.units()"></span>)</label>
-                                        <td><input type="number" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
+                                        <td><input type="number" step="any" id="inputSelMinSegmentLength" data-bind="value: selMinSegmentLength" placeholder="Length">
                                 </table>
                             </div>
                         </div>
@@ -470,11 +470,11 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <tr>
                                         <td><label for="gcodeOffsetX">X Offset</label>
                                         <td><span data-bind="text: units" />
-                                        <td><input type="number" id="gcodeOffsetX" data-bind="value: offsetX">
+                                        <td><input type="number" step="any" id="gcodeOffsetX" data-bind="value: offsetX">
                                     <tr>
                                         <td><label for="gcodeOffsetY">Y Offset</label>
                                         <td><span data-bind="text: units" />
-                                        <td><input type="number" id="gcodeOffsetY" data-bind="value: offsetY">
+                                        <td><input type="number" step="any" id="gcodeOffsetY" data-bind="value: offsetY">
                                     <tr><td><label class="control-label">Min X</label><td><span data-bind="text: units" /><td><span data-bind="text: minX" />
                                     <tr><td><label class="control-label">Max X</label><td><span data-bind="text: units" /><td><span data-bind="text: maxX" />
                                     <tr><td><label class="control-label">Min Y</label><td><span data-bind="text: units" /><td><span data-bind="text: minY" />
