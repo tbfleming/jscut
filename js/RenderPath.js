@@ -395,8 +395,8 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         self.gl.useProgram(renderHeightMapProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         self.gl.enable(self.gl.DEPTH_TEST);
-        var canvasSize = Math.max(canvas.width, canvas.height);
-        self.gl.viewport((canvasSize - canvas.width) / 2, (canvas.height - canvasSize) / 2, canvasSize, canvasSize);
+        var canvasSize = Math.min(canvas.width, canvas.height);
+        self.gl.viewport((canvas.width - canvasSize) / 2, (canvas.height - canvasSize) / 2, canvasSize, canvasSize);
         self.gl.clear(self.gl.COLOR_BUFFER_BIT | self.gl.DEPTH_BUFFER_BIT);
 
         self.gl.activeTexture(self.gl.TEXTURE0);
