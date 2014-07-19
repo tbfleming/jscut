@@ -178,7 +178,7 @@ var Cam = new function () {
             path.push(path[0]);
             allPaths.push(path);
         }
-        result = mergePaths(null, allPaths);
+        var result = mergePaths(null, allPaths);
         for (var i = 0; i < result.length; ++i)
             result[i].safeToClose = true;
         return result;
@@ -186,7 +186,7 @@ var Cam = new function () {
 
     // Convert array of CamPath to array of Clipper path
     Cam.getClipperPathsFromCamPaths = function (paths) {
-        result = [];
+        var result = [];
         if (paths != null)
             for (var i = 0; i < paths.length; ++i)
                 result.push(paths[i].path);
