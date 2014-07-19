@@ -1,12 +1,25 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
-<polymer-element name="jscut-simulate-gcode" attributes="gcode cutterDiameter cutterHeight elementsUrl">
+<polymer-element name="jscut-parse-gcode" attributes="gcode parsedGcode">
+    <script src="../js/parseGcode.js"></script>
+    <script>
+        Polymer('jscut-parse-gcode', {
+            gcode: '',
+            parsedGcode: [],
+
+            gcodeChanged: function(oldValue, newValue) {
+                this.parsedGcode = parseGcode({}, newValue);
+            },
+        });
+    </script>
+</polymer-element>
+
+<polymer-element name="jscut-simulate-gcode" attributes="gcode parsedGcode cutterDiameter cutterHeight elementsUrl">
     <script src="../lib/jquery-2.1.1.min.js"></script>
     <script src="../lib/bootstrap-3.1.1/js/bootstrap.min.js"></script>
     <script src="../lib/gl-matrix-2.2.0-min.js"></script>
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/bootstrap-slider.min.js"></script>
-    <script src="../js/parseGcode.js"></script>
     <script src="../js/RenderPath.js"></script>
     <template>
         <div>
@@ -30,13 +43,14 @@
             var renderPath;
             var filled = false;
 
-            function fill(oldValue, newValue) {
+            function fill() {
                 if (filled)
-                    renderPath.fillPathBuffer(parseGcode({}, self.gcode), 0, self.cutterDiameter, self.cutterHeight);
+                    renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterHeight);
             }
 
             Polymer('jscut-simulate-gcode', {
                 gcode: '',
+                parsedGcode: [],
                 cutterDiameter: 0,
                 cutterHeight: 0,
                 elementsUrl: "elements",
@@ -49,13 +63,18 @@
 
                     window.requestAnimationFrame(function () {
                         renderPath = startRenderPath({}, self.$.renderPathCanvas, null, self.elementsUrl + '/../js', function (renderPath) {
-                            renderPath.fillPathBuffer(parseGcode({}, self.gcode), 0, self.cutterDiameter, self.cutterHeight);
+                            renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterHeight);
                             filled = true;
                         });
                     });
                 },
 
-                gcodeChanged: fill,
+                gcodeChanged: function (oldValue, newValue) {
+                    this.parsedGcode = parseGcode({}, newValue);
+                    fill();
+                },
+
+                parsedGcodeChanged: fill,
                 cutterDiameterChanged: fill,
                 cutterHeightChanged: fill,
             });

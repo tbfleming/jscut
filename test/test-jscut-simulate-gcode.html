@@ -12,7 +12,8 @@
         <core-localstorage name="test-jscut-simulate-gcode-cutterHeight" value="{{cutterHeight}}"></core-localstorage>
         <core-localstorage name="test-jscut-simulate-gcode-gcode" value="{{gcode}}"></core-localstorage>
 
-        <jscut-simulate-gcode gcode="{{gcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}" elementsurl="../elements"></jscut-simulate-gcode>
+        <jscut-parse-gcode gcode="{{gcode}}" parsedgcode="{{parsedGcode}}"></jscut-parse-gcode>
+        <jscut-simulate-gcode parsedGcode="{{parsedGcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}" elementsurl="../elements"></jscut-simulate-gcode>
         <br />
         <input type="number" value="{{cutterDiameter}}" />
         <br />
