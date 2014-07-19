@@ -16,25 +16,13 @@
 
 <polymer-element name="jscut-simulate-gcode" attributes="gcode parsedGcode cutterDiameter cutterHeight elementsUrl">
     <script src="../lib/jquery-2.1.1.min.js"></script>
-    <script src="../lib/bootstrap-3.1.1/js/bootstrap.min.js"></script>
     <script src="../lib/gl-matrix-2.2.0-min.js"></script>
     <script src="../lib/webgl-utils.js"></script>
-    <script src="../lib/bootstrap-slider.min.js"></script>
     <script src="../js/RenderPath.js"></script>
     <template>
-        <div>
-            <link href="../lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
-            <link href="../lib/bootstrap-slider.min.css" rel="stylesheet">
-            <div class="container-fluid">
-                <div class="row clearfix">
-                    <div class="col-md-12 column">
-                        <div class="jumbotron">
-                            <canvas id="renderPathCanvas" style="border: none;" width="512" height="512"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <link href="../lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
+        <link href="../lib/bootstrap-slider.min.css" rel="stylesheet">
+        <canvas id="renderPathCanvas" style="border: none;" width="512" height="512"></canvas>
     </template>
     <script>
         (function () {
