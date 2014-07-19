@@ -11,7 +11,6 @@
         Polymer('jscut-parse-gcode', {
             gcode: '',
             parsedGcode: [],
-
             gcodeChanged: function(oldValue, newValue) {
                 this.parsedGcode = parseGcode({}, newValue);
             },
@@ -19,11 +18,9 @@
     </script>
 </polymer-element>
 
-<polymer-element name="jscut-simulate-gcode" attributes="gcode parsedGcode cutterDiameter cutterHeight time1 time2 maxTime maxTimeRounded elementsUrl">
+<polymer-element name="jscut-simulate-gcode" attributes="width height gcode parsedGcode cutterDiameter cutterHeight time1 time2 maxTime maxTimeRounded elementsUrl">
     <template>
-        <link href="../lib/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
-        <link href="../lib/bootstrap-slider.min.css" rel="stylesheet">
-        <canvas id="renderPathCanvas" style="border: none;" width="512" height="512"></canvas>
+        <canvas id="renderPathCanvas" width="{{width}}" height="{{height}}"></canvas>
     </template>
     <script>
         (function () {
@@ -48,6 +45,8 @@
             }
 
             Polymer('jscut-simulate-gcode', {
+                width: 512,
+                height: 512,
                 gcode: '',
                 parsedGcode: [],
                 cutterDiameter: 0,
