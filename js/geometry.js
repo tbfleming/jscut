@@ -43,15 +43,11 @@ jscut.geometry = jscut.geometry || {};
         var conv = jscut.geometry.getConversion(units);
         if (isNaN(conv))
             return [];
-        var minX = Math.min(x1, x2) * conv;
-        var maxX = Math.max(x1, x2) * conv;
-        var minY = Math.min(y1, y2) * conv;
-        var maxY = Math.max(y1, y2) * conv;
         return [[
-            { X: minX, Y: minY },
-            { X: maxX, Y: minY },
-            { X: maxX, Y: maxY },
-            { X: minX, Y: maxY }]];
+            { X: x1 * conv, Y: y1 * conv },
+            { X: x2 * conv, Y: y1 * conv },
+            { X: x2 * conv, Y: y2 * conv },
+            { X: x1 * conv, Y: y2 * conv }]];
     }
 
     // Transform geometry. Returns new geometry.
@@ -91,7 +87,7 @@ jscut.geometry = jscut.geometry || {};
         return jscut.geometry.transform(matrix, geometry);
     }
 
-    // Rotate geometry. Units is "deg" or "rad". Returns new geometry.
+    // Rotate geometry. units is "deg" or "rad". Returns new geometry.
     jscut.geometry.rotate = function (geometry, angle, units) {
         var convertedAngle;
         if (units == "deg")
@@ -108,12 +104,23 @@ jscut.geometry = jscut.geometry || {};
         return jscut.geometry.transform(matrix, geometry);
     }
 
-    // Grow geometry by distance. Negative distance shrinks. Returns new geometry.
-    jscut.geometry.grow = function (geometry, distance, units) {
+    // Grow geometry by distance. Negative distance shrinks.
+    // join is "square", "round", or "miter". Returns new geometry.
+    jscut.geometry.grow = function (geometry, distance, units, join) {
         var conv = jscut.geometry.getConversion(units);
+        if(join=='square')
+            join = ClipperLib.JoinType.jtSquare;
+        else if(join=='round')
+            join = ClipperLib.JoinType.jtRound;
+        else if(join=='miter')
+            join = ClipperLib.JoinType.jtMiter;
+        else {
+            console.log("jscut.geometry.grow: join must be 'square', 'round', or 'miter'");
+            return [];
+        }
         if (isNaN(conv))
             return [];
-        return Path.offset(geometry, distance * conv);
+        return Path.offset(geometry, distance * conv, join);
     }
 
     // Intersect geometry. Returns new geometry.

@@ -25,7 +25,7 @@ handlers:
   http_headers:
       Access-Control-Allow-Origin: "*"
 
-- url: /stylesheets
-  static_dir: stylesheets
+- url: /components
+  static_dir: components
   http_headers:
       Access-Control-Allow-Origin: "*"

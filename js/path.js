@@ -204,9 +204,18 @@ var Path = new function () {
     }
 
     // Offset Clipper geometries by amount (positive expands, negative shrinks). Returns new geometry.
-    Path.offset = function(paths, amount) {
+    Path.offset = function (paths, amount, joinType) {
+        if (typeof joinType == 'undefined')
+            joinType = ClipperLib.JoinType.jtRound;
+
+        // bug workaround: join types are swapped in ClipperLib 6.1.3.2
+        if (joinType == ClipperLib.JoinType.jtSquare)
+            joinType = ClipperLib.JoinType.jtMiter;
+        else if (joinType == ClipperLib.JoinType.jtMiter)
+            joinType = ClipperLib.JoinType.jtSquare;
+
         var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
-        co.AddPaths(paths, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+        co.AddPaths(paths, joinType, ClipperLib.EndType.etClosedPolygon);
         var offsetted = [];
         co.Execute(offsetted, amount);
         offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, Path.cleanPolyDist);
