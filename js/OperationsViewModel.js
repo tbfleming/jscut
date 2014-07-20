@@ -324,7 +324,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             loading = true;
             self.rawPaths = json.rawPaths;
             f(json.name, self.name);
-            self.units(materialViewModel.matUnits()); // backwards compat: operation used to use materialViewModel's units
+            self.units(materialViewModel.matUnits()); // backwards compat: operation used to use materialViewModel's units !!!!! future hazard when switching to jscut.model.cleanOperation
             f(json.units, self.units);
             f(json.selected, self.selected);
             f(json.ramp, self.ramp);
