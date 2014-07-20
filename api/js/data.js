@@ -1,0 +1,132 @@
+// Copyright 2014 Todd Fleming
+//
+// This file is part of jscut.
+//
+// jscut is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// jscut is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with jscut.  If not, see <http://www.gnu.org/licenses/>.
+
+var jscut = jscut || {};
+jscut.data = jscut.data || {};
+
+(function () {
+    "use strict";
+
+    // Clean up material and return new object. Automatically converts old formats to new. json may be an object or text; if it's null or undefined then this creates an object with default values.
+    jscut.data.cleanMaterial = function (json) {
+        if (typeof json === 'undefined' || json == null)
+            json = {};
+        else if (typeof json === 'string')
+            json = JSON.parse(json);
+
+        var result = {
+            units: "inch",
+            thickness: "1.0",
+            zOrigin: "Top",
+            clearance: "0.1",
+        }
+
+        function fetch(name) {
+            var v = json[name];
+            if (typeof v !== "undefined")
+                result[name] = v;
+        }
+
+        fetch('units');
+        fetch('thickness');
+        fetch('zOrigin');
+        fetch('clearance');
+
+        return result;
+    }
+
+    // Clean up tool and return new object. Automatically converts old formats to new. json may be an object or text; if it's null or undefined then this creates an object with default values.
+    jscut.data.cleanTool = function (json) {
+        if (typeof json === 'undefined' || json == null)
+            json = {};
+        else if (typeof json === 'string')
+            json = JSON.parse(json);
+
+        var result = {
+            units: 'inch',
+            diameter: .125,
+            passDepth: .125,
+            overlap: .6,
+            rapidRate: 100,
+            plungeRate: 5,
+            cutRate: 40,
+        }
+
+        function fetch(name) {
+            var v = json[name];
+            if (typeof v !== "undefined")
+                result[name] = v;
+        }
+
+        fetch('units');
+        fetch('diameter');
+        fetch('passDepth');
+        fetch('overlap');
+        fetch('rapidRate');
+        fetch('plungeRate');
+        fetch('cutRate');
+
+        return result;
+    }
+
+    // Clean up operation and return new object. Automatically converts old formats to new. json may be an object or text; if it's null or undefined then this creates an object with default values.
+    jscut.data.cleanOperation = function (json) {
+        if (typeof json === 'undefined' || json == null)
+            json = {};
+        else if (typeof json === 'string')
+            json = JSON.parse(json);
+
+        var result = {
+            name: "",
+            units: "inch",
+            enabled: true,
+            ramp: false,
+            selected: "off",
+            combineOp: "Union",
+            camOp: "Pocket",
+            direction: "Conventional",
+            cutDepth: 0,
+            margin: 0,
+            width: 0,
+            geometries: [],
+        }
+
+        function fetch(name) {
+            var v = json[name];
+            if (typeof v !== "undefined")
+                result[name] = v;
+        }
+
+        fetch('name');
+        fetch('units');
+        fetch('enabled');
+        fetch('ramp');
+        fetch('selected');
+        fetch('combineOp');
+        fetch('camOp');
+        fetch('direction');
+        fetch('cutDepth');
+        fetch('margin');
+        fetch('width');
+        fetch('geometries');
+
+        if (result.camOp == "Outline") // backwards compat
+            result.camOp = "Outside";
+
+        return result;
+    }
+})();
