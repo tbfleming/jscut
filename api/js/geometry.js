@@ -143,8 +143,12 @@ jscut.geometry = jscut.geometry || {};
         return Path.clip(geometry1, geometry2, ClipperLib.ClipType.ctXor);
     }
 
-    // Convert geometry to SVG path data format
-    jscut.geometry.toSvgPathData = function (geometry, pxPerInch) {
+    // Convert geometry to SVG path data format ('d' attribute). Closes each path if
+    // closePaths is true. closePaths defaults to true; set it to false it you're
+    // converting CAM paths.
+    jscut.geometry.toSvgPathData = function (geometry, pxPerInch, closePaths) {
+        if (typeof closePaths == 'undefined')
+            closePaths = true;
         var scale = pxPerInch / Path.inchToClipperScale;
         var result = "";
         for (var i = 0; i < geometry.length; ++i) {
@@ -157,8 +161,9 @@ jscut.geometry = jscut.geometry || {};
                     result += "L ";
                 result += point.X * scale + " " + (-point.Y) * scale + " ";
             }
+            if (closePaths)
+                result += "Z ";
         }
-        result += "Z";
         return result;
     }
 })();

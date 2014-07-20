@@ -22,6 +22,16 @@
                 svg.setAttribute("viewBox", (bbox.x - 2) + " " + (bbox.y - 2) + " " + (bbox.width + 4) + " " + (bbox.height + 4));
             }
 
+            function addCamPathToSvg(attrs, geometry) {
+                var path = document.createElementNS(svgNS, "path");
+                path.setAttribute('d', jscut.cam.toSvgPathData(geometry, 90));
+                for (var k in attrs)
+                    path.setAttribute(k, attrs[k]);
+                svg.appendChild(path);
+                var bbox = svg.getBBox();
+                svg.setAttribute("viewBox", (bbox.x - 2) + " " + (bbox.y - 2) + " " + (bbox.width + 4) + " " + (bbox.height + 4));
+            }
+
             var r1 = jscut.geometry.createRect(-50, -50, 50, 50, 'mm');
             var r2 = jscut.geometry.translate(r1, 20, 20, 'mm');
             var r3 = jscut.geometry.translate(r2, 20, 20, 'mm');
@@ -38,6 +48,14 @@
                         dx, dy, "mm"));
             }
 
+            function testCamPaths(svgAttrs, dx, dy, operation, tool) {
+                for (var i = 0; i < operation.geometries.length; ++i)
+                    operation.geometries[i] = jscut.geometry.translate(operation.geometries[i], dx, dy, "mm");
+                addCamPathToSvg(
+                    svgAttrs,
+                    jscut.cam.getCamPaths(jscut.data.cleanOperation(operation), jscut.data.cleanTool(tool)));
+            }
+
             testPreview({ fill: 'black' }, 150, 0, { geometries: [r1, r2, r3] });
             testPreview({ fill: 'black' }, 300, 0, { geometries: [r1, r2, r3], combineOp: "Intersect" });
             testPreview({ fill: 'black' }, 450, 0, { geometries: [r1, r2, r3], combineOp: "Diff" });
@@ -47,6 +65,11 @@
             testPreview({ fill: 'black' }, 300, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Inside" });
             testPreview({ fill: 'black' }, 450, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Outside" });
             testPreview({ fill: 'black' }, 600, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Engrave" });
+
+            testCamPaths({ fill: 'none', stroke: 'cyan' }, 150, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Pocket" });
+            testCamPaths({ fill: 'none', stroke: 'cyan' }, 300, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Inside" });
+            testCamPaths({ fill: 'none', stroke: 'cyan' }, 450, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Outside" });
+            testCamPaths({ fill: 'none', stroke: 'cyan' }, 600, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Engrave" });
         });
     </script>
 </body>

@@ -73,4 +73,44 @@ jscut.cam = jscut.cam || {};
 
         return result;
     }
+
+    // Get cam paths for operation.
+    // Each cam path has this format: {
+    //      path:               Path data (geometry format)
+    //      safeToClose:        Is it safe to close the path without retracting?
+    // }
+    jscut.cam.getCamPaths = function (operation, tool) {
+        var geometry = jscut.cam.getCombinedGeometry(operation);
+
+        var grow = operation.margin;
+        if (operation.camOp == "Pocket" || operation.camOp == "Inside")
+            grow = -grow;
+        if (operation.camOp != "Engrave" && grow != 0)
+            geometry = jscut.geometry.grow(geometry, grow, operation.units, 'round');
+
+        var diameter = jscut.geometry.getConversion(tool.units) * tool.diameter;
+
+        if (operation.camOp == "Pocket")
+            return Cam.pocket(geometry, diameter, 1 - tool.stepover, operation.direction == "Climb");
+        else if (operation.camOp == "Inside" || operation.camOp == "Outside") {
+            var width = jscut.geometry.getConversion(operation.units) * operation.width;
+            if (width < diameter)
+                width = diameter;
+            return Cam.outline(geometry, diameter, operation.camOp == "Inside", width, 1 - tool.stepover, operation.direction == "Climb");
+        }
+        else if (operation.camOp == "Engrave")
+            return Cam.engrave(geometry, operation.direction == "Climb");
+        else {
+            console.log("jscut.cam.getPaths: operation.camOp must be 'Pocket', 'Inside', 'Outside', or 'Engrave'");
+            return [];
+        }
+    }
+
+    // Convert cam paths to SVG path data format ('d' attribute).
+    jscut.cam.toSvgPathData = function (camPaths, pxPerInch) {
+        var paths = [];
+        for (var i = 0; i < camPaths.length; ++i)
+            paths.push(camPaths[i].path);
+        return jscut.geometry.toSvgPathData(paths, pxPerInch, false);
+    }
 })();

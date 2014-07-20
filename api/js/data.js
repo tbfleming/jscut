@@ -72,7 +72,7 @@ jscut.data = jscut.data || {};
             units: 'inch',
             diameter: .125,
             passDepth: .125,
-            overlap: .6,
+            stepover: .6,
             rapidRate: 100,
             plungeRate: 5,
             cutRate: 40,
@@ -87,7 +87,9 @@ jscut.data = jscut.data || {};
         fetch('units');
         fetch('diameter');
         fetch('passDepth');
-        fetch('overlap');
+        if (typeof json.overlap !== "undefined") // backwards compat
+            result.stepover = 1 - json.overlap;
+        fetch('stepover');
         fetch('rapidRate');
         fetch('plungeRate');
         fetch('cutRate');
