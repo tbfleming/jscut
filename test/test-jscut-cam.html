@@ -7,6 +7,7 @@
 </head>
 <body>
     <svg width="800" height="400" preserveAspectRatio="xMinYMin meet"></svg>
+    <br><textarea rows="20" cols="60"></textarea>
     <script>
         window.addEventListener('HTMLImportsLoaded', function (e) {
             var svg = document.querySelector('svg');
@@ -70,6 +71,15 @@
             testCamPaths({ fill: 'none', stroke: 'cyan' }, 300, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Inside" });
             testCamPaths({ fill: 'none', stroke: 'cyan' }, 450, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Outside" });
             testCamPaths({ fill: 'none', stroke: 'cyan' }, 600, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Engrave" });
+
+            var operation = jscut.data.cleanOperation({ geometries: [r1, r2, r3], units: "mm", width: 10, name: "Test Operation" });
+            var tool = jscut.data.cleanTool();
+            var material = jscut.data.cleanMaterial();
+            var gcodeOptions = jscut.data.cleanGcodeOptions();
+            var camPaths = jscut.cam.getCamPaths(operation, tool);
+            var gcode = jscut.cam.getOperationGcode(operation, tool, material, gcodeOptions, camPaths);
+
+            document.querySelector('textarea').value = gcode;
         });
     </script>
 </body>

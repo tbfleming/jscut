@@ -113,4 +113,36 @@ jscut.cam = jscut.cam || {};
             paths.push(camPaths[i].path);
         return jscut.geometry.toSvgPathData(paths, pxPerInch, false);
     }
+
+    // Get gcode for operation.
+    jscut.cam.getOperationGcode = function (operation, tool, material, gcodeOptions, camPaths) {
+        var fromOpConv = jscut.data.getInchConversion(operation.units);
+        var fromToolConv = jscut.data.getInchConversion(tool.units);
+        var fromMatConv = jscut.data.getInchConversion(material.units);
+        var toGcodeConv = 1 / jscut.data.getInchConversion(gcodeOptions.units);
+
+        var topZ = 0;
+        var botZ = -operation.cutDepth * fromOpConv * toGcodeConv;
+        if (material.zOrigin != "Top") {
+            topZ = material.thickness * fromMatConv * toGcodeConv;
+            botZ = topZ + botZ;
+        }
+
+        return Cam.getGcode({
+            paths: camPaths,
+            ramp: operation.ramp,
+            scale: 1 / jscut.geometry.getConversion(gcodeOptions.units),
+            offsetX: gcodeOptions.offsetX,
+            offsetY: gcodeOptions.offsetY,
+            decimal: 4,
+            topZ: topZ,
+            botZ: botZ,
+            safeZ: topZ + material.clearance * fromMatConv * toGcodeConv,
+            passDepth: tool.passDepth * fromToolConv * toGcodeConv,
+            plungeFeed: tool.plungeRate * fromToolConv * toGcodeConv,
+            retractFeed: tool.rapidRate * fromToolConv * toGcodeConv,
+            cutFeed: tool.cutRate * fromToolConv * toGcodeConv,
+            rapidFeed: tool.rapidRate * fromToolConv * toGcodeConv,
+        });
+    }
 })();

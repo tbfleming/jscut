@@ -108,12 +108,12 @@ jscut.data = jscut.data || {};
             name: "",
             units: "inch",
             enabled: true,
-            ramp: false,
+            ramp: true,
             selected: "off",
             combineOp: "Union",
             camOp: "Pocket",
             direction: "Conventional",
-            cutDepth: 0,
+            cutDepth: .125,
             margin: 0,
             width: 0,
             geometries: [],
@@ -140,6 +140,34 @@ jscut.data = jscut.data || {};
 
         if (result.camOp == "Outline") // backwards compat
             result.camOp = "Outside";
+
+        return result;
+    }
+
+    // Clean up gcode options and return new object. Automatically converts old formats to new. json may be an object or text; if it's null or undefined then this creates an object with default values.
+    jscut.data.cleanGcodeOptions = function (json) {
+        if (typeof json === 'undefined' || json == null)
+            json = {};
+        else if (typeof json === 'string')
+            json = JSON.parse(json);
+
+        var result = {
+            units: "mm",
+            gcodeFilename: "gcode.gcode",
+            offsetX: 0,
+            offsetY: 0,
+        }
+
+        function fetch(name) {
+            var v = json[name];
+            if (typeof v !== "undefined")
+                result[name] = v;
+        }
+
+        fetch('units');
+        fetch('gcodeFilename');
+        fetch('offsetX');
+        fetch('offsetY');
 
         return result;
     }
