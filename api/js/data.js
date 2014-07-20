@@ -21,6 +21,18 @@ jscut.data = jscut.data || {};
 (function () {
     "use strict";
 
+    // Get the factor to convert units ("inch" or "mm") to inch
+    jscut.data.getInchConversion = function (units) {
+        if (units == "inch")
+            return 1;
+        else if (units == "mm")
+            return 1 / 25.4;
+        else {
+            console.log("jscut.data.getInchConversion: units must be 'inch' or 'mm'");
+            return Number.NaN;
+        }
+    }
+
     // Clean up material and return new object. Automatically converts old formats to new. json may be an object or text; if it's null or undefined then this creates an object with default values.
     jscut.data.cleanMaterial = function (json) {
         if (typeof json === 'undefined' || json == null)

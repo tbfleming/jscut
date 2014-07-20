@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>test</title>
+    <script src="../bower_components/platform/platform.js"></script>
+    <link rel="import" href="../api/jscut-cam.html">
+</head>
+<body>
+    <svg width="800" height="400" preserveAspectRatio="xMinYMin meet"></svg>
+    <script>
+        window.addEventListener('HTMLImportsLoaded', function (e) {
+            var svg = document.querySelector('svg');
+            var svgNS = "http://www.w3.org/2000/svg";
+
+            function addToSvg(attrs, geometry) {
+                var path = document.createElementNS(svgNS, "path");
+                path.setAttribute('d', jscut.geometry.toSvgPathData(geometry, 90));
+                for (var k in attrs)
+                    path.setAttribute(k, attrs[k]);
+                svg.appendChild(path);
+                var bbox = svg.getBBox();
+                svg.setAttribute("viewBox", (bbox.x - 2) + " " + (bbox.y - 2) + " " + (bbox.width + 4) + " " + (bbox.height + 4));
+            }
+
+            var r1 = jscut.geometry.createRect(-50, -50, 50, 50, 'mm');
+            var r2 = jscut.geometry.translate(r1, 20, 20, 'mm');
+            var r3 = jscut.geometry.translate(r2, 20, 20, 'mm');
+
+            addToSvg({ fill: 'red' }, r1);
+            addToSvg({ fill: 'green' }, r2);
+            addToSvg({ fill: 'blue' }, r3);
+
+            function testPreview(svgAttrs, dx, dy, operation, tool) {
+                addToSvg(
+                    svgAttrs,
+                    jscut.geometry.translate(
+                        jscut.cam.getPreviewGeometry(jscut.data.cleanOperation(operation), jscut.data.cleanTool(tool)),
+                        dx, dy, "mm"));
+            }
+
+            testPreview({ fill: 'black' }, 150, 0, { geometries: [r1, r2, r3] });
+            testPreview({ fill: 'black' }, 300, 0, { geometries: [r1, r2, r3], combineOp: "Intersect" });
+            testPreview({ fill: 'black' }, 450, 0, { geometries: [r1, r2, r3], combineOp: "Diff" });
+            testPreview({ fill: 'black' }, 600, 0, { geometries: [r1, r2, r3], combineOp: "Xor" });
+
+            testPreview({ fill: 'black' }, 150, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Pocket" });
+            testPreview({ fill: 'black' }, 300, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Inside" });
+            testPreview({ fill: 'black' }, 450, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Outside" });
+            testPreview({ fill: 'black' }, 600, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Engrave" });
+        });
+    </script>
+</body>
+</html>
