@@ -10,8 +10,8 @@ handlers:
   http_headers:
       Access-Control-Allow-Origin: "*"
 
-- url: /elements
-  static_dir: elements
+- url: /api
+  static_dir: api
   http_headers:
       Access-Control-Allow-Origin: "*"
 
@@ -22,10 +22,5 @@ handlers:
 
 - url: /lib
   static_dir: lib
-  http_headers:
-      Access-Control-Allow-Origin: "*"
-
-- url: /components
-  static_dir: components
   http_headers:
       Access-Control-Allow-Origin: "*"
