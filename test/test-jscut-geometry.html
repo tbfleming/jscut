@@ -41,18 +41,12 @@
             addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.xor(h, v), 8, 4, 'inch'));
 
             var u = jscut.geometry.union(h, v);
-            var ugrowSquare = jscut.geometry.grow(u, 10, 'mm', 'square');
-            var ugrowMiter = jscut.geometry.grow(u, 10, 'mm', 'miter');
-            var ugrowRound = jscut.geometry.grow(u, 10, 'mm', 'round');
-            var ushrinkSquare = jscut.geometry.grow(u, -10, 'mm', 'square');
-            var ushrinkMiter = jscut.geometry.grow(u, -10, 'mm', 'miter');
-            var ushrinkRound = jscut.geometry.grow(u, -10, 'mm', 'round');
-            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.difference(u, ushrinkSquare), 0, 8, 'inch'));
-            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.difference(ugrowSquare, u), 0, 12, 'inch'));
-            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.difference(u, ushrinkMiter), 4, 8, 'inch'));
-            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.difference(ugrowMiter, u), 4, 12, 'inch'));
-            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.difference(u, ushrinkRound), 8, 8, 'inch'));
-            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.difference(ugrowRound, u), 8, 12, 'inch'));
+            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.grow(u, -10, 'mm', 'square'), 0, 8, 'inch'));
+            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.grow(u, 10, 'mm', 'square'), 0, 12, 'inch'));
+            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.grow(u, -10, 'mm', 'miter'), 4, 8, 'inch'));
+            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.grow(u, 10, 'mm', 'miter'), 4, 12, 'inch'));
+            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.grow(u, -10, 'mm', 'round'), 8, 8, 'inch'));
+            addToSvg({ fill: 'purple' }, jscut.geometry.translate(jscut.geometry.grow(u, 10, 'mm', 'round'), 8, 12, 'inch'));
         });
     </script>
 </body>
