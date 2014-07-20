@@ -62,7 +62,6 @@
                     // Chrome 36: the ready event fires after this object's shadow-root is created,
                     // but before parent shadow-roots are created. That causes WebGL initialization to
                     // fail. requestAnimationFrame works around this. Firefox doesn't have this problem.
-
                     window.requestAnimationFrame(function () {
                         renderPath = startRenderPath({}, self.$.renderPathCanvas, null, self.elementsUrl + '/../js', function (renderPath) {
                             renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterHeight);
