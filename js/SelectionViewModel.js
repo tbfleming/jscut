@@ -32,7 +32,7 @@ function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
             return true;
         }
 
-        var path = Path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength.toInch() * svgViewModel.pxPerInch(), function (msg) {
+        var path = jscut.priv.path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength.toInch() * svgViewModel.pxPerInch(), function (msg) {
             showAlert(msg, "alert-warning");
         });
 
