@@ -114,8 +114,29 @@ jscut.cam = jscut.cam || {};
         return jscut.geometry.toSvgPathData(paths, pxPerInch, false);
     }
 
+    // Get gcode header
+    jscut.cam.getGcodeHeader = function (tool, material, gcodeOptions) {
+        var fromToolConv = jscut.data.getInchConversion(tool.units);
+        var fromMatConv = jscut.data.getInchConversion(material.units);
+        var toGcodeConv = 1 / jscut.data.getInchConversion(gcodeOptions.units);
+
+        var topZ = 0;
+        if (material.zOrigin != "Top")
+            topZ = material.thickness * fromMatConv * toGcodeConv;
+
+        var gcode = "";
+        if (gcodeOptions.units == "inch")
+            gcode += "G20         ; Set units to inches\r\n";
+        else
+            gcode += "G21         ; Set units to mm\r\n";
+        gcode += "G90         ; Absolute positioning\r\n";
+        gcode += "G1 Z" + (topZ + material.clearance * fromMatConv * toGcodeConv) +
+            " F" + tool.rapidRate * fromToolConv * toGcodeConv + "      ; Move to clearance level\r\n"
+        return gcode;
+    }
+
     // Get gcode for operation.
-    jscut.cam.getOperationGcode = function (operation, tool, material, gcodeOptions, camPaths) {
+    jscut.cam.getOperationGcode = function (opIndex, operation, tool, material, gcodeOptions, camPaths) {
         var fromOpConv = jscut.data.getInchConversion(operation.units);
         var fromToolConv = jscut.data.getInchConversion(tool.units);
         var fromMatConv = jscut.data.getInchConversion(material.units);
@@ -127,8 +148,21 @@ jscut.cam = jscut.cam || {};
             topZ = material.thickness * fromMatConv * toGcodeConv;
             botZ = topZ + botZ;
         }
+        
+        var gcode =
+            "\r\n;" +
+            "\r\n; Operation:    " + opIndex +
+            "\r\n; Name:         " + operation.name +
+            "\r\n; Type:         " + operation.camOp +
+            "\r\n; Paths:        " + camPaths.length +
+            "\r\n; Direction:    " + operation.direction +
+            "\r\n; Cut Depth:    " + operation.cutDepth * fromOpConv * toGcodeConv +
+            "\r\n; Pass Depth:   " + tool.passDepth * fromToolConv * toGcodeConv +
+            "\r\n; Plunge rate:  " + tool.plungeRate * fromToolConv * toGcodeConv +
+            "\r\n; Cut rate:     " + tool.cutRate * fromToolConv * toGcodeConv +
+            "\r\n;\r\n";
 
-        return Cam.getGcode({
+        gcode += Cam.getGcode({
             paths: camPaths,
             ramp: operation.ramp,
             scale: 1 / jscut.geometry.getConversion(gcodeOptions.units),
@@ -144,5 +178,6 @@ jscut.cam = jscut.cam || {};
             cutFeed: tool.cutRate * fromToolConv * toGcodeConv,
             rapidFeed: tool.rapidRate * fromToolConv * toGcodeConv,
         });
+        return gcode;
     }
 })();
