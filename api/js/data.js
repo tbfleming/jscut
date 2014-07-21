@@ -72,7 +72,7 @@ jscut.data = jscut.data || {};
             units: 'inch',
             diameter: .125,
             passDepth: .125,
-            stepover: .6,
+            stepover: .4,
             rapidRate: 100,
             plungeRate: 5,
             cutRate: 40,

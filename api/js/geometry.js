@@ -24,9 +24,9 @@ jscut.geometry = jscut.geometry || {};
     // Get the factor to convert units ("inch" or "mm") into geometry coordinates.
     jscut.geometry.getConversion = function (units) {
         if (units == "inch")
-            return Path.inchToClipperScale;
+            return jscut.priv.path.inchToClipperScale;
         else if (units == "mm")
-            return Path.inchToClipperScale / 25.4;
+            return jscut.priv.path.inchToClipperScale / 25.4;
         else {
             console.log("jscut.geometry: units must be 'inch' or 'mm'");
             return Number.NaN;
@@ -120,27 +120,27 @@ jscut.geometry = jscut.geometry || {};
         }
         if (isNaN(conv))
             return [];
-        return Path.offset(geometry, distance * conv, join);
+        return jscut.priv.path.offset(geometry, distance * conv, join);
     }
 
     // Intersect geometry. Returns new geometry.
     jscut.geometry.intersect = function (geometry1, geometry2) {
-        return Path.clip(geometry1, geometry2, ClipperLib.ClipType.ctIntersection);
+        return jscut.priv.path.clip(geometry1, geometry2, ClipperLib.ClipType.ctIntersection);
     }
 
     // Union geometry. Returns new geometry.
     jscut.geometry.union = function (geometry1, geometry2) {
-        return Path.clip(geometry1, geometry2, ClipperLib.ClipType.ctUnion);
+        return jscut.priv.path.clip(geometry1, geometry2, ClipperLib.ClipType.ctUnion);
     }
 
     // Difference geometry. Returns new geometry.
     jscut.geometry.difference = function (geometry1, geometry2) {
-        return Path.clip(geometry1, geometry2, ClipperLib.ClipType.ctDifference);
+        return jscut.priv.path.clip(geometry1, geometry2, ClipperLib.ClipType.ctDifference);
     }
 
     // Xor geometry. Returns new geometry.
     jscut.geometry.xor = function (geometry1, geometry2) {
-        return Path.clip(geometry1, geometry2, ClipperLib.ClipType.ctXor);
+        return jscut.priv.path.clip(geometry1, geometry2, ClipperLib.ClipType.ctXor);
     }
 
     // Convert geometry to SVG path data format ('d' attribute). Closes each path if
@@ -149,7 +149,7 @@ jscut.geometry = jscut.geometry || {};
     jscut.geometry.toSvgPathData = function (geometry, pxPerInch, closePaths) {
         if (typeof closePaths == 'undefined')
             closePaths = true;
-        var scale = pxPerInch / Path.inchToClipperScale;
+        var scale = pxPerInch / jscut.priv.path.inchToClipperScale;
         var result = "";
         for (var i = 0; i < geometry.length; ++i) {
             var subGeom = geometry[i];

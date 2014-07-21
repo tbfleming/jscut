@@ -4,15 +4,15 @@
     <title>test</title>
     <script src="../bower_components/platform/platform.js"></script>
     <link rel="import" href="../api/jscut-cam.html">
-    <!--<link rel="import" href="../api/jscut-simulate-gcode.html">-->
+    <link rel="import" href="../api/jscut-simulate-gcode.html">
 </head>
 <body>
     <svg width="800" height="400" preserveAspectRatio="xMinYMin meet"></svg>
     <br><textarea rows="20" cols="60"></textarea>
-    <!--<jscut-simulate-gcode elementsurl="../elements"></jscut-simulate-gcode>-->
+    <jscut-simulate-gcode cutterdiameter="3.175" cutterheight="25.4" elementsurl="../elements"></jscut-simulate-gcode>
 
     <script>
-        window.addEventListener('HTMLImportsLoaded', function (e) {
+        document.addEventListener('polymer-ready', function () {
             var svg = document.querySelector('svg');
             var svgNS = "http://www.w3.org/2000/svg";
 
@@ -75,7 +75,7 @@
             testCamPaths({ fill: 'none', stroke: 'cyan' }, 450, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Outside" });
             testCamPaths({ fill: 'none', stroke: 'cyan' }, 600, 150, { geometries: [r1, r2, r3], units: "mm", width: 10, camOp: "Engrave" });
 
-            var operation = jscut.data.cleanOperation({ geometries: [r1, r2, r3], units: "mm", width: 10, name: "Test Operation" });
+            var operation = jscut.data.cleanOperation({ geometries: [r1, r2, r3], units: "mm", width: 10, cutDepth: 3.175, name: "Test Operation" });
             var tool = jscut.data.cleanTool();
             var material = jscut.data.cleanMaterial();
             var gcodeOptions = jscut.data.cleanGcodeOptions();
@@ -86,7 +86,7 @@
             gcode += jscut.cam.getOperationGcode(0, operation, tool, material, gcodeOptions, camPaths);
 
             document.querySelector('textarea').value = gcode;
-            //document.querySelector('jscut-simulate-gcode').value = gcode;
+            document.querySelector('jscut-simulate-gcode').gcode = gcode;
         });
     </script>
 </body>
