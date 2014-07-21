@@ -109,7 +109,7 @@ var Cam = new function () {
     // Compute paths for pocket operation on Clipper geometry. Returns array
     // of CamPath. cutterDia is in Clipper units. overlap is in the range [0, 1).
     Cam.pocket = function (geometry, cutterDia, overlap, climb) {
-        var current = Path.offset(geometry, -cutterDia / 2);
+        var current = jscut.priv.path.offset(geometry, -cutterDia / 2);
         var bounds = current.slice(0);
         var allPaths = [];
         while (current.length != 0) {
@@ -117,7 +117,7 @@ var Cam = new function () {
                 for (var i = 0; i < current.length; ++i)
                     current[i].reverse();
             allPaths = current.concat(allPaths);
-            current = Path.offset(current, -cutterDia * (1 - overlap));
+            current = jscut.priv.path.offset(current, -cutterDia * (1 - overlap));
         }
         return mergePaths(bounds, allPaths);
     };
@@ -136,13 +136,13 @@ var Cam = new function () {
         var needReverse;
 
         if (isInside) {
-            current = Path.offset(geometry, -cutterDia / 2);
-            bounds = Path.diff(current, Path.offset(geometry, -(width - cutterDia / 2)));
+            current = jscut.priv.path.offset(geometry, -cutterDia / 2);
+            bounds = jscut.priv.path.diff(current, jscut.priv.path.offset(geometry, -(width - cutterDia / 2)));
             eachOffset = -eachWidth;
             needReverse = climb;
         } else {
-            current = Path.offset(geometry, cutterDia / 2);
-            bounds = Path.diff(Path.offset(geometry, width - cutterDia / 2), current);
+            current = jscut.priv.path.offset(geometry, cutterDia / 2);
+            bounds = jscut.priv.path.diff(jscut.priv.path.offset(geometry, width - cutterDia / 2), current);
             eachOffset = eachWidth;
             needReverse = !climb;
         }
@@ -154,7 +154,7 @@ var Cam = new function () {
             allPaths = current.concat(allPaths);
             var nextWidth = currentWidth + eachWidth;
             if (nextWidth > width && width - currentWidth > 0) {
-                current = Path.offset(current, width - currentWidth);
+                current = jscut.priv.path.offset(current, width - currentWidth);
                 if (needReverse)
                     for (var i = 0; i < current.length; ++i)
                         current[i].reverse();
@@ -162,7 +162,7 @@ var Cam = new function () {
                 break;
             }
             currentWidth = nextWidth;
-            current = Path.offset(current, eachOffset);
+            current = jscut.priv.path.offset(current, eachOffset);
         }
         return mergePaths(bounds, allPaths);
     };

@@ -31,30 +31,30 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
     self.unitConverter.add(self.offsetY);
 
     self.minX = ko.computed(function () {
-        return (self.unitConverter.fromInch(operationsViewModel.minX() / Path.inchToClipperScale) + Number(self.offsetX())).toFixed(4);
+        return (self.unitConverter.fromInch(operationsViewModel.minX() / jscut.priv.path.inchToClipperScale) + Number(self.offsetX())).toFixed(4);
     });
     self.maxX = ko.computed(function () {
-        return (self.unitConverter.fromInch(operationsViewModel.maxX() / Path.inchToClipperScale) + Number(self.offsetX())).toFixed(4);
+        return (self.unitConverter.fromInch(operationsViewModel.maxX() / jscut.priv.path.inchToClipperScale) + Number(self.offsetX())).toFixed(4);
     });
     self.minY = ko.computed(function () {
-        return (-self.unitConverter.fromInch(operationsViewModel.maxY() / Path.inchToClipperScale) + Number(self.offsetY())).toFixed(4);
+        return (-self.unitConverter.fromInch(operationsViewModel.maxY() / jscut.priv.path.inchToClipperScale) + Number(self.offsetY())).toFixed(4);
     });
     self.maxY = ko.computed(function () {
-        return (-self.unitConverter.fromInch(operationsViewModel.minY() / Path.inchToClipperScale) + Number(self.offsetY())).toFixed(4);
+        return (-self.unitConverter.fromInch(operationsViewModel.minY() / jscut.priv.path.inchToClipperScale) + Number(self.offsetY())).toFixed(4);
     });
 
     self.zeroLowerLeft = function () {
         allowGen = false;
-        self.offsetX(-self.unitConverter.fromInch(operationsViewModel.minX() / Path.inchToClipperScale));
-        self.offsetY(-self.unitConverter.fromInch(-operationsViewModel.maxY() / Path.inchToClipperScale));
+        self.offsetX(-self.unitConverter.fromInch(operationsViewModel.minX() / jscut.priv.path.inchToClipperScale));
+        self.offsetY(-self.unitConverter.fromInch(-operationsViewModel.maxY() / jscut.priv.path.inchToClipperScale));
         allowGen = true;
         self.generateGcode();
     }
 
     self.zeroCenter = function () {
         allowGen = false;
-        self.offsetX(-self.unitConverter.fromInch((operationsViewModel.minX() + operationsViewModel.maxX()) / 2 / Path.inchToClipperScale));
-        self.offsetY(-self.unitConverter.fromInch(-(operationsViewModel.minY() + operationsViewModel.maxY()) / 2 / Path.inchToClipperScale));
+        self.offsetX(-self.unitConverter.fromInch((operationsViewModel.minX() + operationsViewModel.maxX()) / 2 / jscut.priv.path.inchToClipperScale));
+        self.offsetY(-self.unitConverter.fromInch(-(operationsViewModel.minY() + operationsViewModel.maxY()) / 2 / jscut.priv.path.inchToClipperScale));
         allowGen = true;
         self.generateGcode();
     }
@@ -91,9 +91,9 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
 
         var scale;
         if(self.units() == "inch")
-            scale = 1 / Path.inchToClipperScale;
+            scale = 1 / jscut.priv.path.inchToClipperScale;
         else
-            scale = 25.4 / Path.inchToClipperScale;
+            scale = 25.4 / jscut.priv.path.inchToClipperScale;
         var topZ = self.unitConverter.fromInch(materialViewModel.matTopZ.toInch());
 
         var gcode = "";

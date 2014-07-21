@@ -15,12 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-var Path = new function () {
+var jscut = jscut || {};
+jscut.priv = jscut.priv || {};
+jscut.priv.path = jscut.priv.path || {};
+
+(function () {
     "use strict";
-    Path = this;
-    Path.inchToClipperScale = 100000;                           // Scale inch to Clipper
-    Path.cleanPolyDist = Path.inchToClipperScale / 100000;
-    Path.arcTolerance = Path.inchToClipperScale / 40000;
+    jscut.priv.path.inchToClipperScale = 100000;                           // Scale inch to Clipper
+    jscut.priv.path.cleanPolyDist = jscut.priv.path.inchToClipperScale / 100000;
+    jscut.priv.path.arcTolerance = jscut.priv.path.inchToClipperScale / 40000;
 
     // Linearize a cubic bezier. Returns ['L', x2, y2, x3, y3, ...]. The return value doesn't
     // include (p1x, p1y); it's part of the previous segment.
@@ -57,7 +60,7 @@ var Path = new function () {
 
     // Linearize a path. Both the input path and the returned path are in snap.svg's format.
     // Calls alertFn with an error message and returns null if there's a problem.
-    Path.linearizeSnapPath = function (path, minNumSegments, minSegmentLength, alertFn) {
+    jscut.priv.path.linearizeSnapPath = function (path, minNumSegments, minSegmentLength, alertFn) {
         if (path.length < 2 || path[0].length != 3 || path[0][0] != 'M') {
             alertFn("Path does not begin with M")
             return null;
@@ -87,7 +90,7 @@ var Path = new function () {
     // Get a linear path from an element in snap.svg's format. Calls alertFn with an 
     // error message and returns null if there's a problem. Returns null without calling
     // alertFn if element.type == "svg".
-    Path.getLinearSnapPathFromElement = function (element, minNumSegments, minSegmentLength, alertFn) {
+    jscut.priv.path.getLinearSnapPathFromElement = function (element, minNumSegments, minSegmentLength, alertFn) {
         var path = null;
 
         if (element.type == "svg")
@@ -123,18 +126,18 @@ var Path = new function () {
 
         path = Snap.path.map(path, element.transform().globalMatrix);
         path = Snap.parsePathString(path);
-        path = Path.linearizeSnapPath(path, minNumSegments, minSegmentLength, alertFn);
+        path = jscut.priv.path.linearizeSnapPath(path, minNumSegments, minSegmentLength, alertFn);
         return path;
     };
 
     // Convert a path in snap.svg format to Clipper format. May return multiple
     // paths. Only supports linear paths. Calls alertFn with an error message
     // and returns null if there's a problem.
-    Path.getClipperPathsFromSnapPath = function (path, pxPerInch, alertFn) {
+    jscut.priv.path.getClipperPathsFromSnapPath = function (path, pxPerInch, alertFn) {
         function getClipperPointFromSnapPoint(x, y) {
             return {
-                X: Math.round(x * Path.inchToClipperScale / pxPerInch),
-                Y: Math.round(y * Path.inchToClipperScale / pxPerInch)
+                X: Math.round(x * jscut.priv.path.inchToClipperScale / pxPerInch),
+                Y: Math.round(y * jscut.priv.path.inchToClipperScale / pxPerInch)
             };
         };
 
@@ -161,10 +164,10 @@ var Path = new function () {
     };
 
     // Convert a set of Clipper paths to a single snap.svg path.
-    Path.getSnapPathFromClipperPaths = function (path, pxPerInch) {
+    jscut.priv.path.getSnapPathFromClipperPaths = function (path, pxPerInch) {
         function pushSnapPointFromClipperPoint(a, p) {
-            a.push(p.X * pxPerInch / Path.inchToClipperScale);
-            a.push(p.Y * pxPerInch / Path.inchToClipperScale);
+            a.push(p.X * pxPerInch / jscut.priv.path.inchToClipperScale);
+            a.push(p.Y * pxPerInch / jscut.priv.path.inchToClipperScale);
         }
 
         var result = [];
@@ -182,14 +185,14 @@ var Path = new function () {
     };
 
     // Simplify and clean up Clipper geometry. fillRule is ClipperLib.PolyFillType.
-    Path.simplifyAndClean = function (geometry, fillRule) {
-        geometry = ClipperLib.Clipper.CleanPolygons(geometry, Path.cleanPolyDist);
+    jscut.priv.path.simplifyAndClean = function (geometry, fillRule) {
+        geometry = ClipperLib.Clipper.CleanPolygons(geometry, jscut.priv.path.cleanPolyDist);
         geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, fillRule);
         return geometry;
     }
 
     // Clip Clipper geometry. clipType is a ClipperLib.ClipType constant. Returns new geometry.
-    Path.clip = function (paths1, paths2, clipType) {
+    jscut.priv.path.clip = function (paths1, paths2, clipType) {
         var clipper = new ClipperLib.Clipper();
         clipper.AddPaths(paths1, ClipperLib.PolyType.ptSubject, true);
         clipper.AddPaths(paths2, ClipperLib.PolyType.ptClip, true);
@@ -199,12 +202,12 @@ var Path = new function () {
     }
 
     // Return difference between to Clipper geometries. Returns new geometry.
-    Path.diff = function (paths1, paths2) {
-        return Path.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
+    jscut.priv.path.diff = function (paths1, paths2) {
+        return jscut.priv.path.clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
     }
 
     // Offset Clipper geometries by amount (positive expands, negative shrinks). Returns new geometry.
-    Path.offset = function (paths, amount, joinType) {
+    jscut.priv.path.offset = function (paths, amount, joinType) {
         if (typeof joinType == 'undefined')
             joinType = ClipperLib.JoinType.jtRound;
 
@@ -214,11 +217,11 @@ var Path = new function () {
         else if (joinType == ClipperLib.JoinType.jtMiter)
             joinType = ClipperLib.JoinType.jtSquare;
 
-        var co = new ClipperLib.ClipperOffset(2, Path.arcTolerance);
+        var co = new ClipperLib.ClipperOffset(2, jscut.priv.path.arcTolerance);
         co.AddPaths(paths, joinType, ClipperLib.EndType.etClosedPolygon);
         var offsetted = [];
         co.Execute(offsetted, amount);
-        offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, Path.cleanPolyDist);
+        offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, jscut.priv.path.cleanPolyDist);
         return offsetted;
     }
-};
+})();

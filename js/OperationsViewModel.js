@@ -34,7 +34,7 @@ function ToolModel() {
 
     self.getCamArgs = function () {
         result = {
-            diameterClipper: self.diameter.toInch() * Path.inchToClipperScale,
+            diameterClipper: self.diameter.toInch() * jscut.priv.path.inchToClipperScale,
             overlap: Number(self.overlap()),
         };
         if (result.diameterClipper <= 0) {
@@ -160,7 +160,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
 
         var all = [];
         for (var i = 0; i < self.rawPaths.length; ++i) {
-            var geometry = Path.getClipperPathsFromSnapPath(self.rawPaths[i].path, svgViewModel.pxPerInch(), function (msg) {
+            var geometry = jscut.priv.path.getClipperPathsFromSnapPath(self.rawPaths[i].path, svgViewModel.pxPerInch(), function (msg) {
                 showAlert(msg, "alert-warning");
             });
             if (geometry != null) {
@@ -169,7 +169,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
                     fillRule = ClipperLib.PolyFillType.pftNonZero;
                 else
                     fillRule = ClipperLib.PolyFillType.pftEvenOdd;
-                all.push(Path.simplifyAndClean(geometry, fillRule));
+                all.push(jscut.priv.path.simplifyAndClean(geometry, fillRule));
             }
         }
 
@@ -185,34 +185,34 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             else if (self.combineOp() == "Xor")
                 clipType = ClipperLib.ClipType.ctXor;
             for (var i = 1; i < all.length; ++i)
-                self.combinedGeometry = Path.clip(self.combinedGeometry, all[i], clipType);
+                self.combinedGeometry = jscut.priv.path.clip(self.combinedGeometry, all[i], clipType);
         }
 
         var previewGeometry = self.combinedGeometry;
 
         if (previewGeometry.length != 0) {
-            var offset = self.margin.toInch() * Path.inchToClipperScale;
+            var offset = self.margin.toInch() * jscut.priv.path.inchToClipperScale;
             if (self.camOp() == "Pocket" || self.camOp() == "Inside")
                 offset = -offset;
             if (self.camOp() != "Engrave" && offset != 0)
-                previewGeometry = Path.offset(previewGeometry, offset);
+                previewGeometry = jscut.priv.path.offset(previewGeometry, offset);
 
             if (self.camOp() == "Inside" || self.camOp() == "Outside") {
                 var toolCamArgs = toolModel.getCamArgs();
                 if (toolCamArgs != null) {
-                    var width = self.width.toInch() * Path.inchToClipperScale;
+                    var width = self.width.toInch() * jscut.priv.path.inchToClipperScale;
                     if (width < toolCamArgs.diameterClipper)
                         width = toolCamArgs.diameterClipper;
                     if (self.camOp() == "Inside")
-                        previewGeometry = Path.diff(previewGeometry, Path.offset(previewGeometry, -width));
+                        previewGeometry = jscut.priv.path.diff(previewGeometry, jscut.priv.path.offset(previewGeometry, -width));
                     else
-                        previewGeometry = Path.diff(Path.offset(previewGeometry, width), previewGeometry);
+                        previewGeometry = jscut.priv.path.diff(jscut.priv.path.offset(previewGeometry, width), previewGeometry);
                 }
             }
         }
 
         if (previewGeometry.length != 0) {
-            var path = Path.getSnapPathFromClipperPaths(previewGeometry, svgViewModel.pxPerInch());
+            var path = jscut.priv.path.getSnapPathFromClipperPaths(previewGeometry, svgViewModel.pxPerInch());
             if (path != null)
                 self.combinedGeometrySvg = combinedGeometryGroup.path(path).attr("class", "combinedGeometry");
         }
@@ -247,16 +247,16 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         self.removeToolPaths();
 
         var geometry = self.combinedGeometry;
-        var offset = self.margin.toInch() * Path.inchToClipperScale;
+        var offset = self.margin.toInch() * jscut.priv.path.inchToClipperScale;
         if (self.camOp() == "Pocket" || self.camOp() == "Inside")
             offset = -offset;
         if (self.camOp() != "Engrave" && offset != 0)
-            geometry = Path.offset(geometry, offset);
+            geometry = jscut.priv.path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
             self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap, self.direction() == "Climb"));
         else if (self.camOp() == "Inside" || self.camOp() == "Outside") {
-            var width = self.width.toInch() * Path.inchToClipperScale;
+            var width = self.width.toInch() * jscut.priv.path.inchToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
             self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, self.camOp() == "Inside", width, toolCamArgs.overlap, self.direction() == "Climb"));
@@ -264,7 +264,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         else if (self.camOp() == "Engrave")
             self.toolPaths(Cam.engrave(geometry, self.direction() == "Climb"));
 
-        var path = Path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
+        var path = jscut.priv.path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
         if (path != null && path.length > 0)
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
 
