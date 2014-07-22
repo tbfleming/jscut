@@ -481,9 +481,10 @@ function saveSettingsGist() {
     var alert = showAlert("Saving Anonymous Gist", "alert-info", false);
     var files = { "settings.jscut": { "content": JSON.stringify(toJson()) } };
 
-    var svgs = contentGroup.node.children;
+    var svgs = contentGroup.node.childNodes;
     for (var i = 0; i < svgs.length; ++i)
-        files['svg' + i + '.svg'] = {"content":new XMLSerializer().serializeToString(svgs[i])};
+        if (svgs[i].nodeName == 'svg')
+            files['svg' + i + '.svg'] = { "content": new XMLSerializer().serializeToString(svgs[i]) };
 
     $.ajax({
         url: "https://api.github.com/gists",
