@@ -103,12 +103,11 @@ along with jscut.  If not, see <http: />/www.gnu.org/licenses/>.
 
             input {
                 margin: 1px;
-                width: {{width}};
             }
         </style>
         <div style="display:table-cell"><label for="control">{{label}}</label></div>
         <div style="display:table-cell"><label for="control">{{units}}</label></div>
-        <div style="display:table-cell"><input id="control" type="{{type}}" step="{{step}}" value="{{value}}" checked="{{checked}}"></div>
+        <div style="display:table-cell"><input id="control" _style="width: {{width}}" type="{{type}}" step="{{step}}" value="{{value}}" checked="{{checked}}"></div>
     </template>
 </polymer-element>
 
