@@ -16,6 +16,8 @@
   "dependencies": {
     "polymer": "Polymer/polymer#~0.3.4",
     "core-localstorage": "Polymer/core-localstorage#~0.3.4",
-    "paper-slider": "Polymer/paper-slider#~0.3.4"
+    "paper-slider": "Polymer/paper-slider#~0.3.4",
+    "core-pages": "Polymer/core-pages#~0.3.4",
+    "core-collapse": "Polymer/core-collapse#~0.3.4"
   }
 }
