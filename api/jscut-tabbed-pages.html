@@ -1,0 +1,67 @@
+<!--
+Copyright 2014 Todd Fleming
+
+This file is part of jscut.
+
+jscut is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jscut is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with jscut.  If not, see <http: />/www.gnu.org/licenses/>.
+-->
+
+<link rel="import" href="../bower_components/core-pages/core-pages.html">
+<link rel="import" href="../bower_components/core-selector/core-selector.html">
+
+<polymer-element name="jscut-tabbed-pages" noscript>
+    <template>
+        <style>
+            #tabs {
+                background-color: rgb(0, 188, 212);
+            }
+
+            polyfill-next-selector {content: 'jscut-tab';}
+            #tab-content::content jscut-tab {
+                margin-left: 4px;
+                margin-right: 4px;
+                margin-top: 4px;
+                font-weight: bold;
+            }
+
+            polyfill-next-selector {content: 'jscut-tab.core-selected';}
+            #tab-content::content jscut-tab.core-selected {
+                background: white;
+            }
+        </style>
+
+        <div>
+            <div id="tabs" horizontal layout>
+                <core-selector horizontal layout selected="0" selectedindex="{{selectedindex}}">
+                    <content id="tab-content" select="jscut-tab"></content>
+                </core-selector>
+            </div>
+            <core-pages selected="{{selectedindex}}" flex one notap id="core_pages">
+                <content select="jscut-page"></content>
+            </core-pages>
+        </div>
+    </template>
+</polymer-element>
+
+<polymer-element name="jscut-tab" noscript>
+    <template>
+        <label><content></content></label>
+    </template>
+</polymer-element>
+
+<polymer-element name="jscut-page" noscript>
+    <template>
+        <content></content>
+    </template>
+</polymer-element>

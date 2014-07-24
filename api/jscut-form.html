@@ -1,0 +1,143 @@
+<!--
+Copyright 2014 Todd Fleming
+
+This file is part of jscut.
+
+jscut is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jscut is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with jscut.  If not, see <http: />/www.gnu.org/licenses/>.
+-->
+<link rel="import" href="../bower_components/core-collapse/core-collapse.html">
+
+<polymer-element name="jscut-form" attributes="caption opened">
+    <template>
+        <style>
+            #root {
+                padding-bottom: 4px;
+            }
+
+            #header {
+                padding: 4px;
+                color: rgb(255, 255, 255);
+                background-color: rgb(79, 125, 201);
+            }
+
+            #table {
+                display: table;
+            }
+        </style>
+
+        <div id="root">
+            <div id="header" on-click="{{toggle}}"><label><b>{{caption}}</b></label></div>
+            <div id="table">
+                <core-collapse id="collapse" opened="{{opened}}">
+                    <content></content>
+                </core-collapse>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        Polymer('jscut-form', {
+            opened: true,
+
+            toggle: function () {
+                this.opened = !this.opened;
+            }
+        });
+    </script>
+</polymer-element>
+
+<polymer-element name="jscut-field-units" attributes="label value">
+    <template>
+        <style>
+            :host {
+                display: table-row;
+            }
+
+            div {
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+        </style>
+        <div style="display:table-cell"><label for="control">{{label}}</label></div>
+        <div style="display:table-cell"></div>
+        <div style="display:table-cell"><select id="control" on-change="{{controlCallback}}"><option>inch<option>mm</select></div>
+    </template>
+
+    <script>
+        Polymer('jscut-field-units', {
+            value: 'inch',
+
+            controlCallback: function () {
+                this.value = this.$.control.value;
+            },
+
+            valueChanged: function () {
+                this.$.control.value = this.value;
+            }
+        });
+    </script>
+</polymer-element>
+
+<polymer-element name="jscut-field-input" noscript attributes="label units type width step value checked">
+    <template>
+        <style>
+            :host {
+                display: table-row;
+            }
+
+            div {
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+
+            input {
+                margin: 1px;
+                width: {{width}};
+            }
+        </style>
+        <div style="display:table-cell"><label for="control">{{label}}</label></div>
+        <div style="display:table-cell"><label for="control">{{units}}</label></div>
+        <div style="display:table-cell"><input id="control" type="{{type}}" step="{{step}}" value="{{value}}" checked="{{checked}}"></div>
+    </template>
+</polymer-element>
+
+<polymer-element name="jscut-unit-converter" attributes="units value0 value1 value2 value3 value4 value5 value6 value7 value8 value9 value10 value11 value12 value13 value14 value15">
+    <script>
+        Polymer('jscut-unit-converter', {
+            unitsChanged: function () {
+                var factor = 1;
+                if (this.units == 'mm')
+                    factor = 25.4;
+                else if (this.units == 'inch')
+                    factor = 1 / 25.4;
+                this.value0 = this.value0 * factor;
+                this.value1 = this.value1 * factor;
+                this.value2 = this.value2 * factor;
+                this.value3 = this.value3 * factor;
+                this.value4 = this.value4 * factor;
+                this.value5 = this.value5 * factor;
+                this.value6 = this.value6 * factor;
+                this.value7 = this.value7 * factor;
+                this.value8 = this.value8 * factor;
+                this.value9 = this.value9 * factor;
+                this.value10 = this.value10 * factor;
+                this.value11 = this.value11 * factor;
+                this.value12 = this.value12 * factor;
+                this.value13 = this.value13 * factor;
+                this.value14 = this.value14 * factor;
+                this.value15 = this.value15 * factor;
+            }
+        });
+    </script>
+</polymer-element>
