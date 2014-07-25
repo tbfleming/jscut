@@ -23,6 +23,8 @@ jscut.cam = jscut.cam || {};
 
     // Get combined geometry for operation. This uses operation.combineOp to combine multiple geometries in operation.geometries.
     jscut.cam.getCombinedGeometry = function (operation) {
+        operation = jscut.data.cleanOperation(operation);
+
         var combineFn;
         if (operation.combineOp == 'Union')
             combineFn = jscut.geometry.union;
@@ -48,6 +50,9 @@ jscut.cam = jscut.cam || {};
 
     // Get preview geometry for operation
     jscut.cam.getPreviewGeometry = function (operation, tool) {
+        operation = jscut.data.cleanOperation(operation);
+        tool = jscut.data.cleanTool(tool);
+
         var result = jscut.cam.getCombinedGeometry(operation);
 
         var grow = operation.margin;
@@ -80,6 +85,9 @@ jscut.cam = jscut.cam || {};
     //      safeToClose:        Is it safe to close the path without retracting?
     // }
     jscut.cam.getCamPaths = function (operation, tool) {
+        operation = jscut.data.cleanOperation(operation);
+        tool = jscut.data.cleanTool(tool);
+
         var geometry = jscut.cam.getCombinedGeometry(operation);
 
         var grow = operation.margin;
@@ -116,6 +124,10 @@ jscut.cam = jscut.cam || {};
 
     // Get gcode header
     jscut.cam.getGcodeHeader = function (tool, material, gcodeOptions) {
+        tool = jscut.data.cleanTool(tool);
+        material = jscut.data.cleanMaterial(material);
+        gcodeOptions = jscut.data.cleanGcodeOptions(gcodeOptions);
+
         var fromToolConv = jscut.data.getInchConversion(tool.units);
         var fromMatConv = jscut.data.getInchConversion(material.units);
         var toGcodeConv = 1 / jscut.data.getInchConversion(gcodeOptions.units);
@@ -137,6 +149,11 @@ jscut.cam = jscut.cam || {};
 
     // Get gcode for operation.
     jscut.cam.getOperationGcode = function (opIndex, operation, tool, material, gcodeOptions, camPaths) {
+        operation = jscut.data.cleanOperation(operation);
+        tool = jscut.data.cleanTool(tool);
+        material = jscut.data.cleanMaterial(material);
+        gcodeOptions = jscut.data.cleanGcodeOptions(gcodeOptions);
+
         var fromOpConv = jscut.data.getInchConversion(operation.units);
         var fromToolConv = jscut.data.getInchConversion(tool.units);
         var fromMatConv = jscut.data.getInchConversion(material.units);
