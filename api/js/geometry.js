@@ -50,6 +50,23 @@ jscut.geometry = jscut.geometry || {};
             { X: x1 * conv, Y: y2 * conv }]];
     }
 
+    // Create a circle.
+    jscut.geometry.createCircle = function (x, y, r, numSegments, units) {
+        var conv = jscut.geometry.getConversion(units);
+        if (isNaN(conv) || numSegments < 3)
+            return [];
+        x *= conv;
+        y *= conv;
+        r *= conv;
+        var result = [];
+        for (var i = 0; i < numSegments; ++i)
+            result.push({
+                X: x + r * Math.cos(2 * Math.PI * i / numSegments),
+                Y: y + r * Math.sin(2 * Math.PI * i / numSegments)
+            });
+        return [result];
+    }
+
     // Transform geometry. Returns new geometry.
     jscut.geometry.transform = function (matrix, geometry) {
         var result = [];
@@ -165,5 +182,16 @@ jscut.geometry = jscut.geometry || {};
                 result += "Z ";
         }
         return result;
+    }
+
+    // Convert geometry to an SVG path object and set attributes. Closes each path if
+    // closePaths is true. closePaths defaults to true; set it to false it you're
+    // converting CAM paths.
+    jscut.geometry.toSvgPathObject = function (geometry, pxPerInch, attributes, closePaths) {
+        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute('d', jscut.geometry.toSvgPathData(geometry, pxPerInch, closePaths));
+        for (var k in attributes)
+            path.setAttribute(k, attributes[k]);
+        return path;
     }
 })();

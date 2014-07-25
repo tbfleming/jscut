@@ -1,0 +1,49 @@
+<!--
+Copyright 2014 Todd Fleming
+
+This file is part of jscut.
+
+jscut is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jscut is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with jscut.  If not, see <http: />/www.gnu.org/licenses/>.
+-->
+<link rel="import" href="../bower_components/core-collapse/core-collapse.html">
+<link rel="import" href="jscut-form.html">
+
+<polymer-element name="jscut-tool-form" attributes="tool">
+    <template>
+        <jscut-form caption="Tool">
+            <jscut-unit-converter units="{{tool.units}}" value0="{{tool.diameter}}" value1="{{tool.passDepth}}" value2="{{tool.rapidRate}}" value3="{{tool.plungeRate}}" value4="{{tool.cutRate}}"></jscut-unit-converter>
+            <jscut-field-units label="Units" value="{{tool.units}}"></jscut-field-units>
+            <jscut-field-input label="Diameter" type="number" width="80px" step="any" units="{{tool.units}}" value="{{tool.diameter}}"></jscut-field-input>
+            <jscut-field-input label="Pass Depth" type="number" width="80px" step="any" units="{{tool.units}}" value="{{tool.passDepth}}"></jscut-field-input>
+            <jscut-field-input label="Step Over" type="number" width="80px" step="any" units="(0, 1]" value="{{tool.stepover}}"></jscut-field-input>
+            <jscut-field-input label="Rapid" type="number" width="80px" step="any" units="{{tool.units}}/min" value="{{tool.rapidRate}}"></jscut-field-input>
+            <jscut-field-input label="Plunge" type="number" width="80px" step="any" units="{{tool.units}}/min" value="{{tool.plungeRate}}"></jscut-field-input>
+            <jscut-field-input label="Cut" type="number" width="80px" step="any" units="{{tool.units}}/min" value="{{tool.cutRate}}"></jscut-field-input>
+        </jscut-form>
+    </template>
+
+    <script>
+        Polymer('jscut-tool-form', {
+            tool: {
+                units: 'inch',
+                diameter: .125,
+                passDepth: .125,
+                stepover: .4,
+                rapidRate: 100,
+                plungeRate: 5,
+                cutRate: 40,
+            }
+        })
+    </script>
+</polymer-element>

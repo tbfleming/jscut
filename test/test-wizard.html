@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>test</title>
+    <script src="../bower_components/platform/platform.js"></script>
+    <link rel="import" href="../api/jscut-app-layout.html">
+    <link rel="import" href="../api/jscut-cam.html">
+    <link rel="import" href="../api/jscut-material-form.html">
+    <link rel="import" href="../api/jscut-simulate-gcode.html">
+    <link rel="import" href="../api/jscut-stretch-svg.html">
+    <link rel="import" href="../api/jscut-svg.html">
+    <link rel="import" href="../api/jscut-tabbed-pages.html">
+    <link rel="import" href="../api/jscut-tool-form.html">
+    <link rel="import" href="../api/jscut-material-form.html">
+</head>
+
+<polymer-element name="main-page">
+    <template>
+        <jscut-app-layout>
+            <jscut-form caption="Box" class="left">
+                <jscut-unit-converter units="{{units}}" value0="{{boxWidth}}" value1="{{boxHeight}}"></jscut-unit-converter>
+                <jscut-field-control><button on-click="{{generate}}">generate</button></jscut-field-control>
+                <jscut-field-units label="Units" value="{{units}}"></jscut-field-units>
+                <jscut-field-input label="Box Width" type="number" width="80px" step="any" value="{{boxWidth}}"></jscut-field-input>
+                <jscut-field-input label="Box Height" type="number" width="80px" step="any" value="{{boxHeight}}"></jscut-field-input>
+            </jscut-form>
+
+            <jscut-form caption="Hardware" class="left">
+                <jscut-unit-converter units="{{units}}" value0="{{screwDiameter}}" value1="{{nutWidth}}" value2="{{nutThickness}}"></jscut-unit-converter>
+                <jscut-field-input label="Screw Diameter" type="number" width="80px" step="any" value="{{screwDiameter}}"></jscut-field-input>
+                <jscut-field-input label="Nut Width" type="number" width="80px" step="any" value="{{nutWidth}}"></jscut-field-input>
+                <jscut-field-input label="Nut Thickness" type="number" width="80px" step="any" value="{{nutThickness}}"></jscut-field-input>
+            </jscut-form>
+
+            <jscut-form caption="Joints" class="left">
+                <jscut-unit-converter units="{{units}}" value0="{{jointSize}}" value1="{{jointDistFromEdge}}" value2="{{nutSpacing}}"></jscut-unit-converter>
+                <jscut-field-input label="Size" type="number" width="80px" step="any" value="{{jointSize}}"></jscut-field-input>
+                <jscut-field-input label="Distance from Edge" type="number" width="80px" step="any" value="{{jointDistFromEdge}}"></jscut-field-input>
+                <jscut-field-input label="Nut Spacing" type="number" width="80px" step="any" value="{{nutSpacing}}"></jscut-field-input>
+            </jscut-form>
+
+            <jscut-material-form class="left" material="{{material}}"></jscut-material-form>
+
+            <jscut-tool-form class="left" tool="{{tool}}"></jscut-tool-form>
+
+            <jscut-tabbed-pages class="center">
+                <jscut-tab>SVG Page</jscut-tab>
+                <jscut-page>
+                    <jscut-stretch-svg class="center">
+                        <svg id="svg" viewBox="0 0 100 100">
+                            <rect x="0" y="0" width="100" height="100"></rect>
+                            <rect fill="purple" x="10" y="10" width="80" height="80"></rect>
+                        </svg>
+                    </jscut-stretch-svg>
+                </jscut-page>
+                <jscut-tab>Other Page</jscut-tab>
+                <jscut-page>Other Page Content</jscut-page>
+            </jscut-tabbed-pages>
+        </jscut-app-layout>
+    </template>
+
+    <script>
+        Polymer('main-page', {
+            units: 'mm',
+            boxWidth: 100,
+            boxHeight: 100,
+            nutWidth: 6,
+            nutThickness: 5,
+            nutSpacing: 4,
+            screwDiameter: 4,
+            jointSize: 15,
+            jointDistFromEdge: 20,
+            gcode: '',
+
+            material: {
+                units: "inch",
+                thickness: ".25",
+                clearance: "0.1",
+            },
+
+            operation: {
+                camOp: "Outside",
+            },
+
+            ready: function () {
+                this.update();
+            },
+
+            observe: {
+                'material.thickness': 'update',
+                'tool.diameter': 'update',
+                boxWidth: 'update',
+                boxHeight: 'update',
+                nutWidth: 'update',
+                nutThickness: 'update',
+                nutSpacing: 'update',
+                screwDiameter: 'update',
+                jointSize: 'update',
+                jointDistFromEdge: 'update',
+            },
+
+            update: function () {
+                var boxWidth = jscut.data.toInch(this.boxWidth, this.units);
+                var boxHeight = jscut.data.toInch(this.boxHeight, this.units);
+                var nutWidth = jscut.data.toInch(this.nutWidth, this.units);
+                var nutThickness = jscut.data.toInch(this.nutThickness, this.units);
+                var nutSpacing = jscut.data.toInch(this.nutSpacing, this.units);
+                var jointSize = jscut.data.toInch(this.jointSize, this.units);
+                var jointDistFromEdge = jscut.data.toInch(this.jointDistFromEdge, this.units);
+                var screwDiameter = jscut.data.toInch(this.screwDiameter, this.units);
+                var thickness = jscut.data.toInch(this.material.thickness, this.material.units);
+                var diameter = jscut.data.toInch(this.tool.diameter, this.tool.units);
+
+                var reliefRadius = diameter * 1.1 / 2;
+
+                var leftNutJoint = jscut.geometry.createRect(-diameter, -jointSize / 2, thickness, jointSize / 2, "inch");
+                leftNutJoint = jscut.geometry.union(leftNutJoint, jscut.geometry.createRect(
+                    thickness - reliefRadius * 2, -jointSize / 2 - reliefRadius,
+                    thickness, jointSize / 2 + reliefRadius, "inch"));
+                leftNutJoint = jscut.geometry.union(leftNutJoint, jscut.geometry.createRect(
+                    thickness + nutSpacing, -nutWidth / 2 - reliefRadius,
+                    thickness + nutSpacing + nutThickness, nutWidth / 2 + reliefRadius, "inch"));
+                leftNutJoint = jscut.geometry.union(leftNutJoint, jscut.geometry.createRect(
+                    0, -screwDiameter / 2,
+                    thickness + nutSpacing + nutThickness, screwDiameter / 2, "inch"));
+                var bottomNutJoint = jscut.geometry.rotate(leftNutJoint, 90, "deg");
+                var rightNutJoint = jscut.geometry.rotate(leftNutJoint, 180, "deg");
+                var topNutJoint = jscut.geometry.rotate(leftNutJoint, 270, "deg");
+
+                var jointOffset = jointSize / 2 + jointDistFromEdge;
+
+                var panel = jscut.geometry.createRect(0, 0, boxWidth, boxHeight, "inch");
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(leftNutJoint, 0, jointOffset, "inch"));
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(leftNutJoint, 0, boxHeight - jointOffset, "inch"));
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(bottomNutJoint, jointOffset, 0, "inch"));
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(bottomNutJoint, boxWidth - jointOffset, 0, "inch"));
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(rightNutJoint, boxWidth, jointOffset, "inch"));
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(rightNutJoint, boxWidth, boxHeight - jointOffset, "inch"));
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(topNutJoint, jointOffset, boxHeight, "inch"));
+                panel = jscut.geometry.difference(panel, jscut.geometry.translate(topNutJoint, boxWidth - jointOffset, boxHeight, "inch"));
+
+                this.operation.units = this.material.units;
+                this.operation.cutDepth = this.material.thickness;
+                this.operation.geometries = [panel];
+
+                jscut.svg.clear(this.$.svg);
+                jscut.svg.addGeometryToSvg(this.$.svg, jscut.geometry.createRect(
+                    -diameter, -diameter, boxWidth + diameter, boxHeight + diameter, "inch"), 90, { fill: 'white' });
+                jscut.svg.addGeometryToSvg(this.$.svg, panel, 90, { fill: 'blue' });
+            },
+
+            generate: function () {
+                var camPaths = jscut.cam.getCamPaths(this.operation, this.tool);
+                jscut.svg.addCamPathsToSvg(this.$.svg, camPaths, 90, { fill: 'none', stroke: 'red' });
+            },
+        });
+    </script>
+</polymer-element>
+
+<body fullbleed>
+    <main-page></main-page>
+</body>
+</html>

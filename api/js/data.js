@@ -33,6 +33,11 @@ jscut.data = jscut.data || {};
         }
     }
 
+    // Convert value to inch
+    jscut.data.toInch = function (value, units) {
+        return jscut.data.getInchConversion(units) * value;
+    }
+
     // Clean up material and return new object. Automatically converts old formats to new. json may be an object or text; if it's null or undefined then this creates an object with default values.
     jscut.data.cleanMaterial = function (json) {
         if (typeof json === 'undefined' || json == null)

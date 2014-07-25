@@ -1,0 +1,41 @@
+<!--
+Copyright 2014 Todd Fleming
+
+This file is part of jscut.
+
+jscut is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+jscut is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with jscut.  If not, see <http: />/www.gnu.org/licenses/>.
+-->
+<link rel="import" href="../bower_components/core-collapse/core-collapse.html">
+<link rel="import" href="jscut-form.html">
+
+<polymer-element name="jscut-material-form" attributes="material">
+    <template>
+        <jscut-form caption="Material">
+            <jscut-unit-converter units="{{material.units}}" value0="{{material.thickness}}" value1="{{material.clearance}}""></jscut-unit-converter>
+            <jscut-field-units label="Units" value="{{material.units}}"></jscut-field-units>
+            <jscut-field-input label="Thickness" type="number" width="80px" step="any" value="{{material.thickness}}"></jscut-field-input>
+            <jscut-field-input label="Clearance" type="number" width="80px" step="any" value="{{material.clearance}}"></jscut-field-input>
+        </jscut-form>
+    </template>
+
+    <script>
+        Polymer('jscut-material-form', {
+            material: {
+                units: "inch",
+                thickness: "1.0",
+                clearance: "0.1",
+            }
+        })
+    </script>
+</polymer-element>
