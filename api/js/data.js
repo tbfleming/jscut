@@ -54,6 +54,12 @@ jscut.data = jscut.data || {};
         }
 
         fetch('units');
+
+        if (result.units == "mm") {
+            result.thickness *= 25.4;
+            result.clearance *= 25.4;
+        }
+
         fetch('thickness');
         fetch('zOrigin');
         fetch('clearance');
@@ -85,6 +91,16 @@ jscut.data = jscut.data || {};
         }
 
         fetch('units');
+
+        if (result.units == "mm") {
+            result.diameter *= 2.54;
+            result.passDepth *= 2.54;
+            result.stepover *= 2.54;
+            result.rapidRate *= 2.54;
+            result.plungeRate *= 2.54;
+            result.cutRate *= 2.54;
+        }
+
         fetch('diameter');
         fetch('passDepth');
         if (typeof json.overlap !== "undefined") // backwards compat
@@ -107,9 +123,9 @@ jscut.data = jscut.data || {};
         var result = {
             name: "",
             units: "inch",
-            enabled: true,
+            //enabled: true,
             ramp: true,
-            selected: "off",
+            //selected: "off",
             combineOp: "Union",
             camOp: "Pocket",
             direction: "Conventional",
@@ -127,9 +143,16 @@ jscut.data = jscut.data || {};
 
         fetch('name');
         fetch('units');
-        fetch('enabled');
+
+        if (result.units == "mm") {
+            result.cutDepth *= 2.54;
+            result.margin *= 2.54;
+            result.width *= 2.54;
+        }
+
+        //fetch('enabled');
         fetch('ramp');
-        fetch('selected');
+        //fetch('selected');
         fetch('combineOp');
         fetch('camOp');
         fetch('direction');
@@ -153,7 +176,7 @@ jscut.data = jscut.data || {};
 
         var result = {
             units: "mm",
-            gcodeFilename: "gcode.gcode",
+            //gcodeFilename: "gcode.gcode",
             offsetX: 0,
             offsetY: 0,
         }
@@ -165,7 +188,13 @@ jscut.data = jscut.data || {};
         }
 
         fetch('units');
-        fetch('gcodeFilename');
+
+        if (result.units == "inch") {
+            result.offsetX /= 25.4;
+            result.offsetY /= 25.4;
+        }
+
+        //fetch('gcodeFilename');
         fetch('offsetX');
         fetch('offsetY');
 
