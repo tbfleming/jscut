@@ -3,6 +3,7 @@
 <head>
     <title>test</title>
     <script src="../bower_components/platform/platform.js"></script>
+    <link rel="import" href="../bower_components/paper-slider/paper-slider.html">
     <link rel="import" href="../api/jscut-app-layout.html">
     <link rel="import" href="../api/jscut-cam.html">
     <link rel="import" href="../api/jscut-material-form.html">
@@ -44,7 +45,7 @@
             <jscut-tool-form class="left" tool="{{tool}}"></jscut-tool-form>
 
             <jscut-tabbed-pages class="center">
-                <jscut-tab>SVG Page</jscut-tab>
+                <jscut-tab>Design</jscut-tab>
                 <jscut-page>
                     <jscut-stretch-svg class="center">
                         <svg id="svg" viewBox="0 0 100 100">
@@ -53,8 +54,17 @@
                         </svg>
                     </jscut-stretch-svg>
                 </jscut-page>
-                <jscut-tab>Other Page</jscut-tab>
-                <jscut-page>Other Page Content</jscut-page>
+
+                <jscut-tab>Simulate</jscut-tab>
+                <jscut-page>
+                    <jscut-simulate-gcode gcode="{{gcode}}" cutterdiameter="{{simulateCutterDiameter}}" cutterheight="{{simulateCutterHeight}}" time1="{{time1}}" time2="{{time2}}" maxtimerounded="{{maxTime}}" elementsurl="../elements"></jscut-simulate-gcode>
+                    <br><paper-slider pin editable value="{{time1}}" immediatevalue="{{time2}}" max="{{maxTime}}" step="0.1" id="paper_slider"></paper-slider>
+                </jscut-page>
+
+                <jscut-tab>Gcode</jscut-tab>
+                <jscut-page>
+                    <textarea style="width:99%;" rows="30" value="{{gcode}}"></textarea>
+                </jscut-page>
             </jscut-tabbed-pages>
         </jscut-app-layout>
     </template>
@@ -152,6 +162,14 @@
             generate: function () {
                 var camPaths = jscut.cam.getCamPaths(this.operation, this.tool);
                 jscut.svg.addCamPathsToSvg(this.$.svg, camPaths, 90, { fill: 'none', stroke: 'red' });
+
+                var gcodeOptions = {units: this.units};
+                var gcode = jscut.cam.getGcodeHeader(this.tool, this.material, gcodeOptions);
+                gcode += jscut.cam.getOperationGcode(0, this.operation, this.tool, this.material, gcodeOptions, camPaths);
+
+                this.simulateCutterDiameter = jscut.data.fromInch(jscut.data.toInch(this.tool.diameter, this.tool.units), this.units);
+                this.simulateCutterHeight = jscut.data.fromInch(1, this.units);
+                this.gcode = gcode;
             },
         });
     </script>
