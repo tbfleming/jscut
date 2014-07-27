@@ -3,7 +3,7 @@
 <script src="../lib/jquery-2.1.1.min.js"></script>
 <script src="../lib/gl-matrix-2.2.0-min.js"></script>
 <script src="../lib/webgl-utils.js"></script>
-<script src="../js/parseGcode.js"></script>
+<script src="js/parseGcode.js"></script>
 <script src="../js/RenderPath.js"></script>
 
 <polymer-element name="jscut-parse-gcode" attributes="gcode parsedGcode">
@@ -12,7 +12,7 @@
             gcode: '',
             parsedGcode: [],
             gcodeChanged: function(oldValue, newValue) {
-                this.parsedGcode = parseGcode({}, newValue);
+                this.parsedGcode = jscut.parseGcode({}, newValue);
             },
         });
     </script>
@@ -75,7 +75,7 @@
                 },
 
                 gcodeChanged: function (oldValue, newValue) {
-                    this.parsedGcode = parseGcode({}, newValue);
+                    this.parsedGcode = jscut.parseGcode({}, newValue);
                     fill();
                 },
 

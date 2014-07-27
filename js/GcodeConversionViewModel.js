@@ -154,7 +154,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
 
         if (renderPath) {
             renderPath.fillPathBuffer(
-                parseGcode(options, gcode),
+                jscut.parseGcode(options, gcode),
                 self.unitConverter.fromInch(materialViewModel.matTopZ.toInch()),
                 self.unitConverter.fromInch(toolModel.diameter.toInch()),
                 self.unitConverter.fromInch(1));

@@ -15,7 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function parseGcode(options, gcode) {
+var jscut = jscut || {};
+
+jscut.parseGcode = function (options, gcode) {
     "use strict";
     var startTime = Date.now();
     if (options.profile)

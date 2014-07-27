@@ -693,7 +693,7 @@ function startRenderPathDemo() {
     var renderPath;
     renderPath = startRenderPath({}, $("#renderPathCanvas")[0], $('#timeSlider'), 'js', function (renderPath) {
         $.get("logo-gcode.txt", function (gcode) {
-            renderPath.fillPathBuffer(parseGcode({}, gcode), 0, .125, 1);
+            renderPath.fillPathBuffer(jscut.parseGcode({}, gcode), 0, .125, 1);
         });
     });
 }
