@@ -21,7 +21,7 @@ function ToolModel() {
     self.unitConverter = new UnitConverter(self.units);
     self.diameter = ko.observable(.125);
     self.passDepth = ko.observable(.125);
-    self.overlap = ko.observable(.6);
+    self.stepover = ko.observable(.4);
     self.rapidRate = ko.observable(100);
     self.plungeRate = ko.observable(5);
     self.cutRate = ko.observable(40);
@@ -35,18 +35,18 @@ function ToolModel() {
     self.getCamArgs = function () {
         result = {
             diameterClipper: self.diameter.toInch() * jscut.priv.path.inchToClipperScale,
-            overlap: Number(self.overlap()),
+            stepover: Number(self.stepover()),
         };
         if (result.diameterClipper <= 0) {
             showAlert("Tool diameter must be greater than 0", "alert-danger");
             return null;
         }
-        if (result.overlap < 0) {
-            showAlert("Tool overlap must be at least 0", "alert-danger");
+        if (result.stepover <= 0) {
+            showAlert("Tool stepover must be geater than 0", "alert-danger");
             return null;
         }
-        if (result.overlap >= 1) {
-            showAlert("Tool overlap must be less than 1", "alert-danger");
+        if (result.stepover > 1) {
+            showAlert("Tool stepover must be less than or equal to 1", "alert-danger");
             return null;
         }
         return result;
@@ -57,7 +57,7 @@ function ToolModel() {
             'units': self.units(),
             'diameter': self.diameter(),
             'passDepth': self.passDepth(),
-            'overlap': self.overlap(),
+            'stepover': self.stepover(),
             'rapidRate': self.rapidRate(),
             'plungeRate': self.plungeRate(),
             'cutRate': self.cutRate(),
@@ -74,7 +74,9 @@ function ToolModel() {
             f(json.units, self.units);
             f(json.diameter, self.diameter);
             f(json.passDepth, self.passDepth);
-            f(json.overlap, self.overlap);
+            if (typeof json.overlap !== "undefined") // backwards compat
+                self.stepover(1 - json.overlap);
+            f(json.stepover, self.stepover);
             f(json.rapidRate, self.rapidRate);
             f(json.plungeRate, self.plungeRate);
             f(json.cutRate, self.cutRate);
@@ -223,7 +225,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         self.enabled(true);
     }
 
-    toolModel.overlap.subscribe(self.removeToolPaths);
+    toolModel.stepover.subscribe(self.removeToolPaths);
 
     toolModel.diameter.subscribe(self.recombine);
     svgViewModel.pxPerInch.subscribe(self.recombine);
@@ -254,12 +256,12 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             geometry = jscut.priv.path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
-            self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, toolCamArgs.overlap, self.direction() == "Climb"));
+            self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
         else if (self.camOp() == "Inside" || self.camOp() == "Outside") {
             var width = self.width.toInch() * jscut.priv.path.inchToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
-            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, self.camOp() == "Inside", width, toolCamArgs.overlap, self.direction() == "Climb"));
+            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, self.camOp() == "Inside", width, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
         }
         else if (self.camOp() == "Engrave")
             self.toolPaths(Cam.engrave(geometry, self.direction() == "Climb"));
