@@ -125,7 +125,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
                 "\r\n; Cut rate:     " + cutRate +
                 "\r\n;\r\n";
 
-            gcode += Cam.getGcode({
+            gcode += jscut.priv.cam.getGcode({
                 paths:          op.toolPaths(),
                 ramp:           op.ramp(),
                 scale:          scale,

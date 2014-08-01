@@ -256,17 +256,17 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             geometry = jscut.priv.path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
-            self.toolPaths(Cam.pocket(geometry, toolCamArgs.diameterClipper, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
+            self.toolPaths(jscut.priv.cam.pocket(geometry, toolCamArgs.diameterClipper, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
         else if (self.camOp() == "Inside" || self.camOp() == "Outside") {
             var width = self.width.toInch() * jscut.priv.path.inchToClipperScale;
             if (width < toolCamArgs.diameterClipper)
                 width = toolCamArgs.diameterClipper;
-            self.toolPaths(Cam.outline(geometry, toolCamArgs.diameterClipper, self.camOp() == "Inside", width, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
+            self.toolPaths(jscut.priv.cam.outline(geometry, toolCamArgs.diameterClipper, self.camOp() == "Inside", width, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
         }
         else if (self.camOp() == "Engrave")
-            self.toolPaths(Cam.engrave(geometry, self.direction() == "Climb"));
+            self.toolPaths(jscut.priv.cam.engrave(geometry, self.direction() == "Climb"));
 
-        var path = jscut.priv.path.getSnapPathFromClipperPaths(Cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
+        var path = jscut.priv.path.getSnapPathFromClipperPaths(jscut.priv.cam.getClipperPathsFromCamPaths(self.toolPaths()), svgViewModel.pxPerInch());
         if (path != null && path.length > 0)
             self.toolPathSvg = toolPathsGroup.path(path).attr("class", "toolPath");
 

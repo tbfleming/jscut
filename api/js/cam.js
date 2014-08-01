@@ -99,15 +99,15 @@ jscut.cam = jscut.cam || {};
         var diameter = jscut.geometry.getConversion(tool.units) * tool.diameter;
 
         if (operation.camOp == "Pocket")
-            return Cam.pocket(geometry, diameter, 1 - tool.stepover, operation.direction == "Climb");
+            return jscut.priv.cam.pocket(geometry, diameter, 1 - tool.stepover, operation.direction == "Climb");
         else if (operation.camOp == "Inside" || operation.camOp == "Outside") {
             var width = jscut.geometry.getConversion(operation.units) * operation.width;
             if (width < diameter)
                 width = diameter;
-            return Cam.outline(geometry, diameter, operation.camOp == "Inside", width, 1 - tool.stepover, operation.direction == "Climb");
+            return jscut.priv.cam.outline(geometry, diameter, operation.camOp == "Inside", width, 1 - tool.stepover, operation.direction == "Climb");
         }
         else if (operation.camOp == "Engrave")
-            return Cam.engrave(geometry, operation.direction == "Climb");
+            return jscut.priv.cam.engrave(geometry, operation.direction == "Climb");
         else {
             console.log("jscut.cam.getPaths: operation.camOp must be 'Pocket', 'Inside', 'Outside', or 'Engrave'");
             return [];
@@ -179,7 +179,7 @@ jscut.cam = jscut.cam || {};
             "\r\n; Cut rate:     " + tool.cutRate * fromToolConv * toGcodeConv +
             "\r\n;\r\n";
 
-        gcode += Cam.getGcode({
+        gcode += jscut.priv.cam.getGcode({
             paths: camPaths,
             ramp: operation.ramp,
             scale: 1 / jscut.geometry.getConversion(gcodeOptions.units),
