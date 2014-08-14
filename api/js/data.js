@@ -135,7 +135,6 @@ jscut.data = jscut.data || {};
             units: "inch",
             //enabled: true,
             ramp: true,
-            //selected: "off",
             combineOp: "Union",
             camOp: "Pocket",
             direction: "Conventional",
@@ -162,7 +161,6 @@ jscut.data = jscut.data || {};
 
         //fetch('enabled');
         fetch('ramp');
-        //fetch('selected');
         fetch('combineOp');
         fetch('camOp');
         fetch('direction');

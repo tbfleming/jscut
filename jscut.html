@@ -173,31 +173,65 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                 <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
                             </div>
                         </div>
-                        <table class="table">
-                            <tbody data-bind="foreach: operations">
-                                <tr>
-                                    <td><input type="radio" data-bind="checked: selected" /></td>
-                                    <td><input type="checkbox" data-bind="checked: enabled" /></td>
-                                    <td>
-                                        <select data-bind="value: combineOp">
-                                            <option>Union</option>
-                                            <option>Intersect</option>
-                                            <option>Diff</option>
-                                            <option>Xor</option>
-                                        </select>
-                                    </td>
-                                    <td>
+                        <div style="display:table">
+                            <div data-bind="foreach: operations">
+                                <div style="display:table-row">
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><input type="checkbox" data-bind="checked: enabled" /></div>
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px">
                                         <select data-bind="value: camOp">
                                             <option>Pocket</option>
                                             <option>Inside</option>
                                             <option>Outside</option>
                                             <option>Engrave</option>
                                         </select>
-                                    </td>
-                                    <td><a href="#" data-bind="click: generateToolPath">Generate</a></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    </div>
+                                    <div style="display: table-cell; width: 1000px; padding-right: 5px; text-align:right"><a href="#" data-bind="click: generateToolPath">Generate</a></div>
+                                    <div style="display: table-cell; width: 1px; text-align:right"><label data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
+                                </div>
+                                <div style="display:table-row" data-bind="visible: showDetail">
+                                    <div style="display: table-cell; width: 20px"></div>
+                                    <div style="display: table-cell">
+                                        <table class="table">
+                                            <tr>
+                                                <td><label class="control-label">Name</label>
+                                                <td><input data-bind="value: name">
+                                            <tr>
+                                                <td><label class="control-label">Ramp Plunge</label>
+                                                <td><input type="checkbox" data-bind="checked: ramp" />
+                                            <tr>
+                                                <td><label class="control-label">Combine</label>
+                                                <td>
+                                                    <select data-bind="value: combineOp">
+                                                        <option>Union</option>
+                                                        <option>Intersect</option>
+                                                        <option>Diff</option>
+                                                        <option>Xor</option>
+                                                    </select>
+                                            <tr>
+                                                <td><label class="control-label">Direction</label>
+                                                <td>
+                                                    <select data-bind="value: direction">
+                                                        <option>Conventional</option>
+                                                        <option>Climb</option>
+                                                    </select>
+                                            <tr>
+                                                <td><label class="control-label">Units</label>
+                                                <td><select data-bind="value: units"><option>inch<option>mm</select>
+                                            <tr>
+                                                <td><label class="control-label">Cut Depth</label>
+                                                <td><input type="number" step="any" data-bind="value: cutDepth">
+                                            <tr data-bind="visible: camOp()!='Engrave'">
+                                                <td><label class="control-label">Margin</label>
+                                                <td><input type="number" step="any" data-bind="value: margin">
+                                            <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
+                                                <td><label class="control-label">Width</label>
+                                                <td><input type="number" step="any" data-bind="value: width">
+                                            <tr><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <!-- tool -->
@@ -238,80 +272,6 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <td><span data-bind="text: units"></span>/min
                                     <td><input type="number" step="any" data-bind="value: cutRate">
                             </table>
-                        </div>
-                    </div>
-                </div>
-                <!-- Operation -->
-                <div data-bind="with: selectedOperation" id="Operation">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseOperation">Selected Operation</a>
-                            </h3>
-                        </div>
-                        <div id="collapseOperation" class="panel-collapse collapse in">
-                            <div class="panel-body">
-                                <table class="table">
-                                    <tr><td><td><td><a href="#" data-bind="click: generateToolPath">Generate Toolpath</a>
-                                    <tr><td><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
-                                    <tr>
-                                        <td><label class="control-label">Name</label>
-                                        <td>
-                                        <td><input data-bind="value: name">
-                                    <tr>
-                                        <td><label class="control-label">Visible</label>
-                                        <td>
-                                        <td><input type="checkbox" data-bind="checked: enabled" />
-                                    <tr>
-                                        <td><label class="control-label">Ramp Plunge</label>
-                                        <td>
-                                        <td><input type="checkbox" data-bind="checked: ramp" />
-                                    <tr>
-                                        <td><label class="control-label">Combine</label>
-                                        <td>
-                                        <td>
-                                            <select data-bind="value: combineOp">
-                                                <option>Union</option>
-                                                <option>Intersect</option>
-                                                <option>Diff</option>
-                                                <option>Xor</option>
-                                            </select>
-                                    <tr>
-                                        <td><label class="control-label">Operation</label>
-                                        <td>
-                                        <td>
-                                            <select data-bind="value: camOp">
-                                                <option>Pocket</option>
-                                                <option>Inside</option>
-                                                <option>Outside</option>
-                                                <option>Engrave</option>
-                                            </select>
-                                    <tr>
-                                        <td><label class="control-label">Direction</label>
-                                        <td>
-                                        <td>
-                                            <select data-bind="value: direction">
-                                                <option>Conventional</option>
-                                                <option>Climb</option>
-                                            </select>
-                                    <tr>
-                                        <td><label class="control-label">Units</label>
-                                        <td>
-                                        <td><select data-bind="value: units"><option>inch<option>mm</select>
-                                    <tr>
-                                        <td><label class="control-label">Cut Depth</label>
-                                        <td><span data-bind="text: units" />
-                                        <td><input type="number" step="any" data-bind="value: cutDepth">
-                                    <tr data-bind="visible: camOp()!='Engrave'">
-                                        <td><label class="control-label">Margin</label>
-                                        <td><span data-bind="text: units" />
-                                        <td><input type="number" step="any" data-bind="value: margin">
-                                    <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
-                                        <td><label class="control-label">Width</label>
-                                        <td><span data-bind="text: materialViewModel.matUnits" />
-                                        <td><input type="number" step="any" data-bind="value: width">
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>

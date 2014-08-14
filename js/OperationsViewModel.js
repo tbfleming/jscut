@@ -88,12 +88,12 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     var self = this;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
+    self.showDetail = ko.observable(false);
     self.name = ko.observable("");
     self.units = ko.observable(materialViewModel.matUnits());
     self.unitConverter = new UnitConverter(self.units);
     self.enabled = ko.observable(true);
     self.ramp = ko.observable(false);
-    self.selected = ko.observable("off");
     self.combineOp = ko.observable("Union");
     self.camOp = ko.observable("Pocket");
     self.direction = ko.observable("Conventional");
@@ -111,6 +111,10 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
 
     self.cutDepth.fromInch(toolModel.passDepth.toInch());
 
+    self.toggleDetail = function () {
+        self.showDetail(!self.showDetail());
+    }
+
     self.removeCombinedGeometrySvg = function() {
         if (self.combinedGeometrySvg) {
             self.combinedGeometrySvg.remove();
@@ -127,15 +131,6 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     }
 
     self.direction.subscribe(self.removeToolPaths);
-
-    self.selected.subscribe(function (newValue) {
-        if (newValue == "on")
-            operationsViewModel.selectedOperation(self);
-    });
-
-    operationsViewModel.selectedOperation.subscribe(function () {
-        self.selected(operationsViewModel.selectedOperation() === self ? "on" : "off");
-    });
 
     self.enabled.subscribe(function (newValue) {
         var v;
@@ -293,9 +288,6 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             toolPathsChanged();
     });
 
-    if(!loading)
-        self.selected("on");
-
     self.toJson = function () {
         result = {
             'rawPaths': self.rawPaths,
@@ -303,7 +295,6 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             'units': self.units(),
             'enabled': self.enabled(),
             'ramp': self.ramp(),
-            'selected': self.selected(),
             'combineOp': self.combineOp(),
             'camOp': self.camOp(),
             'direction': self.direction(),
@@ -328,7 +319,6 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
             f(json.name, self.name);
             self.units(materialViewModel.matUnits()); // backwards compat: operation used to use materialViewModel's units !!!!! future hazard when switching to jscut.model.cleanOperation
             f(json.units, self.units);
-            f(json.selected, self.selected);
             f(json.ramp, self.ramp);
             f(json.combineOp, self.combineOp);
             if (json.camOp == "Outline")
@@ -360,7 +350,6 @@ function OperationsViewModel(options, svgViewModel, materialViewModel, selection
     var self = this;
     self.svgViewModel = svgViewModel;
     self.operations = ko.observableArray();
-    self.selectedOperation = ko.observable();
     self.minX = ko.observable(0);
     self.minY = ko.observable(0);
     self.maxX = ko.observable(0);
@@ -426,12 +415,6 @@ function OperationsViewModel(options, svgViewModel, materialViewModel, selection
         operation.removeToolPaths();
         var i = self.operations.indexOf(operation);
         self.operations.remove(operation);
-        if (i < self.operations().length)
-            self.selectedOperation(self.operations()[i]);
-        else if (self.operations().length > 0)
-            self.selectedOperation(self.operations()[self.operations().length - 1]);
-        else
-            self.selectedOperation(null);
     }
 
     self.clickOnSvg = function (elem) {
@@ -459,7 +442,6 @@ function OperationsViewModel(options, svgViewModel, materialViewModel, selection
             }
 
             self.operations.removeAll();
-            self.selectedOperation(null);
 
             for (var i = 0; i < json.operations.length; ++i) {
                 var op = new Operation(options, svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, [], toolPathsChanged, true);
