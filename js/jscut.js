@@ -214,13 +214,45 @@ function makeAllSameUnit(val) {
         ops[i].units(val);
 }
 
-$('#pxPerInch').popover({
-    trigger: "hover",
-    html: true,
-    content: "<table><tr><td>Inkscape:<td>90<tr><td>Adobe Illustrator:<td>72<tr><td>CorelDRAW:<td>96</table>",
-    container: "body",
-    placement: "right"
-});
+function popoverHover(obj, placement, content) {
+    $(obj).popover({
+        trigger: "hover",
+        html: true,
+        content: content,
+        container: "body",
+        placement: placement
+    });
+}
+
+popoverHover('#pxPerInch', "bottom", "SVG editors use different scales from each other; set this to allow sizes come out correctly.<br><br><table><tr><td>Inkscape:<td>90<tr><td>Adobe Illustrator:<td>72<tr><td>CorelDRAW:<td>96</table>");
+
+popoverHover('#toolDiameter', "right", "Diameter of tool");
+popoverHover('#toolPassDepth', "right", "Maximum depth the tool should plunge each pass. Use a smaller pass depth for harder materials and better quality.");
+popoverHover('#toolStepOver', "right", "What fraction of the tool diameter the tool should step over each time around a loop. Smaller values produce better cuts and reduce tool wear, but take longer to complete.");
+popoverHover('#toolRapidRate', "right", "The speed the tool moves while not cutting");
+popoverHover('#toolPlungeRate', "right", "The speed the tool plunges downwards into the material");
+popoverHover('#toolCutRate', "right", "The speed the tool moves horizontally during cutting");
+
+var operationPopovers = {
+    opEnabled: ['top', 'Whether this operation is enabled'],
+    opOperation: ['top', 'What operation type to perform'],
+    opGenerate: ['top', 'Generate toolpath for operation'],
+    opShowDetail: ['top', 'Show additional detail'],
+    opName: ['right', 'Name used in gcode comments'],
+    opDirection: ['right', 'What direction the cutter should travel'],
+    opCutDepth: ['right', 'How deep this operation should cut in total'],
+    opMargin: ['right', 'Positive: how much material to leave uncut.<br><br>Negative: how much extra material to cut'],
+}
+
+function hookupOperationPopovers(nodes) {
+    "use strict";
+    for (var i = 0; i < nodes.length; ++i) {
+        var node = nodes[i];
+        hookupOperationPopovers(node.childNodes);
+        if (node.id in operationPopovers)
+            popoverHover(node, operationPopovers[node.id][0], operationPopovers[node.id][1]);
+    }
+}
 
 $('#createOperationButton').popover({
     trigger: "manual",

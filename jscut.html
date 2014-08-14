@@ -174,19 +174,19 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                             </div>
                         </div>
                         <div style="display:table">
-                            <div data-bind="foreach: operations">
+                            <div data-bind="foreach: {data: operations, afterRender: hookupOperationPopovers}">
                                 <div style="display:table-row">
-                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><input type="checkbox" data-bind="checked: enabled" /></div>
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px"><input id="opEnabled" type="checkbox" data-bind="checked: enabled" /></div>
                                     <div style="display: table-cell; width: 1px; padding-right: 5px">
-                                        <select data-bind="value: camOp">
+                                        <select id="opOperation" data-bind="value camop">
                                             <option>Pocket</option>
                                             <option>Inside</option>
                                             <option>Outside</option>
                                             <option>Engrave</option>
                                         </select>
                                     </div>
-                                    <div style="display: table-cell; width: 1000px; padding-right: 5px; text-align:right"><a href="#" data-bind="click: generateToolPath">Generate</a></div>
-                                    <div style="display: table-cell; width: 1px; text-align:right"><label data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
+                                    <div style="display: table-cell; width: 1000px; padding-right: 5px; text-align:right"><a id="opGenerate" href="#" data-bind="click: generateToolPath">Generate</a></div>
+                                    <div style="display: table-cell; width: 1px; text-align:right"><label id="opShowDetail" data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
                                 </div>
                                 <div style="display:table-row" data-bind="visible: showDetail">
                                     <div style="display: table-cell; width: 20px"></div>
@@ -194,7 +194,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <table class="table">
                                             <tr>
                                                 <td><label class="control-label">Name</label>
-                                                <td><input data-bind="value: name">
+                                                <td><input id="opName" data-bind="value: name">
                                             <tr>
                                                 <td><label class="control-label">Ramp Plunge</label>
                                                 <td><input type="checkbox" data-bind="checked: ramp" />
@@ -210,7 +210,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <tr>
                                                 <td><label class="control-label">Direction</label>
                                                 <td>
-                                                    <select data-bind="value: direction">
+                                                    <select id="opDirection" data-bind="value: direction">
                                                         <option>Conventional</option>
                                                         <option>Climb</option>
                                                     </select>
@@ -219,10 +219,10 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                                 <td><select data-bind="value: units"><option>inch<option>mm</select>
                                             <tr>
                                                 <td><label class="control-label">Cut Depth</label>
-                                                <td><input type="number" step="any" data-bind="value: cutDepth">
+                                                <td><input id="opCutDepth" type="number" step="any" data-bind="value: cutDepth">
                                             <tr data-bind="visible: camOp()!='Engrave'">
                                                 <td><label class="control-label">Margin</label>
-                                                <td><input type="number" step="any" data-bind="value: margin">
+                                                <td><input id="opMargin" type="number" step="any" data-bind="value: margin">
                                             <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
                                                 <td><label class="control-label">Width</label>
                                                 <td><input type="number" step="any" data-bind="value: width">
@@ -245,32 +245,32 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                         <div class="panel-body">
                             <table class="table">
                                 <tr>
-                                    <td><label class="control-label">Units</label>
-                                    <td><select data-bind="value: units"><option>inch<option>mm</select>
+                                    <td><label for="toolUnits" class="control-label">Units</label>
+                                    <td><select id="toolUnits" data-bind="value: units"><option>inch<option>mm</select>
                                 <tr>
-                                    <td><label class="control-label">Diameter</label>
+                                    <td><label for="toolDiameter" class="control-label">Diameter</label>
                                     <td><span data-bind="text: units"></span>
-                                    <td><input type="number" step="any" data-bind="value: diameter">
+                                    <td><input id="toolDiameter" type="number" step="any" data-bind="value: diameter">
                                 <tr>
-                                    <td><label class="control-label">Pass Depth</label>
+                                    <td><label for="toolPassDepth" class="control-label">Pass Depth</label>
                                     <td><span data-bind="text: units"></span>
-                                    <td><input type="number" step="any" data-bind="value: passDepth">
+                                    <td><input id="toolPassDepth" type="number" step="any" data-bind="value: passDepth">
                                 <tr>
-                                    <td><label class="control-label">Step Over</label>
+                                    <td><label for="toolStepOver" class="control-label">Step Over</label>
                                     <td>(0, 1]
-                                    <td><input type="number" step="any" data-bind="value: stepover">
+                                    <td><input id="toolStepOver" type="number" step="any" data-bind="value: stepover">
                                 <tr>
-                                    <td><label class="control-label">Rapid</label>
+                                    <td><label for="toolRapidRate" class="control-label">Rapid</label>
                                     <td><span data-bind="text: units"></span>/min
-                                    <td><input type="number" step="any" data-bind="value: rapidRate">
+                                    <td><input id="toolRapidRate" type="number" step="any" data-bind="value: rapidRate">
                                 <tr>
-                                    <td><label class="control-label">Plunge</label>
+                                    <td><label for="toolPlungeRate" class="control-label">Plunge</label>
                                     <td><span data-bind="text: units"></span>/min
-                                    <td><input type="number" step="any" data-bind="value: plungeRate">
+                                    <td><input id="toolPlungeRate" type="number" step="any" data-bind="value: plungeRate">
                                 <tr>
-                                    <td><label class="control-label">Cut</label>
+                                    <td><label for="toolCutRate" class="control-label">Cut</label>
                                     <td><span data-bind="text: units"></span>/min
-                                    <td><input type="number" step="any" data-bind="value: cutRate">
+                                    <td><input id="toolCutRate" type="number" step="any" data-bind="value: cutRate">
                             </table>
                         </div>
                     </div>
