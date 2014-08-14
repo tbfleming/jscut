@@ -233,6 +233,22 @@ popoverHover('#toolRapidRate', "right", "The speed the tool moves while not cutt
 popoverHover('#toolPlungeRate', "right", "The speed the tool plunges downwards into the material");
 popoverHover('#toolCutRate', "right", "The speed the tool moves horizontally during cutting");
 
+popoverHover('#inputMatThickness', "top", "How thick is the material");
+popoverHover('#selectMatZOrigin', "top", "What is considered the 0 Z position");
+popoverHover('#inputMatClearance', "top", "How high the tool moves over the material. Increase this when using clamps or screws to fasten the material.");
+
+popoverHover('#inputSelMinNumSegments', "top", "Minimum number of line segments to convert a curve to. jscut does this conversion when you select an object (it becomes blue).");
+popoverHover('#inputSelMinSegmentLength', "top", "Minimum length of each line segment when converting curves. jscut does this conversion when you select an object (it becomes blue).");
+
+popoverHover('#gcodeZeroLowerLeft', "top", "Changes the X and Y Offset values so that 0,0 is at the lower-left corner of all tool paths.");
+popoverHover('#gcodeZeroCenter', "top", "Changes the X and Y Offset values so that 0,0 is at the center of all tool paths.");
+popoverHover('#gcodeOffsetX', "top", "Amount to add to gcode X coordinates");
+popoverHover('#gcodeOffsetY', "top", "Amount to add to gcode Y coordinates");
+popoverHover('#gcodeMinX', "top", "Minimum X coordinate in gcode. If this is out of range of your machine then adjust X Offset.");
+popoverHover('#gcodeMaxX', "top", "Maximum X coordinate in gcode. If this is out of range of your machine then adjust X Offset.");
+popoverHover('#gcodeMinY', "top", "Minimum Y coordinate in gcode. If this is out of range of your machine then adjust Y Offset.");
+popoverHover('#gcodeMaxY', "top", "Maximum Y coordinate in gcode. If this is out of range of your machine then adjust Y Offset.");
+
 var operationPopovers = {
     opEnabled: ['top', 'Whether this operation is enabled'],
     opOperation: ['top', 'What operation type to perform'],

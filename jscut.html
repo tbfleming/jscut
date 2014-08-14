@@ -423,10 +423,10 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><select data-bind="value: units"><option>inch<option>mm</select>
                                     <tr>
                                         <td>
-                                        <td colspan="2"><a href="#" data-bind="click: zeroLowerLeft">Zero lower left</a>
+                                        <td colspan="2"><a id="gcodeZeroLowerLeft" href="#" data-bind="click: zeroLowerLeft">Zero lower left</a>
                                     <tr>
                                         <td>
-                                        <td colspan="2"><a href="#" data-bind="click: zeroCenter">Zero center</a>
+                                        <td colspan="2"><a id="gcodeZeroCenter" href="#" data-bind="click: zeroCenter">Zero center</a>
                                     <tr>
                                         <td><label for="gcodeOffsetX">X Offset</label>
                                         <td><span data-bind="text: units" />
@@ -435,10 +435,10 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                         <td><label for="gcodeOffsetY">Y Offset</label>
                                         <td><span data-bind="text: units" />
                                         <td><input type="number" step="any" id="gcodeOffsetY" data-bind="value: offsetY">
-                                    <tr><td><label class="control-label">Min X</label><td><span data-bind="text: units" /><td><span data-bind="text: minX" />
-                                    <tr><td><label class="control-label">Max X</label><td><span data-bind="text: units" /><td><span data-bind="text: maxX" />
-                                    <tr><td><label class="control-label">Min Y</label><td><span data-bind="text: units" /><td><span data-bind="text: minY" />
-                                    <tr><td><label class="control-label">Max Y</label><td><span data-bind="text: units" /><td><span data-bind="text: maxY" />
+                                    <tr><td><label class="control-label">Min X</label><td><span data-bind="text: units" /><td><span id="gcodeMinX" data-bind="text: minX" />
+                                    <tr><td><label class="control-label">Max X</label><td><span data-bind="text: units" /><td><span id="gcodeMaxX" data-bind="text: maxX" />
+                                    <tr><td><label class="control-label">Min Y</label><td><span data-bind="text: units" /><td><span id="gcodeMinY" data-bind="text: minY" />
+                                    <tr><td><label class="control-label">Max Y</label><td><span data-bind="text: units" /><td><span id="gcodeMaxY" data-bind="text: maxY" />
                                 </table>
                             </div>
                         </div>
