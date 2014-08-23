@@ -47,9 +47,31 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSettingsLocalStorage(function () { $('#save-settings-modal').modal('hide') })">In Browser</button>
                     <button type="button" class="btn btn-primary" onclick="$('#save-settings-modal').modal('hide');$('#save-gist-warning').modal('show')">Gist</button>
                     <button type="button" class="btn btn-primary" onclick="saveSettingsGoogle(function () { $('#save-settings-modal').modal('hide') })">Google Drive</button>
                     <a id="SaveSettings2" class="btn btn-primary" href="#" target="_blank" data-bind="attr:{href:saveSettingsUrl()}">Get</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load settings from Local Storage Modal -->
+    <div class="modal fade" id="load-local-storage-settings-modal" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Load Settings
+                    </h4>
+                </div>
+                <div class="modal-body">
+                  <p>Select settings:<select id="selectSettings" data-bind="options: localStorageSettings, value saveSettingsFilename"></select></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="loadSettingsLocalStorage(function () { $('#load-local-storage-settings-modal').modal('hide') })">Load</button>
                 </div>
             </div>
         </div>
@@ -299,6 +321,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Open Settings<strong class="caret"></strong></a>
                                 <ul class="dropdown-menu">
+                                    <li><a href="#" onclick="showLoadSettingsFromLocalStorageModal()">In Browser</a></li>
                                     <li><a href="#" class="choose-file">Local<input type="file" id="choose-settings-file"></a></li>
                                     <li><a href="#" onclick="loadSettingsGoogle()">Google Drive</a></li>
                                 </ul>

@@ -28,6 +28,7 @@ function MiscViewModel() {
     self.saveGistDescription = ko.observable("jscut settings");
     self.savedGistUrl = ko.observable("");
     self.savedGistLaunchUrl = ko.observable("");
+    self.localStorageSettings = ko.observableArray([]);
 }
 
 var mainSvg = Snap("#MainSvg");
@@ -70,6 +71,7 @@ ko.applyBindings(miscViewModel, $("#SaveSettings2")[0]);
 ko.applyBindings(miscViewModel, $("#LaunchChiliPeppr")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-warning")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-result")[0]);
+ko.applyBindings(miscViewModel, $("#load-local-storage-settings-modal")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
@@ -522,6 +524,41 @@ function loadSettingsGoogle() {
 
 function saveSettingsGoogle(callback) {
     saveGoogle(miscViewModel.saveSettingsFilename(), miscViewModel.saveSettingsContent(), callback);
+}
+
+/* Support for storing settings in the browser local storage
+ */
+function showLoadSettingsFromLocalStorageModal() {
+    "use strict";
+
+    var settings = localStorage.getItem("settings");
+    if (settings == null) {
+      showAlert("No settings stored locally yet.", "alert-danger");
+    }
+    miscViewModel.localStorageSettings(Object.keys(JSON.parse(settings)));
+
+    $('#load-local-storage-settings-modal').modal('show');
+}
+
+function loadSettingsLocalStorage() {
+    var alert = showAlert("Loading settings from browser local storage", "alert-info", false);
+    console.log("loadSettingsLocalStorage");
+    var settings = JSON.parse(localStorage.getItem("settings"));
+    fromJson(settings[miscViewModel.saveSettingsFilename()]);
+    $('#load-local-storage-settings-modal').modal('hide');
+    alert.remove();
+}
+
+function saveSettingsLocalStorage(callback) {
+    var alert = showAlert("Saving settings into browser local storage", "alert-info", false);
+    var settings = JSON.parse(localStorage.getItem("settings"));
+    if (settings == null) {
+      settings = {};
+    }
+    settings[miscViewModel.saveSettingsFilename()] = toJson();
+    localStorage.setItem("settings", JSON.stringify(settings));
+    alert.remove();
+    callback();
 }
 
 function saveSettingsGist() {
