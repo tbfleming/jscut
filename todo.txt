@@ -19,7 +19,6 @@ what users want; the TODO list doesn't.
   * Polygon
   * Circle & Ellipse
 * V-shaped bits
-* tabs (cutting tabs; not UI tabs)
 * Code cleanup
   * Replace alertFn callback with exception?
 * Trim gcode of tiny moves

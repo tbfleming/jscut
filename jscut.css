@@ -41,6 +41,11 @@ code {
     fill: #000000;
 }
 
+.tabsGeometry {
+    stroke: none;
+    fill: #ff0000;
+}
+
 .toolPath {
     stroke: #ffff00;
     fill: none;

@@ -37,6 +37,7 @@ var materialSvg = Snap("#MaterialSvg");
 var contentGroup = mainSvg.group();
 contentGroup.attr("filter", mainSvg.filter(Snap.filter.contrast(.5)).attr("filterUnits", "objectBoundingBox"));
 var combinedGeometryGroup = mainSvg.g();
+var tabsGroup = mainSvg.g();
 var toolPathsGroup = mainSvg.g();
 var selectionGroup = mainSvg.g();
 var renderPath;
@@ -46,6 +47,7 @@ var materialViewModel;
 var selectionViewModel;
 var toolModel;
 var operationsViewModel;
+var tabsViewModel;
 var gcodeConversionViewModel;
 var miscViewModel;
 
@@ -56,6 +58,9 @@ toolModel = new ToolModel();
 operationsViewModel = new OperationsViewModel(
     options, svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup,
     function () { gcodeConversionViewModel.generateGcode(); });
+tabsViewModel = new TabsViewModel(
+    options, svgViewModel, materialViewModel, selectionViewModel, tabsGroup,
+    function () { gcodeConversionViewModel.generateGcode(); });
 gcodeConversionViewModel = new GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel);
 miscViewModel = new MiscViewModel();
 
@@ -63,6 +68,7 @@ ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);
 ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
+ko.applyBindings(tabsViewModel, $("#Tabs")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode1")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode2")[0]);
@@ -198,8 +204,7 @@ function openSvgDropbox() {
 $("#MainSvg").click(function (e) {
     var element = Snap.getElementByPoint(e.pageX, e.pageY);
     if (element != null) {
-        operationsViewModel.clickOnSvg(element) ||
-        selectionViewModel.clickOnSvg(element);
+        operationsViewModel.clickOnSvg(element) || tabsViewModel.clickOnSvg(element) || selectionViewModel.clickOnSvg(element);
         if (selectionViewModel.selNumSelected() > 0) {
             tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
         }
@@ -209,6 +214,7 @@ $("#MainSvg").click(function (e) {
 function makeAllSameUnit(val) {
     "use strict";
     materialViewModel.matUnits(val);
+    tabsViewModel.units(val);
     toolModel.units(val);
     gcodeConversionViewModel.units(val);
 
@@ -263,6 +269,11 @@ var operationPopovers = {
     opMargin: ['right', 'Positive: how much material to leave uncut.<br><br>Negative: how much extra material to cut'],
 }
 
+var tabPopovers = {
+    tabEnabled: ['top', 'Whether this tab is enabled'],
+    tabMargin: ['top', 'Positive: how much to expand tab.<br><br>Negative: how much to shrink tab.'],
+}
+
 function hookupOperationPopovers(nodes) {
     "use strict";
     for (var i = 0; i < nodes.length; ++i) {
@@ -270,6 +281,16 @@ function hookupOperationPopovers(nodes) {
         hookupOperationPopovers(node.childNodes);
         if (node.id in operationPopovers)
             popoverHover(node, operationPopovers[node.id][0], operationPopovers[node.id][1]);
+    }
+}
+
+function hookupTabPopovers(nodes) {
+    "use strict";
+    for (var i = 0; i < nodes.length; ++i) {
+        var node = nodes[i];
+        hookupTabPopovers(node.childNodes);
+        if (node.id in tabPopovers)
+            popoverHover(node, tabPopovers[node.id][0], tabPopovers[node.id][1]);
     }
 }
 
@@ -295,6 +316,7 @@ function toJson() {
         'curveToLineConversion': selectionViewModel.toJson(),
         'tool': toolModel.toJson(),
         'operations': operationsViewModel.toJson(),
+        'tabs': tabsViewModel.toJson(),
         'gcodeConversion': gcodeConversionViewModel.toJson(),
     };
 }
@@ -306,6 +328,7 @@ function fromJson(json) {
         selectionViewModel.fromJson(json.curveToLineConversion);
         toolModel.fromJson(json.tool);
         operationsViewModel.fromJson(json.operations);
+        tabsViewModel.fromJson(json.tabs);
         gcodeConversionViewModel.fromJson(json.gcodeConversion);
         updateSvgSize();
     }

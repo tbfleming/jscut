@@ -256,6 +256,38 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                         </div>
                     </div>
                 </div>
+                <!-- tabs -->
+                <div class="panel panel-default" id="Tabs">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTabs">Tabs</a>
+                        </h3>
+                    </div>
+                    <div id="collapseTabs" class="panel-collapse collapse in">
+                        <div class="panel-body">
+                            <table class="table">
+                                <tr>
+                                    <td><label for="tabsUnits" class="control-label">Units</label>
+                                    <td><select id="tabsUnits" data-bind="value: units"><option>inch<option>mm</select>
+                                <tr>
+                                    <td><label for="tabsMaxCutDepth" class="control-label">Max Cut Depth</label>
+                                    <td><input id="tabsMaxCutDepth" type="number" step="any" data-bind="value: maxCutDepth">
+                            </table>
+                            <div style="display: inline-block">
+                                <button id="createTabsButton" class="btn btn-default" data-bind="click: addTab, enable:selectionViewModel.selNumSelected()>0">Create Tabs</button>
+                            </div>
+                        </div>
+                        <div style="display:table">
+                            <div data-bind="foreach: {data: tabs, afterRender: hookupTabPopovers}">
+                                <div style="display:table-row">
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px"><input id="tabEnabled" type="checkbox" data-bind="checked: enabled" /></div>
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><input id="tabMargin" type="number" step="any" data-bind="value: margin"></div>
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><a href="#" data-bind="click: $root.removeTab">Delete</a></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- tool -->
                 <div class="panel panel-default" id="Tool">
                     <div class="panel-heading">
@@ -488,6 +520,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
     <script src="js/MaterialViewModel.js"></script>
     <script src="js/SelectionViewModel.js"></script>
     <script src="js/OperationsViewModel.js"></script>
+    <script src="js/TabsViewModel.js"></script>
     <script src="js/GcodeConversionViewModel.js"></script>
     <script src="js/jscut.js"></script>
     <script type="text/javascript" src="https://apis.google.com/js/api.js?onload=onGoogleApiLoad"></script>
