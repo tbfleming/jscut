@@ -22,6 +22,7 @@ var options = {
 function MiscViewModel() {
     var self = this;
     self.saveSettingsFilename = ko.observable("settings.jscut");
+    self.loadLocalStorageFilename = ko.observable("settings.jscut");
     self.saveSettingsContent = ko.observable("");
     self.saveSettingsUrl = ko.observable(null);
     self.launchChiliUrl = ko.observable(null);
@@ -544,7 +545,7 @@ function loadSettingsLocalStorage() {
     var alert = showAlert("Loading settings from browser local storage", "alert-info", false);
     console.log("loadSettingsLocalStorage");
     var settings = JSON.parse(localStorage.getItem("settings"));
-    fromJson(settings[miscViewModel.saveSettingsFilename()]);
+    fromJson(settings[miscViewModel.loadLocalStorageFilename()]);
     $('#load-local-storage-settings-modal').modal('hide');
     alert.remove();
 }
