@@ -23,7 +23,6 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
     self.unitConverter = new UnitConverter(self.units);
     self.gcode = ko.observable("");
     self.gcodeFilename = ko.observable("gcode.gcode");
-    self.gcodeUrl = ko.observable(null);
     self.offsetX = ko.observable(0);
     self.offsetY = ko.observable(0);
 
@@ -144,10 +143,6 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
         }
 
         self.gcode(gcode);
-
-        if (self.gcodeUrl() != null)
-            URL.revokeObjectURL(self.gcodeUrl());
-        self.gcodeUrl(URL.createObjectURL(new Blob([gcode])));
 
         if (options.profile)
             console.log("generateGcode: " + (Date.now() - startTime));

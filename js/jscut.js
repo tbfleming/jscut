@@ -24,7 +24,6 @@ function MiscViewModel() {
     self.saveSettingsFilename = ko.observable("settings.jscut");
     self.loadLocalStorageFilename = ko.observable("settings.jscut");
     self.saveSettingsContent = ko.observable("");
-    self.saveSettingsUrl = ko.observable(null);
     self.launchChiliUrl = ko.observable(null);
     self.saveGistDescription = ko.observable("jscut settings");
     self.savedGistUrl = ko.observable("");
@@ -65,10 +64,8 @@ ko.applyBindings(toolModel, $("#Tool")[0]);
 ko.applyBindings(operationsViewModel, $("#Operations")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#GcodeConversion")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode1")[0]);
-ko.applyBindings(gcodeConversionViewModel, $("#FileGetGcode2")[0]);
 ko.applyBindings(gcodeConversionViewModel, $("#simulatePanel")[0]);
 ko.applyBindings(miscViewModel, $("#SaveSettings1")[0]);
-ko.applyBindings(miscViewModel, $("#SaveSettings2")[0]);
 ko.applyBindings(miscViewModel, $("#LaunchChiliPeppr")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-warning")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-result")[0]);
@@ -313,12 +310,6 @@ function fromJson(json) {
 
 function showSaveSettingsModal() {
     "use strict";
-    miscViewModel.saveSettingsContent(JSON.stringify(toJson()));
-
-    if (miscViewModel.saveSettingsUrl() != null)
-        URL.revokeObjectURL(miscViewModel.saveSettingsUrl());
-    miscViewModel.saveSettingsUrl(URL.createObjectURL(new Blob([miscViewModel.saveSettingsContent()])));
-
     $('#save-settings-modal').modal('show');
 }
 
@@ -559,6 +550,24 @@ function saveSettingsLocalStorage(callback) {
     settings[miscViewModel.saveSettingsFilename()] = toJson();
     localStorage.setItem("settings", JSON.stringify(settings));
     alert.remove();
+    callback();
+}
+
+/* Support for storing settings and gcode in local files
+ */
+function saveGcodeLocalFile(callback) {
+    if (gcodeConversionViewModel.gcode() == "") {
+        showAlert('Click "Generate Gcode" first', "alert-danger");
+        return;
+    }
+    var blob = new Blob([gcodeConversionViewModel.gcode()], {type: 'text/plain'});
+    saveAs(blob, gcodeConversionViewModel.gcodeFilename());
+    callback();
+}
+
+function saveSettingsLocalFile(callback) {
+    var blob = new Blob([JSON.stringify(toJson())], {type: 'text/json'});
+    saveAs(blob, miscViewModel.saveSettingsFilename());
     callback();
 }
 

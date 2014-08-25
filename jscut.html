@@ -48,9 +48,9 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" onclick="saveSettingsLocalStorage(function () { $('#save-settings-modal').modal('hide') })">In Browser</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSettingsLocalFile(function () { $('#save-settings-modal').modal('hide') })">Local file</button>
                     <button type="button" class="btn btn-primary" onclick="$('#save-settings-modal').modal('hide');$('#save-gist-warning').modal('show')">Gist</button>
                     <button type="button" class="btn btn-primary" onclick="saveSettingsGoogle(function () { $('#save-settings-modal').modal('hide') })">Google Drive</button>
-                    <a id="SaveSettings2" class="btn btn-primary" href="#" target="_blank" data-bind="attr:{href:saveSettingsUrl()}">Get</a>
                 </div>
             </div>
         </div>
@@ -92,9 +92,9 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveGcodeLocalFile(function () { $('#save-gcode-modal').modal('hide') })">Local file</button>
                     <button type="button" class="btn btn-primary" onclick="saveGcodeGoogle(function () { $('#save-gcode-modal').modal('hide') })">Google Drive</button>
                     <button type="button" class="btn btn-primary" onclick="chiliSaveGcode()">ChiliPeppr</button>
-                    <a id="FileGetGcode2" class="btn btn-primary" target="_blank" data-bind="attr:{href:gcodeUrl()}">Get</a>
                 </div>
             </div>
         </div>
@@ -478,6 +478,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
     <script src="lib/clipper_unminified-6.1.3.2.js"></script>
     <script src="lib/gl-matrix-2.2.0-min.js"></script>
     <script src="lib/webgl-utils.js"></script>
+    <script src="lib/FileSaver.js"></script>
     <script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="l00gmdr0kh6ke45"></script>
     <script src="js/path.js"></script>
     <script src="js/Cam.js"></script>
