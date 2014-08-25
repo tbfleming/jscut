@@ -23,7 +23,6 @@ function MiscViewModel() {
     var self = this;
     self.saveSettingsFilename = ko.observable("settings.jscut");
     self.loadLocalStorageFilename = ko.observable("settings.jscut");
-    self.saveSettingsContent = ko.observable("");
     self.launchChiliUrl = ko.observable(null);
     self.saveGistDescription = ko.observable("jscut settings");
     self.savedGistUrl = ko.observable("");
@@ -515,7 +514,7 @@ function loadSettingsGoogle() {
 }
 
 function saveSettingsGoogle(callback) {
-    saveGoogle(miscViewModel.saveSettingsFilename(), miscViewModel.saveSettingsContent(), callback);
+    saveGoogle(miscViewModel.saveSettingsFilename(), JSON.stringify(toJson()), callback);
 }
 
 /* Support for storing settings in the browser local storage
