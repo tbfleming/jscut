@@ -140,6 +140,7 @@ jscut.priv.cam = jscut.priv.cam || {};
         var spiralR = 60 / 25.4 * jscut.priv.path.inchToClipperScale;
         var minRadius = cutterDia;
         var minProgress = stepover / 4;
+        var precision = jscut.priv.path.inchToClipperScale / 5000;
 
         var safeArea = jscut.priv.path.offset(geometry, -cutterDia / 2);
 
@@ -233,6 +234,7 @@ jscut.priv.cam = jscut.priv.cam || {};
                 break;
 
             var newCutterPath = [closestPath];
+            newCutterPath = ClipperLib.Clipper.CleanPolygons(newCutterPath, precision);
             cutterPath.push(closestPath);
 
             var newCutArea = jscut.priv.path.offset(newCutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
