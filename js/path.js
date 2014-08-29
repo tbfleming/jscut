@@ -207,9 +207,11 @@ jscut.priv.path = jscut.priv.path || {};
     }
 
     // Offset Clipper geometries by amount (positive expands, negative shrinks). Returns new geometry.
-    jscut.priv.path.offset = function (paths, amount, joinType) {
+    jscut.priv.path.offset = function (paths, amount, joinType, endType) {
         if (typeof joinType == 'undefined')
             joinType = ClipperLib.JoinType.jtRound;
+        if (typeof endType == 'undefined')
+            endType = ClipperLib.EndType.etClosedPolygon;
 
         // bug workaround: join types are swapped in ClipperLib 6.1.3.2
         if (joinType == ClipperLib.JoinType.jtSquare)
@@ -218,7 +220,7 @@ jscut.priv.path = jscut.priv.path || {};
             joinType = ClipperLib.JoinType.jtSquare;
 
         var co = new ClipperLib.ClipperOffset(2, jscut.priv.path.arcTolerance);
-        co.AddPaths(paths, joinType, ClipperLib.EndType.etClosedPolygon);
+        co.AddPaths(paths, joinType, endType);
         var offsetted = [];
         co.Execute(offsetted, amount);
         offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, jscut.priv.path.cleanPolyDist);

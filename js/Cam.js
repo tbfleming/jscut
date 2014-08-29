@@ -126,6 +126,129 @@ jscut.priv.cam = jscut.priv.cam || {};
         return mergePaths(bounds, allPaths);
     };
 
+    // Compute paths for pocket operation on Clipper geometry. Returns array
+    // of CamPath. cutterDia is in Clipper units. overlap is in the range [0, 1).
+    jscut.priv.cam.hspocket = function (geometry, cutterDia, overlap, climb) {
+        "use strict";
+        var startX = 67 / 25.4 * jscut.priv.path.inchToClipperScale;
+        var startY = 72 / 25.4 * jscut.priv.path.inchToClipperScale;
+        var stepover = cutterDia / 4;
+        var spiralR = 60 / 25.4 * jscut.priv.path.inchToClipperScale;
+
+        var safeArea = jscut.priv.path.offset(geometry, -cutterDia / 2);
+
+        var spiral = [];
+        var angle = 0;
+        while (true) {
+            var r = angle / 2 / Math.PI * stepover;
+            spiral.push({ X: r * Math.cos(-angle) + startX, Y: r * Math.sin(-angle) + startY });
+            angle += Math.PI * 2 / 100;
+            if (r >= spiralR)
+                break;
+        }
+
+        spiral = (function () {
+            var clipper = new ClipperLib.Clipper();
+            clipper.AddPath(spiral, ClipperLib.PolyType.ptSubject, false);
+            clipper.AddPaths(safeArea, ClipperLib.PolyType.ptClip, true);
+            var result = new ClipperLib.PolyTree();
+            clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+            var childs = result.Childs();
+            for (var i = 0; i < childs.length; ++i) {
+                var path = childs[i].Contour();
+                for (var j = 0; j < path.length; ++j)
+                    if (path[j].X == startX && path[j].Y == startY) {
+                        path.reverse();
+                        return path;
+                    }
+            }
+            return [];
+        })();
+        //return [{ path: spiral, safeToClose: false }];
+
+        var cutterPath = [spiral];
+
+        var cutArea = jscut.priv.path.offset(cutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
+
+        //cutArea = cutArea.concat(cutterPath);
+
+        //var camPaths = [];
+        //for (var i = 0; i < cutArea.length; ++i)
+        //    camPaths.push({ path: cutArea[i], safeToClose: false });
+        //return camPaths;
+
+        var yyy = 30;
+        var xxx = 0;
+        while (true) {
+            //if (++xxx >= yyy)
+            //    break;
+            var prev = jscut.priv.path.offset(cutArea, -cutterDia / 2);
+            var q = jscut.priv.path.offset(prev, stepover);
+            var q2 = jscut.priv.path.offset(prev, 10);
+            //for (var i = 0; i < q.length; ++i)
+            //    q[i].push(q[i][0]);
+
+            //var clipper = new ClipperLib.Clipper();
+            //clipper.AddPaths(q, ClipperLib.PolyType.ptSubject, false);
+            //clipper.AddPaths(safeArea, ClipperLib.PolyType.ptClip, true);
+            //var result = new ClipperLib.PolyTree();
+            //clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+            //var childs = result.Childs();
+            //if (childs.length == 0)
+            //    break;
+            //
+            //var newCutterPath = [];
+            //for (var i = 0; i < childs.length; ++i) {
+            //    var path = childs[i].Contour();
+            //    path.reverse();
+            //    cutterPath.push(path);
+            //    newCutterPath.push(path);
+            //}
+
+            q = jscut.priv.path.clip(q, safeArea, ClipperLib.ClipType.ctIntersection);
+            for (var i = 0; i < q.length; ++i)
+                q[i].push(q[i][0]);
+
+            //var newCutterPath = [];
+            //for (var i = 0; i < q.length; ++i) {
+            //    var path = q[i];
+            //    path.reverse();
+            //    cutterPath.push(path);
+            //    newCutterPath.push(path);
+            //}
+
+            var clipper = new ClipperLib.Clipper();
+            clipper.AddPaths(q, ClipperLib.PolyType.ptSubject, false);
+            clipper.AddPaths(q2, ClipperLib.PolyType.ptClip, true);
+            var result = new ClipperLib.PolyTree();
+            clipper.Execute(ClipperLib.ClipType.ctDifference, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+            var childs = result.Childs();
+            if (childs.length == 0)
+                break;
+
+            var newCutterPath = [];
+            for (var i = 0; i < childs.length; ++i) {
+                var path = childs[i].Contour();
+                path.reverse();
+                cutterPath.push(path);
+                newCutterPath.push(path);
+            }
+
+            var newCutArea = jscut.priv.path.offset(newCutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
+            if (++xxx >= yyy) {
+                //cutterPath = cutArea.concat(newCutArea);
+                break;
+            }
+            cutArea = jscut.priv.path.clip(cutArea, newCutArea, ClipperLib.ClipType.ctUnion);
+            //cutArea = ClipperLib.Clipper.SimplifyPolygons(cutArea, ClipperLib.PolyFillType.pftEvenOdd);
+            //cutArea = ClipperLib.Clipper.CleanPolygons(cutArea, jscut.priv.path.inchToClipperScale/1000);
+        }
+        var camPaths = [];
+        for (var i = 0; i < cutterPath.length; ++i)
+            camPaths.push({ path: cutterPath[i], safeToClose: false });
+        return camPaths;
+    };
+
     // Compute paths for outline operation on Clipper geometry. Returns array
     // of CamPath. cutterDia and width are in Clipper units. overlap is in the 
     // range [0, 1).
