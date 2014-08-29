@@ -22,6 +22,10 @@ jscut.priv.cam = jscut.priv.cam || {};
 (function () {
     "use strict";
 
+    function dist(x1, y1, x2, y2) {
+        return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    }
+
     // Does the line from p1 to p2 cross outside of bounds?
     function crosses(bounds, p1, p2) {
         if (bounds == null)
@@ -167,6 +171,15 @@ jscut.priv.cam = jscut.priv.cam || {};
         //return [{ path: spiral, safeToClose: false }];
 
         var cutterPath = [spiral];
+        var currentX, currentY;
+
+        function updateCurrentPos() {
+            var lastPath = cutterPath[cutterPath.length - 1];
+            var lastPos = lastPath[lastPath.length - 1];
+            currentX = lastPos.X;
+            currentY = lastPos.Y;
+        }
+        updateCurrentPos();
 
         var cutArea = jscut.priv.path.offset(cutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
 
@@ -185,6 +198,7 @@ jscut.priv.cam = jscut.priv.cam || {};
             var prev = jscut.priv.path.offset(cutArea, -cutterDia / 2);
             var q = jscut.priv.path.offset(prev, stepover);
             var q2 = jscut.priv.path.offset(prev, 10);
+            //var q2 = prev;
             //for (var i = 0; i < q.length; ++i)
             //    q[i].push(q[i][0]);
 
@@ -223,16 +237,28 @@ jscut.priv.cam = jscut.priv.cam || {};
             var result = new ClipperLib.PolyTree();
             clipper.Execute(ClipperLib.ClipType.ctDifference, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
             var childs = result.Childs();
-            if (childs.length == 0)
-                break;
 
-            var newCutterPath = [];
+            var closestPath = [];
+            var closestDist = 0;
             for (var i = 0; i < childs.length; ++i) {
                 var path = childs[i].Contour();
-                path.reverse();
-                cutterPath.push(path);
-                newCutterPath.push(path);
+                var d = dist(path[0].X, path[0].Y, currentX, currentY);
+                if (closestPath.length == 0 || d < closestDist) {
+                    path.reverse();
+                    var pathCutArea = jscut.priv.path.offset([path], cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
+                    pathCutArea = jscut.priv.path.clip(pathCutArea, cutArea, ClipperLib.ClipType.ctDifference);
+                    if (pathCutArea.length > 0) {
+                        closestPath = path;
+                        closestDist = d;
+                    }
+                }
             }
+
+            if (closestPath.length == 0)
+                break;
+
+            var newCutterPath = [closestPath];
+            cutterPath.push(closestPath);
 
             var newCutArea = jscut.priv.path.offset(newCutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
             if (++xxx >= yyy) {
@@ -364,10 +390,6 @@ jscut.priv.cam = jscut.priv.cam || {};
 
         function getY(p) {
             return -p.Y * scale + offsetY;
-        }
-
-        function dist(x1, y1, x2, y2) {
-            return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         }
 
         function convertPoint(p) {
