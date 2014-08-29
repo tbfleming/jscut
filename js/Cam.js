@@ -186,7 +186,6 @@ jscut.priv.cam = jscut.priv.cam || {};
         var cutArea = jscut.priv.path.offset(cutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
 
         //cutArea = cutArea.concat(cutterPath);
-
         //var camPaths = [];
         //for (var i = 0; i < cutArea.length; ++i)
         //    camPaths.push({ path: cutArea[i], safeToClose: false });
@@ -198,44 +197,12 @@ jscut.priv.cam = jscut.priv.cam || {};
             //if (++xxx >= yyy)
             //    break;
             var q = jscut.priv.path.offset(cutArea, -cutterDia / 2 + stepover);
-            //var prev = jscut.priv.path.offset(cutArea, -cutterDia / 2);
-            //var q = jscut.priv.path.offset(prev, stepover);
-            //var q2 = jscut.priv.path.offset(prev, 10);
-            //var q2 = prev;
             var q2 = jscut.priv.path.offset(cutArea, -cutterDia / 2 + minProgress);
-            //for (var i = 0; i < q.length; ++i)
-            //    q[i].push(q[i][0]);
-
-            //var clipper = new ClipperLib.Clipper();
-            //clipper.AddPaths(q, ClipperLib.PolyType.ptSubject, false);
-            //clipper.AddPaths(safeArea, ClipperLib.PolyType.ptClip, true);
-            //var result = new ClipperLib.PolyTree();
-            //clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
-            //var childs = result.Childs();
-            //if (childs.length == 0)
-            //    break;
-            //
-            //var newCutterPath = [];
-            //for (var i = 0; i < childs.length; ++i) {
-            //    var path = childs[i].Contour();
-            //    path.reverse();
-            //    cutterPath.push(path);
-            //    newCutterPath.push(path);
-            //}
-
             q = jscut.priv.path.clip(q, safeArea, ClipperLib.ClipType.ctIntersection);
             q = jscut.priv.path.offset(q, -minRadius);
             q = jscut.priv.path.offset(q, minRadius);
             for (var i = 0; i < q.length; ++i)
                 q[i].push(q[i][0]);
-
-            //var newCutterPath = [];
-            //for (var i = 0; i < q.length; ++i) {
-            //    var path = q[i];
-            //    path.reverse();
-            //    cutterPath.push(path);
-            //    newCutterPath.push(path);
-            //}
 
             var clipper = new ClipperLib.Clipper();
             clipper.AddPaths(q, ClipperLib.PolyType.ptSubject, false);
@@ -272,8 +239,6 @@ jscut.priv.cam = jscut.priv.cam || {};
                 break;
             }
             cutArea = jscut.priv.path.clip(cutArea, newCutArea, ClipperLib.ClipType.ctUnion);
-            //cutArea = ClipperLib.Clipper.SimplifyPolygons(cutArea, ClipperLib.PolyFillType.pftEvenOdd);
-            //cutArea = ClipperLib.Clipper.CleanPolygons(cutArea, jscut.priv.path.inchToClipperScale/1000);
         }
         var camPaths = [];
         for (var i = 0; i < cutterPath.length; ++i)
