@@ -191,14 +191,16 @@ jscut.priv.cam = jscut.priv.cam || {};
         //    camPaths.push({ path: cutArea[i], safeToClose: false });
         //return camPaths;
 
-        var yyy = 30;
+        var loopStartTime = Date.now();
+
+        var yyy = 100;
         var xxx = 0;
         while (true) {
             //if (++xxx >= yyy)
             //    break;
-            var q = jscut.priv.path.offset(cutArea, -cutterDia / 2 + stepover);
-            var q2 = jscut.priv.path.offset(cutArea, -cutterDia / 2 + minProgress);
-            q = jscut.priv.path.clip(q, safeArea, ClipperLib.ClipType.ctIntersection);
+            var front = jscut.priv.path.offset(cutArea, -cutterDia / 2 + stepover);
+            var back = jscut.priv.path.offset(cutArea, -cutterDia / 2 + minProgress);
+            var q = jscut.priv.path.clip(front, safeArea, ClipperLib.ClipType.ctIntersection);
             q = jscut.priv.path.offset(q, -minRadius);
             q = jscut.priv.path.offset(q, minRadius);
             for (var i = 0; i < q.length; ++i)
@@ -206,7 +208,7 @@ jscut.priv.cam = jscut.priv.cam || {};
 
             var clipper = new ClipperLib.Clipper();
             clipper.AddPaths(q, ClipperLib.PolyType.ptSubject, false);
-            clipper.AddPaths(q2, ClipperLib.PolyType.ptClip, true);
+            clipper.AddPaths(back, ClipperLib.PolyType.ptClip, true);
             var result = new ClipperLib.PolyTree();
             clipper.Execute(ClipperLib.ClipType.ctDifference, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
             var childs = result.Childs();
@@ -240,6 +242,9 @@ jscut.priv.cam = jscut.priv.cam || {};
             }
             cutArea = jscut.priv.path.clip(cutArea, newCutArea, ClipperLib.ClipType.ctUnion);
         }
+
+        console.log("hspocket loop: " + (Date.now() - loopStartTime));
+
         var camPaths = [];
         for (var i = 0; i < cutterPath.length; ++i)
             camPaths.push({ path: cutterPath[i], safeToClose: false });
