@@ -138,6 +138,8 @@ jscut.priv.cam = jscut.priv.cam || {};
         var startY = 72 / 25.4 * jscut.priv.path.inchToClipperScale;
         var stepover = cutterDia / 4;
         var spiralR = 60 / 25.4 * jscut.priv.path.inchToClipperScale;
+        var minRadius = cutterDia;
+        var minProgress = stepover / 4;
 
         var safeArea = jscut.priv.path.offset(geometry, -cutterDia / 2);
 
@@ -195,10 +197,12 @@ jscut.priv.cam = jscut.priv.cam || {};
         while (true) {
             //if (++xxx >= yyy)
             //    break;
-            var prev = jscut.priv.path.offset(cutArea, -cutterDia / 2);
-            var q = jscut.priv.path.offset(prev, stepover);
-            var q2 = jscut.priv.path.offset(prev, 10);
+            var q = jscut.priv.path.offset(cutArea, -cutterDia / 2 + stepover);
+            //var prev = jscut.priv.path.offset(cutArea, -cutterDia / 2);
+            //var q = jscut.priv.path.offset(prev, stepover);
+            //var q2 = jscut.priv.path.offset(prev, 10);
             //var q2 = prev;
+            var q2 = jscut.priv.path.offset(cutArea, -cutterDia / 2 + minProgress);
             //for (var i = 0; i < q.length; ++i)
             //    q[i].push(q[i][0]);
 
@@ -220,6 +224,8 @@ jscut.priv.cam = jscut.priv.cam || {};
             //}
 
             q = jscut.priv.path.clip(q, safeArea, ClipperLib.ClipType.ctIntersection);
+            q = jscut.priv.path.offset(q, -minRadius);
+            q = jscut.priv.path.offset(q, minRadius);
             for (var i = 0; i < q.length; ++i)
                 q[i].push(q[i][0]);
 
