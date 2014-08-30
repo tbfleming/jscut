@@ -19,6 +19,7 @@
 
 #include "clipper.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 
 using namespace std;
@@ -26,6 +27,16 @@ using namespace ClipperLib;
 
 static const long long inchToClipperScale = 100000;
 static const long long arcTolerance = inchToClipperScale / 40000;
+
+static Paths clip(const Paths& paths1, const Paths& paths2, ClipType clipType)
+{
+    Clipper clipper;
+    clipper.AddPaths(paths1, ptSubject, true);
+    clipper.AddPaths(paths2, ptClip, true);
+    Paths result;
+    clipper.Execute(clipType, result);
+    return result;
+}
 
 static Paths offset(const Paths& paths, long long delta, JoinType joinType = jtRound, EndType endType = etClosedPolygon)
 {
@@ -35,6 +46,10 @@ static Paths offset(const Paths& paths, long long delta, JoinType joinType = jtR
     co.Execute(result, delta);
     //offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, jscut.priv.path.cleanPolyDist);
     return result;
+}
+
+static double dist(double x1, double y1, double x2, double y2) {
+    return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
 }
 
 // Convert paths to C format
@@ -122,11 +137,91 @@ extern "C" void hspocket(
             }
 
             if (!found)
-                spiral.clear();
+            {
+                convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {});
+                return;
+            }
         };
 
-        Paths xxxx{spiral};
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, xxxx);
+        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral});
+
+        Paths cutterPaths{spiral};
+        long long currentX, currentY;
+
+        auto updateCurrentPos = [&]() {
+            auto& lastPath = cutterPaths.back();
+            auto& lastPos = lastPath.back();
+            currentX = lastPos.X;
+            currentY = lastPos.Y;
+        };
+        updateCurrentPos();
+
+        auto cutArea = offset(cutterPaths, cutterDia / 2, jtRound, etOpenRound);
+
+        //cutArea = cutArea.concat(cutterPaths);
+        //var camPaths = [];
+        //for (var i = 0; i < cutArea.length; ++i)
+        //    camPaths.push({ path: cutArea[i], safeToClose: false });
+        //return camPaths;
+
+        //var loopStartTime = Date.now();
+        auto loopStartTime = std::chrono::high_resolution_clock::now();
+
+        int yyy = 100;
+        int xxx = 0;
+        while (true) {
+            printf("%d\n", xxx);
+            //if (++xxx >= yyy)
+            //    break;
+            auto front = offset(cutArea, -cutterDia / 2 + stepover);
+            auto back = offset(front, minProgress - stepover);
+            auto q = clip(front, safeArea, ctIntersection);
+            q = offset(q, -minRadius);
+            q = offset(q, minRadius);
+            for (auto& path: q)
+                path.push_back(path.front());
+
+            Clipper clipper;
+            clipper.AddPaths(q, ptSubject, false);
+            clipper.AddPaths(back, ptClip, true);
+            PolyTree result;
+            clipper.Execute(ctDifference, result, pftEvenOdd, pftEvenOdd);
+
+            Path closestPath;
+            double closestDist = 0;
+            for (auto child: result.Childs) {
+                auto& path = child->Contour;
+                double d = dist(path.back().X, path.back().Y, currentX, currentY);
+                if (closestPath.empty() || d < closestDist) {
+                    reverse(path.begin(), path.end());
+                    auto pathCutArea = offset({path}, cutterDia / 2, jtRound, etOpenRound);
+                    pathCutArea = clip(pathCutArea, cutArea, ctDifference);
+                    if (!pathCutArea.empty()) {
+                        closestPath = move(path);
+                        closestDist = d;
+                    }
+                }
+            }
+
+            if (closestPath.empty())
+                break;
+
+            Paths newCutterPath{closestPath};
+            //newCutterPath = ClipperLib.Clipper.CleanPolygons(newCutterPath, precision);
+            cutterPaths.push_back(move(closestPath));
+
+            auto newCutArea = offset(newCutterPath, cutterDia / 2, jtRound, etOpenRound);
+            if (++xxx >= yyy) {
+                //cutterPaths = cutArea.concat(newCutArea);
+                break;
+            }
+            cutArea = clip(cutArea, newCutArea, ctUnion);
+        }
+
+        //console.log("hspocket loop: " + (Date.now() - loopStartTime));
+        printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
+
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
     }
     catch (exception& e) {
         printf("%s\n", e.what());
@@ -134,86 +229,4 @@ extern "C" void hspocket(
     catch (...) {
         printf("???? unknown exception\n");
     }
-
-    /*
-    var cutterPath = [spiral];
-    var currentX, currentY;
-
-    function updateCurrentPos() {
-        var lastPath = cutterPath[cutterPath.length - 1];
-        var lastPos = lastPath[lastPath.length - 1];
-        currentX = lastPos.X;
-        currentY = lastPos.Y;
-    }
-    updateCurrentPos();
-
-    var cutArea = jscut.priv.path.offset(cutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
-
-    //cutArea = cutArea.concat(cutterPath);
-    //var camPaths = [];
-    //for (var i = 0; i < cutArea.length; ++i)
-    //    camPaths.push({ path: cutArea[i], safeToClose: false });
-    //return camPaths;
-
-    var loopStartTime = Date.now();
-
-    var yyy = 100;
-    var xxx = 0;
-    while (true) {
-        console.log(xxx);
-        //if (++xxx >= yyy)
-        //    break;
-        var front = jscut.priv.path.offset(cutArea, -cutterDia / 2 + stepover);
-        var back = jscut.priv.path.offset(front, minProgress - stepover);
-        var q = jscut.priv.path.clip(front, safeArea, ctIntersection);
-        q = jscut.priv.path.offset(q, -minRadius);
-        q = jscut.priv.path.offset(q, minRadius);
-        for (var i = 0; i < q.length; ++i)
-            q[i].push(q[i][0]);
-
-        var clipper = new ClipperLib.Clipper();
-        clipper.AddPaths(q, ptSubject, false);
-        clipper.AddPaths(back, ptClip, true);
-        var result = new ClipperLib.PolyTree();
-        clipper.Execute(ctDifference, result, pftEvenOdd, pftEvenOdd);
-        var childs = result.Childs();
-
-        var closestPath = [];
-        var closestDist = 0;
-        for (var i = 0; i < childs.length; ++i) {
-            var path = childs[i].Contour();
-            var d = dist(path[0].X, path[0].Y, currentX, currentY);
-            if (closestPath.length == 0 || d < closestDist) {
-                path.reverse();
-                var pathCutArea = jscut.priv.path.offset([path], cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
-                pathCutArea = jscut.priv.path.clip(pathCutArea, cutArea, ctDifference);
-                if (pathCutArea.length > 0) {
-                    closestPath = path;
-                    closestDist = d;
-                }
-            }
-        }
-
-        if (closestPath.length == 0)
-            break;
-
-        var newCutterPath = [closestPath];
-        newCutterPath = ClipperLib.Clipper.CleanPolygons(newCutterPath, precision);
-        cutterPath.push(closestPath);
-
-        var newCutArea = jscut.priv.path.offset(newCutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
-        if (++xxx >= yyy) {
-            //cutterPath = cutArea.concat(newCutArea);
-            break;
-        }
-        cutArea = jscut.priv.path.clip(cutArea, newCutArea, ctUnion);
-    }
-
-    console.log("hspocket loop: " + (Date.now() - loopStartTime));
-
-    var camPaths = [];
-    for (var i = 0; i < cutterPath.length; ++i)
-        camPaths.push({ path: cutterPath[i], safeToClose : false });
-    return camPaths;
-*/
 };
