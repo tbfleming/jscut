@@ -130,10 +130,115 @@ jscut.priv.cam = jscut.priv.cam || {};
         return mergePaths(bounds, allPaths);
     };
 
+    // Convert Clipper paths to C format. Returns [double** cPaths, int cNumPaths, int* cPathSizes].
+    function convertPathsToCpp(memoryBlocks, paths) {
+        var doubleSize = 8;
+
+        var cPaths = Module._malloc(paths.length * 4);
+        memoryBlocks.push(cPaths);
+        var cPathsBase = cPaths >> 2;
+
+        var cPathSizes = Module._malloc(paths.length * 4);
+        memoryBlocks.push(cPathSizes);
+        var cPathSizesBase = cPathSizes >> 2;
+
+        for(var i = 0; i < paths.length; ++i) {
+            var path = paths[i];
+
+            var cPath = Module._malloc(path.length * 2 * doubleSize + 4);
+            memoryBlocks.push(cPath);
+            if (cPath & 4)
+                cPath += 4;
+            //console.log("-> " + cPath.toString(16));
+            var pathArray = new Float64Array(Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
+
+            for (var j = 0; j < path.length; ++j) {
+                var point = path[j];
+                pathArray[j*2] = point.X;
+                pathArray[j*2 + 1] = point.Y;
+            }
+
+            Module.HEAPU32[cPathsBase + i] = cPath;
+            Module.HEAPU32[cPathSizesBase + i] = path.length;
+        }
+
+        return [cPaths, paths.length, cPathSizes];
+    }
+
+    // Convert C format paths to array of CamPath. double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
+    function convertPathsFromCppToCamPath(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
+        var cPaths = Module.HEAPU32[cPathsRef >> 2];
+        memoryBlocks.push(cPaths);
+        var cPathsBase = cPaths >> 2;
+
+        var cNumPaths = Module.HEAPU32[cNumPathsRef >> 2];
+
+        var cPathSizes = Module.HEAPU32[cPathSizesRef >> 2];
+        memoryBlocks.push(cPathSizes);
+        var cPathSizesBase = cPathSizes >> 2;
+
+        var convertedPaths = [];
+        for (var i = 0; i < cNumPaths; ++i) {
+            var pathSize = Module.HEAPU32[cPathSizesBase + i];
+            var cPath = Module.HEAPU32[cPathsBase + i];
+            // cPath contains value to pass to Module._free(). The aligned version contains the actual data.
+            memoryBlocks.push(cPath);
+            if (cPath & 4)
+                cPath += 4;
+            var pathArray = new Float64Array(Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
+
+            var convertedPath = [];
+            convertedPaths.push({ path: convertedPath, safeToClose: false });
+            for (var j = 0; j < pathSize; ++j)
+                convertedPath.push({
+                    X: pathArray[j * 2],
+                    Y: pathArray[j * 2 + 1]
+                });
+        }
+
+        return convertedPaths;
+    }
+
     // Compute paths for pocket operation on Clipper geometry. Returns array
     // of CamPath. cutterDia is in Clipper units. overlap is in the range [0, 1).
     jscut.priv.cam.hspocket = function (geometry, cutterDia, overlap, climb) {
         "use strict";
+
+        var memoryBlocks = [];
+
+        var cGeometry = convertPathsToCpp(memoryBlocks, geometry);
+
+        var resultPathsRef = Module._malloc(4);
+        var resultNumPathsRef = Module._malloc(4);
+        var resultPathSizesRef = Module._malloc(4);
+        memoryBlocks.push(resultPathsRef);
+        memoryBlocks.push(resultNumPathsRef);
+        memoryBlocks.push(resultPathSizesRef);
+
+        //extern "C" void hspocket(
+        //    double** paths, int numPaths, int* pathSizes, double cutterDia,
+        //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
+        Module.ccall(
+            'hspocket',
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+
+        var result = convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
+
+        for(var i = 0; i < memoryBlocks.length; ++i)
+            Module._free(memoryBlocks[i]);
+
+        return result;
+
+
+        
+
+
+
+
+
+
+
         var startX = 67 / 25.4 * jscut.priv.path.inchToClipperScale;
         var startY = 72 / 25.4 * jscut.priv.path.inchToClipperScale;
         var stepover = cutterDia / 4;

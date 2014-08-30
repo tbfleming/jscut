@@ -1,0 +1,18 @@
+em++ \
+ cam.cpp \
+ lib/clipper/cpp/clipper.cpp \
+ -I lib/clipper/cpp \
+ -D use_lines \
+ -std=c++11 \
+ -O2 \
+ -Wno-dangling-else \
+ -s CORRECT_SIGNS=0 \
+ -s CHECK_SIGNS=1 \
+ -s ASSERTIONS=2 \
+ -s ALLOW_MEMORY_GROWTH=1 \
+ -s SAFE_HEAP=1 \
+ -s DISABLE_EXCEPTION_CATCHING=0 \
+ -s FORCE_ALIGNED_MEMORY=1 \
+ -s NO_EXIT_RUNTIME=1 \
+ -s EXPORTED_FUNCTIONS="['_hspocket']" \
+
