@@ -29,6 +29,11 @@ static const long long inchToClipperScale = 100000;
 //static const long long cleanPolyDist = inchToClipperScale / 100000;
 static const long long arcTolerance = inchToClipperScale / 10000;
 
+struct CandidatePath {
+    Path path;
+    double distToCurrentPos;
+};
+
 static Paths clip(const Paths& paths1, const Paths& paths2, ClipType clipType)
 {
     Clipper clipper;
@@ -36,6 +41,16 @@ static Paths clip(const Paths& paths1, const Paths& paths2, ClipType clipType)
     clipper.AddPaths(paths2, ptClip, true);
     Paths result;
     clipper.Execute(clipType, result);
+    return result;
+}
+
+static Paths offset(const Path& path, long long delta, JoinType joinType = jtRound, EndType endType = etClosedPolygon)
+{
+    ClipperOffset co(2, arcTolerance);
+    co.AddPath(path, joinType, endType);
+    Paths result;
+    co.Execute(result, delta);
+    //CleanPolygons(result, cleanPolyDist);
     return result;
 }
 
@@ -168,13 +183,14 @@ extern "C" void hspocket(
         //var loopStartTime = Date.now();
         auto loopStartTime = std::chrono::high_resolution_clock::now();
 
-        int yyy = 100;
+        int yyy = 200;
         int xxx = 0;
         while (true) {
             printf("%d\n", xxx);
             //if (++xxx >= yyy)
             //    break;
             auto front = offset(cutArea, -cutterDia / 2 + stepover);
+            //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
             auto back = offset(front, minProgress - stepover);
             auto q = clip(front, safeArea, ctIntersection);
             q = offset(q, -minRadius);
@@ -188,36 +204,39 @@ extern "C" void hspocket(
             PolyTree result;
             clipper.Execute(ctDifference, result, pftEvenOdd, pftEvenOdd);
 
-            Path closestPath;
-            double closestDist = 0;
+            vector<CandidatePath> candidates;
             for (auto child: result.Childs) {
                 auto& path = child->Contour;
                 double d = dist(path.back().X, path.back().Y, currentX, currentY);
-                if (closestPath.empty() || d < closestDist) {
-                    reverse(path.begin(), path.end());
-                    auto pathCutArea = offset({path}, cutterDia / 2, jtRound, etOpenRound);
-                    pathCutArea = clip(pathCutArea, cutArea, ctDifference);
-                    if (!pathCutArea.empty()) {
-                        closestPath = move(path);
-                        closestDist = d;
-                    }
+                candidates.push_back({move(path), d});
+            }
+            make_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
+
+            bool found = false;
+            while (!found && !candidates.empty()) {
+                auto& newCutterPath = candidates.front().path;
+                reverse(newCutterPath.begin(), newCutterPath.end());
+                CleanPolygon(newCutterPath, precision);
+                auto newCutArea = offset(newCutterPath, cutterDia / 2, jtRound, etOpenRound);
+                if (!clip(newCutArea, cutArea, ctDifference).empty()) {
+                    cutterPaths.push_back(move(newCutterPath));
+                    cutArea = clip(cutArea, newCutArea, ctUnion);
+                    updateCurrentPos();
+                    found = true;
                 }
+                else
+                    pop_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
             }
 
-            if (closestPath.empty())
+            if (!found)
                 break;
 
-            Paths newCutterPath{closestPath};
-            CleanPolygons(newCutterPath, precision);
-            cutterPaths.push_back(move(closestPath));
-            updateCurrentPos();
 
-            auto newCutArea = offset(newCutterPath, cutterDia / 2, jtRound, etOpenRound);
             if (++xxx >= yyy) {
                 //cutterPaths = cutArea.concat(newCutArea);
                 break;
             }
-            cutArea = clip(cutArea, newCutArea, ctUnion);
+            
         }
 
         //console.log("hspocket loop: " + (Date.now() - loopStartTime));
