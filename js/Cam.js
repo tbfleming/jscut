@@ -197,10 +197,11 @@ jscut.priv.cam = jscut.priv.cam || {};
         var yyy = 100;
         var xxx = 0;
         while (true) {
+            console.log(xxx);
             //if (++xxx >= yyy)
             //    break;
             var front = jscut.priv.path.offset(cutArea, -cutterDia / 2 + stepover);
-            var back = jscut.priv.path.offset(cutArea, -cutterDia / 2 + minProgress);
+            var back = jscut.priv.path.offset(front, minProgress - stepover);
             var q = jscut.priv.path.clip(front, safeArea, ClipperLib.ClipType.ctIntersection);
             q = jscut.priv.path.offset(q, -minRadius);
             q = jscut.priv.path.offset(q, minRadius);
