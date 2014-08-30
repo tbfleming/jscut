@@ -204,7 +204,7 @@ jscut.priv.cam = jscut.priv.cam || {};
     jscut.priv.cam.hspocket = function (geometry, cutterDia, overlap, climb) {
         "use strict";
 
-        if (0) {
+        if (1) {
             var memoryBlocks = [];
 
             var cGeometry = convertPathsToCpp(memoryBlocks, geometry);
@@ -233,7 +233,7 @@ jscut.priv.cam = jscut.priv.cam || {};
         }
 
 
-        
+
 
 
 
@@ -246,7 +246,7 @@ jscut.priv.cam = jscut.priv.cam || {};
         var stepover = cutterDia / 4;
         var spiralR = 60 / 25.4 * jscut.priv.path.inchToClipperScale;
         var minRadius = cutterDia;
-        var minProgress = stepover / 4;
+        var minProgress = stepover / 8;
         var precision = jscut.priv.path.inchToClipperScale / 5000;
 
         var safeArea = jscut.priv.path.offset(geometry, -cutterDia / 2);
@@ -301,7 +301,7 @@ jscut.priv.cam = jscut.priv.cam || {};
 
         var loopStartTime = Date.now();
 
-        var yyy = 100;
+        var yyy = 200;
         var xxx = 0;
         while (true) {
             console.log(xxx);
@@ -326,7 +326,7 @@ jscut.priv.cam = jscut.priv.cam || {};
             var closestDist = 0;
             for (var i = 0; i < childs.length; ++i) {
                 var path = childs[i].Contour();
-                var d = dist(path[0].X, path[0].Y, currentX, currentY);
+                var d = dist(path[path.length - 1].X, path[path.length - 1].Y, currentX, currentY);
                 if (closestPath.length == 0 || d < closestDist) {
                     path.reverse();
                     var pathCutArea = jscut.priv.path.offset([path], cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
@@ -344,6 +344,7 @@ jscut.priv.cam = jscut.priv.cam || {};
             var newCutterPath = [closestPath];
             newCutterPath = ClipperLib.Clipper.CleanPolygons(newCutterPath, precision);
             cutterPath.push(closestPath);
+            updateCurrentPos();
 
             var newCutArea = jscut.priv.path.offset(newCutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
             if (++xxx >= yyy) {

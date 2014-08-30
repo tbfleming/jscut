@@ -101,7 +101,7 @@ extern "C" void hspocket(
         long long stepover = cutterDia / 4;
         double spiralR = 60 / 25.4 * inchToClipperScale;
         long long minRadius = cutterDia;
-        long long minProgress = llround(stepover / 4);
+        long long minProgress = llround(stepover / 8);
         long long precision = llround(inchToClipperScale / 5000);
 
         Paths safeArea = offset(geometry, -cutterDia / 2);
@@ -192,7 +192,7 @@ extern "C" void hspocket(
             double closestDist = 0;
             for (auto child: result.Childs) {
                 auto& path = child->Contour;
-                double d = dist(path.front().X, path.front().Y, currentX, currentY);
+                double d = dist(path.back().X, path.back().Y, currentX, currentY);
                 if (closestPath.empty() || d < closestDist) {
                     reverse(path.begin(), path.end());
                     auto pathCutArea = offset({path}, cutterDia / 2, jtRound, etOpenRound);
@@ -210,6 +210,7 @@ extern "C" void hspocket(
             Paths newCutterPath{closestPath};
             CleanPolygons(newCutterPath, precision);
             cutterPaths.push_back(move(closestPath));
+            updateCurrentPos();
 
             auto newCutArea = offset(newCutterPath, cutterDia / 2, jtRound, etOpenRound);
             if (++xxx >= yyy) {
