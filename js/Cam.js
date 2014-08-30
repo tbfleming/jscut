@@ -204,31 +204,33 @@ jscut.priv.cam = jscut.priv.cam || {};
     jscut.priv.cam.hspocket = function (geometry, cutterDia, overlap, climb) {
         "use strict";
 
-        var memoryBlocks = [];
+        if (0) {
+            var memoryBlocks = [];
 
-        var cGeometry = convertPathsToCpp(memoryBlocks, geometry);
+            var cGeometry = convertPathsToCpp(memoryBlocks, geometry);
 
-        var resultPathsRef = Module._malloc(4);
-        var resultNumPathsRef = Module._malloc(4);
-        var resultPathSizesRef = Module._malloc(4);
-        memoryBlocks.push(resultPathsRef);
-        memoryBlocks.push(resultNumPathsRef);
-        memoryBlocks.push(resultPathSizesRef);
+            var resultPathsRef = Module._malloc(4);
+            var resultNumPathsRef = Module._malloc(4);
+            var resultPathSizesRef = Module._malloc(4);
+            memoryBlocks.push(resultPathsRef);
+            memoryBlocks.push(resultNumPathsRef);
+            memoryBlocks.push(resultPathSizesRef);
 
-        //extern "C" void hspocket(
-        //    double** paths, int numPaths, int* pathSizes, double cutterDia,
-        //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
-        Module.ccall(
-            'hspocket',
-            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
-            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+            //extern "C" void hspocket(
+            //    double** paths, int numPaths, int* pathSizes, double cutterDia,
+            //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
+            Module.ccall(
+                'hspocket',
+                'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+                [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
 
-        var result = convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
+            var result = convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
 
-        for(var i = 0; i < memoryBlocks.length; ++i)
-            Module._free(memoryBlocks[i]);
+            for (var i = 0; i < memoryBlocks.length; ++i)
+                Module._free(memoryBlocks[i]);
 
-        return result;
+            return result;
+        }
 
 
         

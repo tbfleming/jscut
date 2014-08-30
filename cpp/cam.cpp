@@ -26,7 +26,8 @@ using namespace std;
 using namespace ClipperLib;
 
 static const long long inchToClipperScale = 100000;
-static const long long arcTolerance = inchToClipperScale / 40000;
+//static const long long cleanPolyDist = inchToClipperScale / 100000;
+static const long long arcTolerance = inchToClipperScale / 10000;
 
 static Paths clip(const Paths& paths1, const Paths& paths2, ClipType clipType)
 {
@@ -44,7 +45,7 @@ static Paths offset(const Paths& paths, long long delta, JoinType joinType = jtR
     co.AddPaths(paths, joinType, endType);
     Paths result;
     co.Execute(result, delta);
-    //offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, jscut.priv.path.cleanPolyDist);
+    //CleanPolygons(result, cleanPolyDist);
     return result;
 }
 
@@ -191,7 +192,7 @@ extern "C" void hspocket(
             double closestDist = 0;
             for (auto child: result.Childs) {
                 auto& path = child->Contour;
-                double d = dist(path.back().X, path.back().Y, currentX, currentY);
+                double d = dist(path.front().X, path.front().Y, currentX, currentY);
                 if (closestPath.empty() || d < closestDist) {
                     reverse(path.begin(), path.end());
                     auto pathCutArea = offset({path}, cutterDia / 2, jtRound, etOpenRound);
@@ -207,7 +208,7 @@ extern "C" void hspocket(
                 break;
 
             Paths newCutterPath{closestPath};
-            //newCutterPath = ClipperLib.Clipper.CleanPolygons(newCutterPath, precision);
+            CleanPolygons(newCutterPath, precision);
             cutterPaths.push_back(move(closestPath));
 
             auto newCutArea = offset(newCutterPath, cutterDia / 2, jtRound, etOpenRound);

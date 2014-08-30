@@ -23,7 +23,7 @@ jscut.priv.path = jscut.priv.path || {};
     "use strict";
     jscut.priv.path.inchToClipperScale = 100000;                           // Scale inch to Clipper
     jscut.priv.path.cleanPolyDist = jscut.priv.path.inchToClipperScale / 100000;
-    jscut.priv.path.arcTolerance = jscut.priv.path.inchToClipperScale / 40000;
+    jscut.priv.path.arcTolerance = jscut.priv.path.inchToClipperScale / 10000;
 
     // Linearize a cubic bezier. Returns ['L', x2, y2, x3, y3, ...]. The return value doesn't
     // include (p1x, p1y); it's part of the previous segment.
@@ -223,7 +223,7 @@ jscut.priv.path = jscut.priv.path || {};
         co.AddPaths(paths, joinType, endType);
         var offsetted = [];
         co.Execute(offsetted, amount);
-        offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, jscut.priv.path.cleanPolyDist);
+        //offsetted = ClipperLib.Clipper.CleanPolygons(offsetted, jscut.priv.path.cleanPolyDist);
         return offsetted;
     }
 })();
