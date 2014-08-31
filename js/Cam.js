@@ -197,6 +197,49 @@ jscut.priv.cam = jscut.priv.cam || {};
         return result;
     }
 
+    function separateTabs(cutterPath, tabGeometry) {
+        var tabSegments = jscut.priv.path.clipOpenPaths([cutterPath], tabGeometry, ClipperLib.ClipType.ctIntersection);
+        var normalSegments = jscut.priv.path.clipOpenPaths([cutterPath], tabGeometry, ClipperLib.ClipType.ctDifference);
+
+        var allSegments = [];
+        for(var i = 0; i < tabSegments.length; ++i)
+            allSegments.push([tabSegments[i], true]);
+        for(var i = 0; i < normalSegments.length; ++i)
+            allSegments.push([normalSegments[i], false]);
+
+        var result = [];
+        var pos = cutterPath[0];
+
+        var expectTab = false;
+        while(allSegments.length > 0) {
+            var found = false;
+            for(var i = 0; i < allSegments.length; ++i) {
+                var p = allSegments[i][0][0];
+                if(p.X == pos.X && p.Y == pos.Y) {
+                    if(allSegments[i][1] != expectTab) {
+                        result.push([]);
+                        expectTab = !expectTab;
+                    }
+                    result.push(allSegments[i][0]);
+                    allSegments.splice(i, 1);
+                    expectTab = !expectTab;
+                    pos = result[result.length-1][0];
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) {
+                showAlert("Internal error processing tabs", "alert-danger", false);
+                return [cutterPath];
+            }
+        }
+        console.log(cutterPath);
+        console.log(tabSegments);
+        console.log(normalSegments);
+        console.log(result);
+        return result;
+    }
+
     // Convert paths to gcode. getGcode() assumes that the current Z position is at safeZ.
     // getGcode()'s gcode returns Z to this position at the end.
     // namedArgs must have:
@@ -214,6 +257,8 @@ jscut.priv.cam = jscut.priv.cam || {};
     //      retractFeed:    Feedrate to retract cutter (gcode units)
     //      cutFeed:        Feedrate for horizontal cuts (gcode units)
     //      rapidFeed:      Feedrate for rapid moves (gcode units)
+    //      tabGeometry:    Tab geometry (optional)
+    //      tabZ:           Z position over tabs (required if tabGeometry is not empty) (gcode units)
     jscut.priv.cam.getGcode = function (namedArgs) {
         var paths = namedArgs.paths;
         var ramp = namedArgs.ramp;
@@ -229,6 +274,11 @@ jscut.priv.cam = jscut.priv.cam || {};
         var retractFeedGcode = ' F' + namedArgs.retractFeed;
         var cutFeedGcode = ' F' + namedArgs.cutFeed;
         var rapidFeedGcode = ' F' + namedArgs.rapidFeed;
+        var tabGeometry = namedArgs.tabGeometry;
+        if (typeof tabGeometry == 'undefined')
+            tabGeometry = [];
+        var tabZ = namedArgs.tabZ;
+
         var gcode = "";
 
         var retractGcode =
@@ -255,16 +305,26 @@ jscut.priv.cam = jscut.priv.cam || {};
             var path = paths[pathIndex];
             if (path.path.length == 0)
                 continue;
+
+            separateTabs(path.path, tabGeometry);
+
+
+
             gcode +=
                 '\r\n' +
                 '; Path ' + pathIndex + '\r\n';
+
+            // !!! rapid over tabs
+
+            var origPath = path.path;
+
             var currentZ = topZ;
             while (currentZ > botZ) {
                 if (currentZ != topZ && !path.safeToClose)
                     gcode += retractGcode;
                 gcode +=
                     '; Rapid to initial position\r\n' +
-                    'G1' + convertPoint(path.path[0]) + rapidFeedGcode + '\r\n' +
+                    'G1' + convertPoint(origPath[0]) + rapidFeedGcode + '\r\n' +
                     'G1 Z' + currentZ.toFixed(decimal) + '\r\n';
                 var nextZ = Math.max(currentZ - passDepth, botZ);
 
@@ -274,15 +334,15 @@ jscut.priv.cam = jscut.priv.cam || {};
                     var idealDist = namedArgs.cutFeed * minPlungeTime;
                     var end;
                     var totalDist = 0;
-                    for (end = 1; end < path.path.length; ++end) {
+                    for (end = 1; end < origPath.length; ++end) {
                         if (totalDist > idealDist)
                             break;
-                        totalDist += 2 * dist(getX(path.path[end - 1]), getY(path.path[end - 1]), getX(path.path[end]), getY(path.path[end]));
+                        totalDist += 2 * dist(getX(origPath[end - 1]), getY(origPath[end - 1]), getX(origPath[end]), getY(origPath[end]));
                     }
                     if (totalDist > 0) {
                         gcode += '; ramp\r\n'
                         executedRamp = true;
-                        var rampPath = path.path.slice(0, end).concat(path.path.slice(0, end - 1).reverse());
+                        var rampPath = origPath.slice(0, end).concat(origPath.slice(0, end - 1).reverse());
                         var distTravelled = 0;
                         for (var i = 1; i < rampPath.length; ++i) {
                             distTravelled += dist(getX(rampPath[i - 1]), getY(rampPath[i - 1]), getX(rampPath[i]), getY(rampPath[i]));
@@ -304,8 +364,8 @@ jscut.priv.cam = jscut.priv.cam || {};
                 currentZ = nextZ;
                 gcode += '; cut\r\n';
 
-                for (var i = 1; i < path.path.length; ++i) {
-                    gcode += 'G1' + convertPoint(path.path[i]);
+                for (var i = 1; i < origPath.length; ++i) {
+                    gcode += 'G1' + convertPoint(origPath[i]);
                     if (i == 1)
                         gcode += cutFeedGcode + '\r\n';
                     else
