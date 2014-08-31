@@ -27,7 +27,7 @@ code {
     padding: 2px;
 }
 
-.table > tbody > tr > td > input[type="number"] {
+.table > tbody > tr > td > input[type="number"], .number {
     width: 60px;
 }
 

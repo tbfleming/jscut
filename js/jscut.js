@@ -61,7 +61,7 @@ operationsViewModel = new OperationsViewModel(
 tabsViewModel = new TabsViewModel(
     options, svgViewModel, materialViewModel, selectionViewModel, tabsGroup,
     function () { gcodeConversionViewModel.generateGcode(); });
-gcodeConversionViewModel = new GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel);
+gcodeConversionViewModel = new GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel, tabsViewModel);
 miscViewModel = new MiscViewModel();
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
@@ -234,6 +234,8 @@ function popoverHover(obj, placement, content) {
 }
 
 popoverHover('#pxPerInch', "bottom", "SVG editors use different scales from each other; set this to allow sizes come out correctly.<br><br><table><tr><td>Inkscape:<td>90<tr><td>Adobe Illustrator:<td>72<tr><td>CorelDRAW:<td>96</table>");
+
+popoverHover('#tabsMaxCutDepth', "right", "Maximum depth operations may cut when they pass over tabs");
 
 popoverHover('#toolDiameter', "right", "Diameter of tool");
 popoverHover('#toolPassDepth', "right", "Maximum depth the tool should plunge each pass. Use a smaller pass depth for harder materials and better quality.");

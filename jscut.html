@@ -281,7 +281,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                             <div data-bind="foreach: {data: tabs, afterRender: hookupTabPopovers}">
                                 <div style="display:table-row">
                                     <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px"><input id="tabEnabled" type="checkbox" data-bind="checked: enabled" /></div>
-                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><input id="tabMargin" type="number" step="any" data-bind="value: margin"></div>
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><input id="tabMargin" class="number" type="number" step="any" data-bind="value: margin"></div>
                                     <div style="display: table-cell; width: 1px; padding-right: 5px"><a href="#" data-bind="click: $root.removeTab">Delete</a></div>
                                 </div>
                             </div>

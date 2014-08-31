@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel) {
+function GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel, tabsViewModel) {
     "use strict";
     var self = this;
     var allowGen = true;
@@ -83,6 +83,9 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
         var plungeRate = self.unitConverter.fromInch(toolModel.plungeRate.toInch());
         var cutRate = self.unitConverter.fromInch(toolModel.cutRate.toInch());
         var passDepth = self.unitConverter.fromInch(toolModel.passDepth.toInch());
+        var topZ = self.unitConverter.fromInch(materialViewModel.matTopZ.toInch());
+        var tabCutDepth = self.unitConverter.fromInch(tabsViewModel.maxCutDepth.toInch());
+        var tabZ = topZ - tabCutDepth;
 
         if(passDepth <= 0) {
             showAlert("Pass Depth is not greater than 0.", "alert-danger");
@@ -94,7 +97,16 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
             scale = 1 / jscut.priv.path.inchToClipperScale;
         else
             scale = 25.4 / jscut.priv.path.inchToClipperScale;
-        var topZ = self.unitConverter.fromInch(materialViewModel.matTopZ.toInch());
+
+        var tabGeometry = [];
+        for (var i = 0; i < tabsViewModel.tabs().length; ++i) {
+            var tab = tabsViewModel.tabs()[i];
+            if (tab.enabled()) {
+                var offset = toolModel.diameter.toInch() / 2 * jscut.priv.path.inchToClipperScale;
+                var geometry = jscut.priv.path.offset(tab.combinedGeometry, offset);
+                tabGeometry = jscut.priv.path.clip(tabGeometry, geometry, ClipperLib.ClipType.ctUnion);
+            }
+        }
 
         var gcode = "";
         if (self.units() == "inch")
@@ -139,7 +151,9 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
                 plungeFeed:     plungeRate,
                 retractFeed:    rapidRate,
                 cutFeed:        cutRate,
-                rapidFeed:      rapidRate
+                rapidFeed:      rapidRate,
+                tabGeometry:    tabGeometry,
+                tabZ:           tabZ,
             });
         }
 
