@@ -17,68 +17,280 @@
 
 #define _USE_MATH_DEFINES
 
-#include "clipper.hpp"
+#include <boost/polygon/polygon.hpp>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 
+using namespace boost::polygon::operators;
 using namespace std;
-using namespace ClipperLib;
+
+using Point = boost::polygon::point_data<int>;
+using Segment = boost::polygon::segment_data<int>;
+using Polygon = vector<Point>;
+using PolygonWithHoles = boost::polygon::polygon_with_holes_data<int>;
+using PolygonSet = vector<Polygon>;
+using PolygonWithHolesSet = vector<PolygonWithHoles>;
+using PolygonSetData = boost::polygon::polygon_set_data<int>;
 
 static const long long inchToClipperScale = 100000;
-//static const long long cleanPolyDist = inchToClipperScale / 100000;
+static const long long cleanPolyDist = inchToClipperScale / 100000;
 static const long long arcTolerance = inchToClipperScale / 10000;
+static const long long spiralArcTolerance = inchToClipperScale / 1000;
 
-struct CandidatePath {
-    Path path;
-    double distToCurrentPos;
-};
-
-static Paths clip(const Paths& paths1, const Paths& paths2, ClipType clipType)
-{
-    Clipper clipper;
-    clipper.AddPaths(paths1, ptSubject, true);
-    clipper.AddPaths(paths2, ptClip, true);
-    Paths result;
-    clipper.Execute(clipType, result);
-    return result;
+static Point operator+(const Point& a, const Point& b) {
+    return{x(a)+x(b), y(a)+y(b)};
 }
 
-static Paths offset(const Path& path, long long delta, JoinType joinType = jtRound, EndType endType = etClosedPolygon)
-{
-    ClipperOffset co(2, arcTolerance);
-    co.AddPath(path, joinType, endType);
-    Paths result;
-    co.Execute(result, delta);
-    //CleanPolygons(result, cleanPolyDist);
-    return result;
+static Point operator-(const Point& a, const Point& b) {
+    return{x(a)-x(b), y(a)-y(b)};
 }
 
-static Paths offset(const Paths& paths, long long delta, JoinType joinType = jtRound, EndType endType = etClosedPolygon)
-{
-    ClipperOffset co(2, arcTolerance);
-    co.AddPaths(paths, joinType, endType);
-    Paths result;
-    co.Execute(result, delta);
-    //CleanPolygons(result, cleanPolyDist);
-    return result;
+static Point& operator*=(Point& a, int scale) {
+    a.x(a.x()*scale);
+    a.y(a.y()*scale);
+    return a;
 }
 
-static double dist(double x1, double y1, double x2, double y2) {
-    return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+static long long dot(const Point& a, const Point& b) {
+    return (long long)x(a)*x(b) + (long long)y(a)*y(b);
+}
+
+static double deltaAngleForError(double e, double r) {
+    e = min(r/2, e);
+    return acos(2*(1-e/r)*(1-e/r)-1);
+}
+
+//static Point intersect(const Segment& a, const Segment& b) {
+//    double x1 = x(low(a));
+//    double x2 = x(high(a));
+//    double x3 = x(low(b));
+//    double x4 = x(high(b));
+//    double y1 = y(low(a));
+//    double y2 = y(high(a));
+//    double y3 = y(low(b));
+//    double y4 = y(high(b));
+//
+//    double n1 = x1*y2-y1*x2;
+//    double n2 = x3*y4-y3*x4;
+//    double q = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+//
+//    double x = (n1*(x3-x4)-(x1-x2)*n2)/q;
+//    double y = (n1*(y3-y4)-(y1-y2)*n2)/q;
+//
+//    return{lround(x), lround(y)};
+//}
+
+void convert(PolygonSet& ppp, const PolygonWithHoles& pwh) {
+    Polygon xxx;
+    for (auto& x: pwh)
+        xxx.push_back(x);
+    ppp.push_back(move(xxx));
+    for (auto it = pwh.begin_holes(); it != pwh.end_holes(); ++it)
+    {
+        Polygon g;
+        for (auto& x: *it)
+            g.push_back(x);
+        ppp.push_back(move(g));
+    }
+}
+
+void convert(PolygonSet& ppp, const PolygonWithHolesSet& pwhs) {
+    for (auto& pwh: pwhs)
+        convert(ppp, pwh);
+}
+
+namespace boost {
+    namespace polygon {
+        template <>
+        struct geometry_concept<Polygon>{ typedef polygon_concept type; };
+
+        template <>
+        struct polygon_traits<Polygon> {
+            typedef int coordinate_type;
+            typedef Polygon::const_iterator iterator_type;
+            typedef Point point_type;
+
+            static inline iterator_type begin_points(const Polygon& t) {
+                return t.begin();
+            }
+
+            static inline iterator_type end_points(const Polygon& t) {
+                return t.end();
+            }
+
+            static inline std::size_t size(const Polygon& t) {
+                return t.size();
+            }
+
+            static inline winding_direction winding(const Polygon& t) {
+                return counterclockwise_winding;
+            }
+        };
+
+        template <>
+        struct polygon_mutable_traits<Polygon> {
+            //expects stl style iterators
+            template <typename iT>
+            static inline Polygon& set_points(Polygon& t,
+                iT input_begin, iT input_end) {
+                t.clear();
+                t.insert(t.end(), input_begin, input_end);
+                return t;
+            }
+
+        };
+    }
+}
+
+//struct CandidatePath {
+//    Path path;
+//    double distToCurrentPos;
+//};
+
+static PolygonSet offsetOpenPath(/* !!!!! const*/ Polygon& path, int amount) {
+    if (path.size() < 2 || amount <= 0)
+        return{};
+
+    auto constructStartTime = std::chrono::high_resolution_clock::now();
+
+    auto processSegment = [](Polygon& raw, const Point& p0, const Point& p1, const Point& p2, int amount) {
+        if (p1 == p0)
+            return;
+
+        auto getNormal = [](const Point& p1, const Point& p2, int amount) -> Point {
+            double length = euclidean_distance(p1, p2);
+            return{lround(double(y(p2)-y(p1))*amount/length), lround(double(x(p1)-x(p2))*amount/length)};
+        };
+
+        auto normal01 = getNormal(p0, p1, amount);
+        auto normal12 = getNormal(p1, p2, amount);
+        auto o = orientation(Segment{p1, p1+normal01}, Segment{p1, p1+normal12});
+
+        // turn left
+        if (o == 1 || o == 0 && dot(normal01, normal12) < 0) {
+            //printf("turn left\n");
+            raw.push_back(p1+normal01);
+
+            int numSegments = 10; // !!!!
+            double baseAngle = atan2(y(normal01), x(normal01));
+            double q = ((double)x(normal01)*x(normal12) + (double)y(normal01)*y(normal12)) / amount / amount;
+            q = min(1.0, max(-1.0, q));
+            double deltaAngle = acos(q);
+
+            for (int i = 1; i < numSegments; ++i) {
+                double angle = baseAngle + deltaAngle*i/numSegments;
+                raw.push_back({lround(x(p1)+amount*cos(angle)), lround(y(p1)+amount*sin(angle))});
+            }
+
+            raw.push_back(p1+normal12);
+        }
+
+        // straight
+        else if (o == 0) {
+            //printf("straight\n");
+            raw.push_back(p1+normal01);
+        }
+
+        // turn right
+        else {
+            //printf("turn right\n");
+            // robust way; let line sweep do intersection
+            raw.push_back(p1+normal01);
+            raw.push_back(p1);
+            raw.push_back(p1+normal12);
+
+            // Reduce load on line sweep
+            // wrong!
+            //Point inter = intersect(Segment(p0+normal01, p1+normal01), Segment(p1+normal12, p2+normal12));
+            //raw.push_back();
+        }
+    };
+
+    // !!!! remove duplicate points in path
+
+    //path.erase(path.begin(), path.begin()+200);
+    //path.erase(path.begin()+100, path.end());
+    //path.erase(path.begin(), path.end()-100);
+    //printf("??? %d\n", path.size());
+
+    Polygon raw;
+    const Point* p0 = &path[1];
+    const Point* p1 = &path[0];
+    for (size_t i = 0; i+1 < path.size(); ++i) {
+        const Point* p2 = &path[i+1];
+        //printf("\np0: %d, %d\n", x(*p0), y(*p0));
+        //printf("p1: %d, %d\n", x(*p1), y(*p1));
+        //printf("p2: %d, %d\n", x(*p2), y(*p2));
+        processSegment(raw, *p0, *p1, *p2, amount);
+        p0 = p1;
+        p1 = p2;
+    }
+    for (size_t i = path.size()-1; i > 0; --i) {
+        const Point* p2 = &path[i-1];
+        //printf("\np0: %d, %d\n", x(*p0), y(*p0));
+        //printf("p1: %d, %d\n", x(*p1), y(*p1));
+        //printf("p2: %d, %d\n", x(*p2), y(*p2));
+        processSegment(raw, *p0, *p1, *p2, amount);
+        p0 = p1;
+        p1 = p2;
+    }
+
+    //return{raw};
+    PolygonSet ps;
+    //ps.push_back(move(raw));
+    ps.push_back(raw);
+
+    printf("offset construct: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - constructStartTime).count());
+
+    auto cleanStartTime = std::chrono::high_resolution_clock::now();
+    //ps |= PolygonSet{};
+    printf("a\n");
+    PolygonSetData psd{ps.begin(), ps.end()};
+    printf("b\n");
+    //for (auto& poly: ps)
+    //    psd.insert(poly, false);
+    ps.clear();
+    printf("c\n");
+    //printf("%s\n", typeid(boost::polygon::geometry_concept<PolygonSet>::type).name());
+    ///auto xxx = boost::polygon::view_as<boost::polygon::polygon_set_concept>(ps);
+
+    printf("dd\n");
+    vector<Segment> segments;
+    for (size_t i = 0; i+1 < raw.size(); ++i) {
+        segments.push_back({path[i], path[i+1]});
+    }
+    vector<Segment> segments2;
+    intersect_segments(segments2, segments.begin(), segments.end());
+    printf("%d -> %d\n", segments.size(), segments2.size());
+
+    printf("d\n");
+    psd.clean();
+
+    printf("e\n");
+    PolygonWithHolesSet pwhs;
+    psd.get(pwhs);
+
+    printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
+
+    PolygonSet ppp;
+    convert(ppp, pwhs);
+    PolygonSet sss{ppp};
+
+    return ppp;
 }
 
 // Convert paths to C format
 static void convertPathsToC(
     double**& cPaths, int& cNumPaths, int*& cPathSizes,
-    const Paths& paths
+    const PolygonSet& paths
     )
 {
     cPaths = (double**)malloc(paths.size() * sizeof(double*));
     cNumPaths = paths.size();
     cPathSizes = (int*)malloc(paths.size() * sizeof(int));
-    for (int i = 0; i < paths.size(); ++i) {
-        const Path& path = paths[i];
+    for (size_t i = 0; i < paths.size(); ++i) {
+        const Polygon& path = paths[i];
         cPathSizes[i] = path.size();
         //printf("path size: %d\n", cPathSizes[i]);
         char* pathStorage = (char*)malloc(path.size() * 2 * sizeof(double) + sizeof(double) / 2);
@@ -88,9 +300,9 @@ static void convertPathsToC(
         if ((int)pathStorage & 4)
             pathStorage += 4;
         double* p = (double*)pathStorage;
-        for (int j = 0; j < path.size(); ++j) {
-            p[j*2] = path[j].X;
-            p[j*2+1] = path[j].Y;
+        for (size_t j = 0; j < path.size(); ++j) {
+            p[j*2] = x(path[j]);
+            p[j*2+1] = y(path[j]);
         }
     }
 }
@@ -101,331 +313,332 @@ extern "C" void hspocket(
     ) 
 {
     try {
-        Paths geometry;
+        PolygonSet geometry;
         for (int i = 0; i < numPaths; ++i) {
-            geometry.push_back(vector<IntPoint>{});
+            geometry.push_back(vector<Point>{});
             auto& newPath = geometry.back();
             double* p = paths[i];
             int l = pathSizes[i];
             for (int j = 0; j < l; ++j)
-                newPath.push_back({llround(p[j*2]), llround(p[j*2+1])});
+                newPath.push_back({lround(p[j*2]), lround(p[j*2+1])});
         }
 
-        long long startX = llround(67 / 25.4 * inchToClipperScale);
-        long long startY = llround(72 / 25.4 * inchToClipperScale);
-        long long stepover = cutterDia / 4;
-        double spiralR = 60 / 25.4 * inchToClipperScale;
-        //long long minRadius = cutterDia / 2;
-        long long minRadius = cutterDia / 8;
-        long long minProgress = llround(stepover / 8);
-        long long precision = llround(inchToClipperScale / 5000);
+        int startX = lround(67 / 25.4 * inchToClipperScale);
+        int startY = lround(72 / 25.4 * inchToClipperScale);
+        int stepover = cutterDia / 4;
+        //double spiralR = 60 / 25.4 * inchToClipperScale;
+        double spiralR = 5 / 25.4 * inchToClipperScale;
+        //int minRadius = cutterDia / 2;
+        int minRadius = cutterDia / 8;
+        int minProgress = lround(stepover / 8);
+        int precision = lround(inchToClipperScale / 5000);
 
-        Paths safeArea = offset(geometry, -cutterDia / 2);
+        //Paths safeArea = offset(geometry, -cutterDia / 2);
 
-        Path spiral;
+        Polygon spiral;
         {
+            auto spiralStartTime = std::chrono::high_resolution_clock::now();
             double angle = 0;
+            //double angle = (spiralR - stepover)* M_PI * 2 / stepover + 2*6*M_PI/8;
             while (true) {
                 double r = angle / M_PI / 2 * stepover;
-                spiral.push_back({llround(r * cos(-angle) + startX), llround(r * sin(-angle) + startY)});
-                angle += M_PI * 2 / 100;
+                spiral.push_back({lround(r * cos(-angle) + startX), lround(r * sin(-angle) + startY)});
+                double deltaAngle = deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
+                angle += deltaAngle;
+                printf("steps = %f\n", 2*M_PI/deltaAngle);
+                
+                //angle += M_PI * 2 / 100; // !!!!
+                //angle += M_PI * 2 / 20;
                 if (r >= spiralR)
                     break;
             }
+            printf("spiral: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralStartTime).count());
 
-            Clipper clipper;
-            clipper.AddPath(spiral, ptSubject, false);
-            clipper.AddPaths(safeArea, ptClip, true);
-            PolyTree result;
-            clipper.Execute(ctIntersection, result, pftEvenOdd, pftEvenOdd);
+            // !!!!!!!!!!!!!!!
+            //Clipper clipper;
+            //clipper.AddPath(spiral, ptSubject, false);
+            //clipper.AddPaths(safeArea, ptClip, true);
+            //PolyTree result;
+            //clipper.Execute(ctIntersection, result, pftEvenOdd, pftEvenOdd);
 
-            bool found = false;
-            for (auto& child: result.Childs) {
-                if (found)
-                    break;
-                for (auto& point: child->Contour) {
-                    if (point.X == startX && point.Y == startY) {
-                        reverse(child->Contour.begin(), child->Contour.end());
-                        spiral = move(child->Contour);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!found)
-            {
-                convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {});
-                return;
-            }
-        };
-
-        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral});
-
-        Paths cutterPaths{spiral};
-        long long currentX, currentY;
-
-        auto updateCurrentPos = [&]() {
-            auto& lastPath = cutterPaths.back();
-            auto& lastPos = lastPath.back();
-            currentX = lastPos.X;
-            currentY = lastPos.Y;
-        };
-        updateCurrentPos();
-
-        auto cutArea = offset(cutterPaths, cutterDia / 2, jtRound, etOpenRound);
-
-        //cutArea = cutArea.concat(cutterPaths);
-        //var camPaths = [];
-        //for (var i = 0; i < cutArea.length; ++i)
-        //    camPaths.push({ path: cutArea[i], safeToClose: false });
-        //return camPaths;
-
-        //var loopStartTime = Date.now();
-        auto loopStartTime = std::chrono::high_resolution_clock::now();
-
-        //int yyy = 200-40+5-50;
-        int yyy = 30-15;
-        int xxx = 0;
-        while (true) {
-            printf("%d\n", xxx);
-            ++xxx;
-            //if (xxx >= yyy)
-            //    break;
-            auto front = offset(cutArea, -cutterDia / 2 + stepover);
-            //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
-            auto back = offset(front, minProgress - stepover);
-            auto q = clip(front, safeArea, ctIntersection);
-            q = offset(q, -minRadius);
-            q = offset(q, minRadius);
-            //for (auto& path: q)
-            //    path.push_back(path.front());
-
-            //if (xxx >= yyy) {
-            //    for (auto& path: q) {
-            //        printf("q f: %lld, %lld\n", path.front().X, path.front().Y);
-            //        printf("q  : %lld, %lld\n", (++path.begin())->X, (++path.begin())->Y);
-            //        printf("q  : %lld, %lld\n", (--path.end())->X, (--path.end())->Y);
-            //        printf("q b: %lld, %lld\n", path.back().X, path.back().Y);
-            //    }
-            //}
-
-            printf("/a\n");
-
-            Clipper clipper;
-            clipper.AddPaths(q, ptSubject, false);
-            clipper.AddPaths(back, ptClip, true);
-            PolyTree result;
-            clipper.Execute(ctDifference, result, pftEvenOdd, pftEvenOdd);
-
-            printf("/b\n");
-
-            if (xxx >= yyy) {
-                //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, q);
-                Paths p;
-                for (auto child: result.Childs)
-                    p.push_back(move(child->Contour));
-                convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, p);
-                return;
-            }
-
-
-            //for (auto child: result.Childs) {
-            //    auto& path = child->Contour;
-            //    for (auto& orig: q) {
-            //        if (path.back() == orig.back())
-            //            path.push_back(orig.front());
-            //        else if (path.front() == orig.front())
-            //            path.insert(path.begin(), orig.back());
-            //    }
-            //}
-
-            vector<pair<Path, Path*>> frontPaths;
-            vector<pair<Path, Path*>> backPaths;
-            Paths combinedPaths;
-            for (auto child: result.Childs) {
-                auto& path = child->Contour;
-                bool found = false;
-                for (auto& existing: q) {
-                    if (existing.front() == path.front()) {
-                        //if (xxx >= yyy) {
-                        //    cutterPaths.clear();
-                        //    cutterPaths.push_back(move(path));
-                        //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
-                        //    return;
-                        //}
-                        frontPaths.push_back(make_pair(move(path), &existing));
-                        found = true;
-                        printf("found front\n");
-                        break;
-                    }
-                    //?else if (existing.front() == path.front()) {
-                    //?    //if (xxx >= yyy) {
-                    //?    //    cutterPaths.clear();
-                    //?    //    cutterPaths.push_back(move(path));
-                    //?    //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
-                    //?    //    return;
-                    //?    //}
-                    //?    frontPaths.push_back(make_pair(move(path), &existing));
-                    //?    found = true;
-                    //?    printf("found front\n");
-                    //?    break;
-                    //?}
-                    else if (existing.back() == path.back()) {
-                        backPaths.push_back(make_pair(move(path), &existing));
-                        found = true;
-                        printf("found back\n");
-                        break;
-                    }
-                }
-                if (!found)
-                    combinedPaths.push_back(move(path));
-            }
-
-            printf("/c\n");
-
-
-            //if (xxx >= yyy) {
-            //    //cutterPaths.clear();
-            //    //cutterPaths.push_back(move(combinedPaths.front()));
-            //    //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
-            //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, combinedPaths);
-            //    return;
-            //}
-
-            printf("/d\n");
-
-
-            /*
-a.out.js:1
-q f: 444663, 205544
-q  : 445355, 205688
-q  : 443959, 205478
-q b: 443959, 205478
-
-
-f: 444663, 205544
- : 445355, 205688
- : 468970, 230637
-b: 468970, 230637 
-
-
-f: 443959, 205478
- : 443253, 205492
- : 436855, 214755
-b: 436855, 214755
-*/
-            for (auto& frontPath: frontPaths) {
-                auto it = find_if(backPaths.begin(), backPaths.end(), [&frontPath](pair<Path, Path*>& p){return p.second == frontPath.second; });
-                if (it != backPaths.end()) {
-                    auto& backPath = it->first;
-                    backPath.insert(backPath.end(), frontPath.first.begin(), frontPath.first.end());
-                    combinedPaths.push_back(move(backPath));
-                    backPaths.erase(it);
-                }
-                else
-                    combinedPaths.push_back(move(frontPath.first));
-            }
-
-            //if (xxx >= yyy) {
-            //    //cutterPaths.clear();
-            //    //cutterPaths.push_back(move(combinedPaths.front()));
-            //    //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
-            //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, combinedPaths);
-            //    return;
-            //}
-
-
-
-            printf("/e\n");
-
-            //    bool merged = false;
-            //    for (auto& existing: combinedPaths) {
-            //        if (existing.back() == path.front()) {
-            //            printf("!1\n");
-            //            existing.insert(existing.end(), path.begin(), path.end());
-            //            merged = true;
-            //            break;
-            //        }
-            //        else if (existing.front() == path.back()) {
-            //            printf("!2\n");
-            //            path.insert(path.end(), existing.begin(), existing.end());
-            //            existing = move(path);
-            //            merged = true;
+            //bool found = false;
+            //for (auto& child: result.Childs) {
+            //    if (found)
+            //        break;
+            //    for (auto& point: child->Contour) {
+            //        if (point.X == startX && point.Y == startY) {
+            //            reverse(child->Contour.begin(), child->Contour.end());
+            //            spiral = move(child->Contour);
+            //            found = true;
             //            break;
             //        }
             //    }
-            //    if (!merged)
-            //        combinedPaths.push_back(move(path));
             //}
 
-            //if (xxx >= yyy) {
-            //    cutterPaths = combinedPaths;
-            //    for (auto& path: combinedPaths) {
-            //        printf("f: %lld, %lld\n", path.front().X, path.front().Y);
-            //        printf(" : %lld, %lld\n", (++path.begin())->X, (++path.begin())->Y);
-            //        printf(" : %lld, %lld\n", (--path.end())->X, (--path.end())->Y);
-            //        printf("b: %lld, %lld\n", path.back().X, path.back().Y);
-            //    }
-            //    cutterPaths.insert(cutterPaths.end(), back.begin(), back.end());
-            //    break;
+            //if (!found)
+            //{
+            //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {});
+            //    return;
             //}
+        };
 
-            printf("/f\n");
+        PolygonSet cutArea = offsetOpenPath(spiral, cutterDia / 2);
+        //PolygonSet cutterPaths;
+        //cutterPaths.push_back(move(spiral));
 
-            vector<CandidatePath> candidates;
-            for (auto& path: combinedPaths) {
-                double d = dist(path.back().X, path.back().Y, currentX, currentY);
-                candidates.push_back({move(path), d});
-            }
-            make_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
-
-            printf("/g\n");
-
-            bool found = false;
-            while (!found && !candidates.empty()) {
-                auto& newCutterPath = candidates.front().path;
-                reverse(newCutterPath.begin(), newCutterPath.end());
-                // corrupts open: CleanPolygon(newCutterPath, precision);
-//auto ccc = newCutterPath;
-                auto newCutArea = offset(newCutterPath, cutterDia / 2, jtRound, etOpenRound);
-                if (!clip(newCutArea, cutArea, ctDifference).empty()) {
-
-                    //if (xxx >= yyy) {
-                    //    cutterPaths.clear();
-                    //    //cutterPaths.push_back(move(newCutterPath));
-                    //    cutterPaths.push_back(move(ccc));
-                    //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
-                    //    return;
-                    //}
-
-
-                    cutterPaths.push_back(move(newCutterPath));
-                    cutArea = clip(cutArea, newCutArea, ctUnion);
-                    updateCurrentPos();
-                    found = true;
-                }
-                else {
-                    pop_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
-                    candidates.pop_back();
-                }
-            }
-
-            printf("/h\n");
-
-            if (!found)
-                break;
-
-            if (xxx >= yyy) {
-                //cutterPaths = cutArea.concat(newCutArea);
-                break;
+        for (auto& poly: cutArea) {
+            for (auto& pt: poly) {
+                //printf("< %d\n", x(pt));
+                x(pt, (x(pt)-startX)*10+startX);
+                y(pt, (y(pt)-startY)*10+startY);
+                //printf("> %d\n\n", x(pt));
             }
         }
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea);
 
-        //console.log("hspocket loop: " + (Date.now() - loopStartTime));
-        printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
 
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
+        //int currentX, currentY;
+
+        //auto updateCurrentPos = [&]() {
+        //    auto& lastPath = cutterPaths.back();
+        //    auto& lastPos = lastPath.back();
+        //    currentX = x(lastPos);
+        //    currentY = y(lastPos);
+        //};
+        //updateCurrentPos();
+
+//
+//        //cutArea = cutArea.concat(cutterPaths);
+//        //var camPaths = [];
+//        //for (var i = 0; i < cutArea.length; ++i)
+//        //    camPaths.push({ path: cutArea[i], safeToClose: false });
+//        //return camPaths;
+//
+//        //var loopStartTime = Date.now();
+//        auto loopStartTime = std::chrono::high_resolution_clock::now();
+//
+//        //int yyy = 200-40+5-50;
+//        int yyy = 30-15;
+//        int xxx = 0;
+//        while (true) {
+//            printf("%d\n", xxx);
+//            ++xxx;
+//            //if (xxx >= yyy)
+//            //    break;
+//            auto front = offset(cutArea, -cutterDia / 2 + stepover);
+//            //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
+//            auto back = offset(front, minProgress - stepover);
+//            auto q = clip(front, safeArea, ctIntersection);
+//            q = offset(q, -minRadius);
+//            q = offset(q, minRadius);
+//            //for (auto& path: q)
+//            //    path.push_back(path.front());
+//
+//            //if (xxx >= yyy) {
+//            //    for (auto& path: q) {
+//            //        printf("q f: %lld, %lld\n", path.front().X, path.front().Y);
+//            //        printf("q  : %lld, %lld\n", (++path.begin())->X, (++path.begin())->Y);
+//            //        printf("q  : %lld, %lld\n", (--path.end())->X, (--path.end())->Y);
+//            //        printf("q b: %lld, %lld\n", path.back().X, path.back().Y);
+//            //    }
+//            //}
+//
+//            printf("/a\n");
+//
+//            Clipper clipper;
+//            clipper.AddPaths(q, ptSubject, false);
+//            clipper.AddPaths(back, ptClip, true);
+//            PolyTree result;
+//            clipper.Execute(ctDifference, result, pftEvenOdd, pftEvenOdd);
+//
+//            printf("/b\n");
+//
+//            if (xxx >= yyy) {
+//                //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, q);
+//                Paths p;
+//                for (auto child: result.Childs)
+//                    p.push_back(move(child->Contour));
+//                convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, p);
+//                return;
+//            }
+//
+//
+//            //for (auto child: result.Childs) {
+//            //    auto& path = child->Contour;
+//            //    for (auto& orig: q) {
+//            //        if (path.back() == orig.back())
+//            //            path.push_back(orig.front());
+//            //        else if (path.front() == orig.front())
+//            //            path.insert(path.begin(), orig.back());
+//            //    }
+//            //}
+//
+//            vector<pair<Path, Path*>> frontPaths;
+//            vector<pair<Path, Path*>> backPaths;
+//            Paths combinedPaths;
+//            for (auto child: result.Childs) {
+//                auto& path = child->Contour;
+//                bool found = false;
+//                for (auto& existing: q) {
+//                    if (existing.front() == path.front()) {
+//                        //if (xxx >= yyy) {
+//                        //    cutterPaths.clear();
+//                        //    cutterPaths.push_back(move(path));
+//                        //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
+//                        //    return;
+//                        //}
+//                        frontPaths.push_back(make_pair(move(path), &existing));
+//                        found = true;
+//                        printf("found front\n");
+//                        break;
+//                    }
+//                    //?else if (existing.front() == path.front()) {
+//                    //?    //if (xxx >= yyy) {
+//                    //?    //    cutterPaths.clear();
+//                    //?    //    cutterPaths.push_back(move(path));
+//                    //?    //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
+//                    //?    //    return;
+//                    //?    //}
+//                    //?    frontPaths.push_back(make_pair(move(path), &existing));
+//                    //?    found = true;
+//                    //?    printf("found front\n");
+//                    //?    break;
+//                    //?}
+//                    else if (existing.back() == path.back()) {
+//                        backPaths.push_back(make_pair(move(path), &existing));
+//                        found = true;
+//                        printf("found back\n");
+//                        break;
+//                    }
+//                }
+//                if (!found)
+//                    combinedPaths.push_back(move(path));
+//            }
+//
+//            printf("/c\n");
+//
+//
+//            //if (xxx >= yyy) {
+//            //    //cutterPaths.clear();
+//            //    //cutterPaths.push_back(move(combinedPaths.front()));
+//            //    //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
+//            //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, combinedPaths);
+//            //    return;
+//            //}
+//
+//            printf("/d\n");
+//
+//            for (auto& frontPath: frontPaths) {
+//                auto it = find_if(backPaths.begin(), backPaths.end(), [&frontPath](pair<Path, Path*>& p){return p.second == frontPath.second; });
+//                if (it != backPaths.end()) {
+//                    auto& backPath = it->first;
+//                    backPath.insert(backPath.end(), frontPath.first.begin(), frontPath.first.end());
+//                    combinedPaths.push_back(move(backPath));
+//                    backPaths.erase(it);
+//                }
+//                else
+//                    combinedPaths.push_back(move(frontPath.first));
+//            }
+//
+//            //if (xxx >= yyy) {
+//            //    //cutterPaths.clear();
+//            //    //cutterPaths.push_back(move(combinedPaths.front()));
+//            //    //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
+//            //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, combinedPaths);
+//            //    return;
+//            //}
+//
+//
+//
+//            printf("/e\n");
+//
+//            //    bool merged = false;
+//            //    for (auto& existing: combinedPaths) {
+//            //        if (existing.back() == path.front()) {
+//            //            printf("!1\n");
+//            //            existing.insert(existing.end(), path.begin(), path.end());
+//            //            merged = true;
+//            //            break;
+//            //        }
+//            //        else if (existing.front() == path.back()) {
+//            //            printf("!2\n");
+//            //            path.insert(path.end(), existing.begin(), existing.end());
+//            //            existing = move(path);
+//            //            merged = true;
+//            //            break;
+//            //        }
+//            //    }
+//            //    if (!merged)
+//            //        combinedPaths.push_back(move(path));
+//            //}
+//
+//            //if (xxx >= yyy) {
+//            //    cutterPaths = combinedPaths;
+//            //    for (auto& path: combinedPaths) {
+//            //        printf("f: %lld, %lld\n", path.front().X, path.front().Y);
+//            //        printf(" : %lld, %lld\n", (++path.begin())->X, (++path.begin())->Y);
+//            //        printf(" : %lld, %lld\n", (--path.end())->X, (--path.end())->Y);
+//            //        printf("b: %lld, %lld\n", path.back().X, path.back().Y);
+//            //    }
+//            //    cutterPaths.insert(cutterPaths.end(), back.begin(), back.end());
+//            //    break;
+//            //}
+//
+//            printf("/f\n");
+//
+//            vector<CandidatePath> candidates;
+//            for (auto& path: combinedPaths) {
+//                double d = dist(path.back().X, path.back().Y, currentX, currentY);
+//                candidates.push_back({move(path), d});
+//            }
+//            make_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
+//
+//            printf("/g\n");
+//
+//            bool found = false;
+//            while (!found && !candidates.empty()) {
+//                auto& newCutterPath = candidates.front().path;
+//                reverse(newCutterPath.begin(), newCutterPath.end());
+//                // corrupts open: CleanPolygon(newCutterPath, precision);
+////auto ccc = newCutterPath;
+//                auto newCutArea = offset(newCutterPath, cutterDia / 2, jtRound, etOpenRound);
+//                if (!clip(newCutArea, cutArea, ctDifference).empty()) {
+//
+//                    //if (xxx >= yyy) {
+//                    //    cutterPaths.clear();
+//                    //    //cutterPaths.push_back(move(newCutterPath));
+//                    //    cutterPaths.push_back(move(ccc));
+//                    //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
+//                    //    return;
+//                    //}
+//
+//
+//                    cutterPaths.push_back(move(newCutterPath));
+//                    cutArea = clip(cutArea, newCutArea, ctUnion);
+//                    updateCurrentPos();
+//                    found = true;
+//                }
+//                else {
+//                    pop_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
+//                    candidates.pop_back();
+//                }
+//            }
+//
+//            printf("/h\n");
+//
+//            if (!found)
+//                break;
+//
+//            if (xxx >= yyy) {
+//                //cutterPaths = cutArea.concat(newCutArea);
+//                break;
+//            }
+//        }
+//
+//        //console.log("hspocket loop: " + (Date.now() - loopStartTime));
+//        printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
+//
+//        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
     }
     catch (exception& e) {
         printf("%s\n", e.what());

@@ -1,13 +1,15 @@
 em++ \
  cam.cpp \
- lib/clipper/cpp/clipper.cpp \
- -I lib/clipper/cpp \
+ -I ../../boost_1_56_0 \
  -D use_lines \
  -std=c++11 \
  -O2 \
- -Wno-dangling-else \
- -s CORRECT_SIGNS=0 \
- -s CHECK_SIGNS=0 \
+ -Wall \
+ -Wextra \
+ -Wno-unused-parameter \
+ -Wno-logical-op-parentheses \
+ -Wno-unused-variable \
+ -Wno-unused-function \
  -s ASSERTIONS=0 \
  -s ALLOW_MEMORY_GROWTH=1 \
  -s SAFE_HEAP=0 \
