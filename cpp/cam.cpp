@@ -163,14 +163,13 @@ static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
 
         // turn left
         if (o == 1 || o == 0 && dot(normal01, normal12) < 0) {
-            //printf("turn left\n");
             raw.push_back(p1+normal01);
 
             double baseAngle = atan2(y(normal01), x(normal01));
             double q = ((double)x(normal01)*x(normal12) + (double)y(normal01)*y(normal12)) / amount / amount;
             q = min(1.0, max(-1.0, q));
             double sweepAngle = acos(q);
-            int numSegments = sweepAngle / deltaAngleForError(arcTolerance, labs(amount));
+            int numSegments = ceil(sweepAngle / deltaAngleForError(arcTolerance, labs(amount)));
             if (amount < 0) {
                 baseAngle += M_PI;
                 sweepAngle = -sweepAngle;
@@ -186,31 +185,16 @@ static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
 
         // straight
         else if (o == 0) {
-            //printf("straight\n");
             raw.push_back(p1+normal01);
         }
 
         // turn right
         else {
-            //printf("turn right\n");
-            // robust way; let line sweep do intersection
             raw.push_back(p1+normal01);
             raw.push_back(p1);
             raw.push_back(p1+normal12);
-
-            // Reduce load on line sweep
-            // wrong!
-            //Point inter = intersect(Segment(p0+normal01, p1+normal01), Segment(p1+normal12, p2+normal12));
-            //raw.push_back();
         }
     };
-
-    // !!!! remove duplicate points in path
-
-    //path.erase(path.begin(), path.begin()+200);
-    //path.erase(path.begin()+100, path.end());
-    //path.erase(path.begin(), path.end()-100);
-    //printf("??? %d\n", path.size());
 
     Polygon raw;
     if (closed) {
@@ -218,9 +202,6 @@ static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
         const Point* p1 = &path[0];
         for (size_t i = 0; i+1 < path.size(); ++i) {
             const Point* p2 = &path[i+1];
-            //printf("\np0: %d, %d\n", x(*p0), y(*p0));
-            //printf("p1: %d, %d\n", x(*p1), y(*p1));
-            //printf("p2: %d, %d\n", x(*p2), y(*p2));
             processSegment(raw, *p0, *p1, *p2, amount);
             p0 = p1;
             p1 = p2;
@@ -233,18 +214,12 @@ static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
         const Point* p1 = &path[0];
         for (size_t i = 0; i+1 < path.size(); ++i) {
             const Point* p2 = &path[i+1];
-            //printf("\np0: %d, %d\n", x(*p0), y(*p0));
-            //printf("p1: %d, %d\n", x(*p1), y(*p1));
-            //printf("p2: %d, %d\n", x(*p2), y(*p2));
             processSegment(raw, *p0, *p1, *p2, amount);
             p0 = p1;
             p1 = p2;
         }
         for (size_t i = path.size()-1; i > 0; --i) {
             const Point* p2 = &path[i-1];
-            //printf("\np0: %d, %d\n", x(*p0), y(*p0));
-            //printf("p1: %d, %d\n", x(*p1), y(*p1));
-            //printf("p2: %d, %d\n", x(*p2), y(*p2));
             processSegment(raw, *p0, *p1, *p2, amount);
             p0 = p1;
             p1 = p2;
@@ -273,10 +248,8 @@ static PolygonSet offset(const PolygonSet& ps, int amount, bool closed) {
     for (auto& poly: ps) {
         Polygon raw = rawOffset(poly, amount, closed);
         printf("%d -> %d\n", poly.size(), raw.size());
-        //return{raw};
         result.push_back(move(raw));
     }
-    //return result;
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
     clean(result);
@@ -292,15 +265,14 @@ static void convertPathsToC(
     const PolygonSet& paths
     )
 {
+    //!!!! don't need double
     cPaths = (double**)malloc(paths.size() * sizeof(double*));
     cNumPaths = paths.size();
     cPathSizes = (int*)malloc(paths.size() * sizeof(int));
     for (size_t i = 0; i < paths.size(); ++i) {
         const Polygon& path = paths[i];
         cPathSizes[i] = path.size();
-        //printf("path size: %d\n", cPathSizes[i]);
         char* pathStorage = (char*)malloc(path.size() * 2 * sizeof(double) + sizeof(double) / 2);
-        //printf("path storage: %p\n", pathStorage);
         // cPaths[i] contains the unaligned block so the javascript side can free it properly.
         cPaths[i] = (double*)pathStorage;
         if ((int)pathStorage & 4)
@@ -351,7 +323,6 @@ extern "C" void hspocket(
                 spiral.push_back({lround(r * cos(-angle) + startX), lround(r * sin(-angle) + startY)});
                 double deltaAngle = deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
                 angle += deltaAngle;
-                //printf("steps = %f\n", 2*M_PI/deltaAngle);
                 if (r >= spiralR)
                     break;
             }
@@ -391,6 +362,10 @@ extern "C" void hspocket(
             //    return;
             //}
         };
+
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral});
+        return;
+
 
         PolygonSet cutArea = offset(spiral, cutterDia / 2, false);
         //PolygonSet cutterPaths;
