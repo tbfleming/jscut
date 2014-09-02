@@ -61,26 +61,6 @@ static double deltaAngleForError(double e, double r) {
     return acos(2*(1-e/r)*(1-e/r)-1);
 }
 
-//static Point intersect(const Segment& a, const Segment& b) {
-//    double x1 = x(low(a));
-//    double x2 = x(high(a));
-//    double x3 = x(low(b));
-//    double x4 = x(high(b));
-//    double y1 = y(low(a));
-//    double y2 = y(high(a));
-//    double y3 = y(low(b));
-//    double y4 = y(high(b));
-//
-//    double n1 = x1*y2-y1*x2;
-//    double n2 = x3*y4-y3*x4;
-//    double q = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
-//
-//    double x = (n1*(x3-x4)-(x1-x2)*n2)/q;
-//    double y = (n1*(y3-y4)-(y1-y2)*n2)/q;
-//
-//    return{lround(x), lround(y)};
-//}
-
 void convert(PolygonSet& ppp, const PolygonWithHoles& pwh) {
     Polygon xxx;
     for (auto& x: pwh)
@@ -148,8 +128,20 @@ namespace boost {
 //    double distToCurrentPos;
 //};
 
-static PolygonSet offsetOpenPath(/* !!!!! const*/ Polygon& path, int amount) {
-    if (path.size() < 2 || amount <= 0)
+static void clean(PolygonSet& ps) {
+    // !!!! todo: convert from psd instead of pwhs
+    PolygonSetData psd{ps.begin(), ps.end()};
+    PolygonWithHolesSet pwhs;
+    psd.get(pwhs);
+    printf("pwhs polys: %d\n", pwhs.size());
+    ps.clear();
+    convert(ps, pwhs);
+}
+
+static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
+    if (amount == 0)
+        return path;
+    if (path.size() < 2)
         return{};
 
     auto constructStartTime = std::chrono::high_resolution_clock::now();
@@ -166,20 +158,26 @@ static PolygonSet offsetOpenPath(/* !!!!! const*/ Polygon& path, int amount) {
         auto normal01 = getNormal(p0, p1, amount);
         auto normal12 = getNormal(p1, p2, amount);
         auto o = orientation(Segment{p1, p1+normal01}, Segment{p1, p1+normal12});
+        if (amount < 0)
+            o = -o;
 
         // turn left
         if (o == 1 || o == 0 && dot(normal01, normal12) < 0) {
             //printf("turn left\n");
             raw.push_back(p1+normal01);
 
-            int numSegments = 10; // !!!!
             double baseAngle = atan2(y(normal01), x(normal01));
             double q = ((double)x(normal01)*x(normal12) + (double)y(normal01)*y(normal12)) / amount / amount;
             q = min(1.0, max(-1.0, q));
-            double deltaAngle = acos(q);
+            double sweepAngle = acos(q);
+            int numSegments = sweepAngle / deltaAngleForError(arcTolerance, labs(amount));
+            if (amount < 0) {
+                baseAngle += M_PI;
+                sweepAngle = -sweepAngle;
+            }
 
             for (int i = 1; i < numSegments; ++i) {
-                double angle = baseAngle + deltaAngle*i/numSegments;
+                double angle = baseAngle + sweepAngle*i/numSegments;
                 raw.push_back({lround(x(p1)+amount*cos(angle)), lround(y(p1)+amount*sin(angle))});
             }
 
@@ -215,69 +213,77 @@ static PolygonSet offsetOpenPath(/* !!!!! const*/ Polygon& path, int amount) {
     //printf("??? %d\n", path.size());
 
     Polygon raw;
-    const Point* p0 = &path[1];
-    const Point* p1 = &path[0];
-    for (size_t i = 0; i+1 < path.size(); ++i) {
-        const Point* p2 = &path[i+1];
-        //printf("\np0: %d, %d\n", x(*p0), y(*p0));
-        //printf("p1: %d, %d\n", x(*p1), y(*p1));
-        //printf("p2: %d, %d\n", x(*p2), y(*p2));
+    if (closed) {
+        const Point* p0 = &path.back();
+        const Point* p1 = &path[0];
+        for (size_t i = 0; i+1 < path.size(); ++i) {
+            const Point* p2 = &path[i+1];
+            //printf("\np0: %d, %d\n", x(*p0), y(*p0));
+            //printf("p1: %d, %d\n", x(*p1), y(*p1));
+            //printf("p2: %d, %d\n", x(*p2), y(*p2));
+            processSegment(raw, *p0, *p1, *p2, amount);
+            p0 = p1;
+            p1 = p2;
+        }
+        const Point* p2 = &path[0];
         processSegment(raw, *p0, *p1, *p2, amount);
-        p0 = p1;
-        p1 = p2;
     }
-    for (size_t i = path.size()-1; i > 0; --i) {
-        const Point* p2 = &path[i-1];
-        //printf("\np0: %d, %d\n", x(*p0), y(*p0));
-        //printf("p1: %d, %d\n", x(*p1), y(*p1));
-        //printf("p2: %d, %d\n", x(*p2), y(*p2));
-        processSegment(raw, *p0, *p1, *p2, amount);
-        p0 = p1;
-        p1 = p2;
+    else {
+        const Point* p0 = &path[1];
+        const Point* p1 = &path[0];
+        for (size_t i = 0; i+1 < path.size(); ++i) {
+            const Point* p2 = &path[i+1];
+            //printf("\np0: %d, %d\n", x(*p0), y(*p0));
+            //printf("p1: %d, %d\n", x(*p1), y(*p1));
+            //printf("p2: %d, %d\n", x(*p2), y(*p2));
+            processSegment(raw, *p0, *p1, *p2, amount);
+            p0 = p1;
+            p1 = p2;
+        }
+        for (size_t i = path.size()-1; i > 0; --i) {
+            const Point* p2 = &path[i-1];
+            //printf("\np0: %d, %d\n", x(*p0), y(*p0));
+            //printf("p1: %d, %d\n", x(*p1), y(*p1));
+            //printf("p2: %d, %d\n", x(*p2), y(*p2));
+            processSegment(raw, *p0, *p1, *p2, amount);
+            p0 = p1;
+            p1 = p2;
+        }
     }
-
-    //return{raw};
-    PolygonSet ps;
-    //ps.push_back(move(raw));
-    ps.push_back(raw);
 
     printf("offset construct: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - constructStartTime).count());
 
+    return raw;
+}
+
+static PolygonSet offset(const Polygon& path, int amount, bool closed) {
+    Polygon raw = rawOffset(path, amount, closed);
+    PolygonSet result;
+    result.push_back(move(raw));
+
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
-    //ps |= PolygonSet{};
-    printf("a\n");
-    PolygonSetData psd{ps.begin(), ps.end()};
-    printf("b\n");
-    //for (auto& poly: ps)
-    //    psd.insert(poly, false);
-    ps.clear();
-    printf("c\n");
-    //printf("%s\n", typeid(boost::polygon::geometry_concept<PolygonSet>::type).name());
-    ///auto xxx = boost::polygon::view_as<boost::polygon::polygon_set_concept>(ps);
-
-    printf("dd\n");
-    vector<Segment> segments;
-    for (size_t i = 0; i+1 < raw.size(); ++i) {
-        segments.push_back({path[i], path[i+1]});
-    }
-    vector<Segment> segments2;
-    intersect_segments(segments2, segments.begin(), segments.end());
-    printf("%d -> %d\n", segments.size(), segments2.size());
-
-    printf("d\n");
-    psd.clean();
-
-    printf("e\n");
-    PolygonWithHolesSet pwhs;
-    psd.get(pwhs);
-
+    clean(result);
     printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
 
-    PolygonSet ppp;
-    convert(ppp, pwhs);
-    PolygonSet sss{ppp};
+    return result;
+}
 
-    return ppp;
+static PolygonSet offset(const PolygonSet& ps, int amount, bool closed) {
+    PolygonSet result;
+    for (auto& poly: ps) {
+        Polygon raw = rawOffset(poly, amount, closed);
+        printf("%d -> %d\n", poly.size(), raw.size());
+        //return{raw};
+        result.push_back(move(raw));
+    }
+    //return result;
+
+    auto cleanStartTime = std::chrono::high_resolution_clock::now();
+    clean(result);
+    printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
+    printf("polys: %d\n", result.size());
+
+    return result;
 }
 
 // Convert paths to C format
@@ -326,33 +332,37 @@ extern "C" void hspocket(
         int startX = lround(67 / 25.4 * inchToClipperScale);
         int startY = lround(72 / 25.4 * inchToClipperScale);
         int stepover = cutterDia / 4;
-        //double spiralR = 60 / 25.4 * inchToClipperScale;
-        double spiralR = 5 / 25.4 * inchToClipperScale;
+        double spiralR = 60 / 25.4 * inchToClipperScale;
         //int minRadius = cutterDia / 2;
         int minRadius = cutterDia / 8;
         int minProgress = lround(stepover / 8);
         int precision = lround(inchToClipperScale / 5000);
 
-        //Paths safeArea = offset(geometry, -cutterDia / 2);
+        PolygonSet safeArea = offset(geometry, -cutterDia / 2, true);
+        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea);
+        //return;
 
         Polygon spiral;
         {
             auto spiralStartTime = std::chrono::high_resolution_clock::now();
             double angle = 0;
-            //double angle = (spiralR - stepover)* M_PI * 2 / stepover + 2*6*M_PI/8;
             while (true) {
                 double r = angle / M_PI / 2 * stepover;
                 spiral.push_back({lround(r * cos(-angle) + startX), lround(r * sin(-angle) + startY)});
                 double deltaAngle = deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
                 angle += deltaAngle;
-                printf("steps = %f\n", 2*M_PI/deltaAngle);
-                
-                //angle += M_PI * 2 / 100; // !!!!
-                //angle += M_PI * 2 / 20;
+                //printf("steps = %f\n", 2*M_PI/deltaAngle);
                 if (r >= spiralR)
                     break;
             }
             printf("spiral: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralStartTime).count());
+
+            //Polygon combined{spiral};
+
+            //void intersect_segments(
+            //    vector<pair<size_t, Segment>* result,
+            //    SegmentIterator first,
+            //    SegmentIterator last)
 
             // !!!!!!!!!!!!!!!
             //Clipper clipper;
@@ -382,18 +392,16 @@ extern "C" void hspocket(
             //}
         };
 
-        PolygonSet cutArea = offsetOpenPath(spiral, cutterDia / 2);
+        PolygonSet cutArea = offset(spiral, cutterDia / 2, false);
         //PolygonSet cutterPaths;
         //cutterPaths.push_back(move(spiral));
 
-        for (auto& poly: cutArea) {
-            for (auto& pt: poly) {
-                //printf("< %d\n", x(pt));
-                x(pt, (x(pt)-startX)*10+startX);
-                y(pt, (y(pt)-startY)*10+startY);
-                //printf("> %d\n\n", x(pt));
-            }
-        }
+        //for (auto& poly: cutArea) {
+        //    for (auto& pt: poly) {
+        //        x(pt, (x(pt)-startX)*10+startX);
+        //        y(pt, (y(pt)-startY)*10+startY);
+        //    }
+        //}
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea);
 
 
