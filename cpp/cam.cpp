@@ -17,7 +17,8 @@
 
 #define _USE_MATH_DEFINES
 
-#include <boost/polygon/polygon.hpp>
+#include "FlexScan.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
