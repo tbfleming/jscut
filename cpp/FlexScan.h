@@ -24,45 +24,16 @@ namespace FlexScan {
 
 namespace bp = boost::polygon;
 
-template<typename... Less>
-struct ChainLess;
-
-template<typename Less0, typename... Less>
-struct ChainLess<Less0, Less...> {
-    Less0 less0;
-    ChainLess<Less...> rest;
-
-    ChainLess(Less0 less0, Less... less) :
-        less0{less0},
-        rest{less...}
-    {
-    }
-
-    ChainLess(const ChainLess&) = default;
-    ChainLess(ChainLess&&) = default;
-    ChainLess& operator=(const ChainLess&) = default;
-    ChainLess& operator=(ChainLess&&) = default;
-
-    template<typename T>
-    bool operator()(const T& a, const T& b) const
-    {
-        return less0(a, b) || !less0(b, a) && rest(a, b);
-    }
-};
-
-template<>
-struct ChainLess<> {
-    template<typename T>
-    bool operator()(const T& a, const T& b) const
-    {
-        return false;
-    }
-};
-
-template<typename... Less>
-ChainLess<Less...> chainLess(Less... less)
+template<typename T, typename Less0, typename... Less>
+bool chainLess(const T& a, const T& b, const Less0& less0, const Less&... less)
 {
-    return{less...};
+    return less0(a, b) || !less0(b, a) && chainLess(a, b, less...);
+}
+
+template<typename T>
+bool chainLess(const T& a, const T& b)
+{
+    return false;
 }
 
 template<typename TPoint, typename... Bases>
@@ -91,7 +62,7 @@ struct ScanlineEdge : Bases... {
     using Edge = TEdge;
     using Point = typename Edge::Point;
     using Unit = typename bp::point_traits<Point>::coordinate_type;
-    using HighPrecision = bp::high_precision_type<Unit>;
+    using HighPrecision = typename bp::high_precision_type<Unit>::type;
 
     Edge* edge;
     HighPrecision yIntercept = 0;
@@ -165,22 +136,65 @@ struct Scan {
     }
 
     template<typename Container, typename It>
-    static bool intersectEdges(Container& dest, It begin, It end) {
-        //std::vector<std::pair<ScanlineBasePoint, ScanlineBasePoint>> segments;
-        //segments.reserve(src.size());
-        //for (auto& edge)
-        //    segments.emplace_back(toScanlineBasePoint(edge.point1), toScanlineBasePoint(edge.point2));
+    static void insertPolygons(Container& dest, It begin, It end, bool closed = true, bool allowZeroLength = false) {
+        for (auto it = begin; it < end; ++it)
+            insertPoints(dest, it->begin(), it->end(), closed, allowZeroLength);
+    }
 
-        std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, int> > intersected;
-        intersected.reserve(end - begin);
-        bp::line_intersection<Unit>::validate_scan(intersected, begin, end);
+    template<typename Container, typename It>
+    static void insertPoints(Container& dest, It begin, It end, bool closed = true, bool allowZeroLength = false) {
+        size_t size = end - begin;
+        for (size_t i = 0; i < size; ++i) {
+            Point* p1 = &begin[i];
+            Point* p2;
+            if (i+1 < size)
+                p2 = &begin[i+1];
+            else if (closed)
+                p2 = &begin[0];
+            else
+                break;
+            insertEdge(dest, {*p1, *p2}, allowZeroLength);
+        }
+    };
+
+    template<typename Container>
+    static void insertEdge(Container& dest, Edge edge, bool allowZeroLength = false) {
+        if (!allowZeroLength && toScanlineBasePoint(edge.point1) == toScanlineBasePoint(edge.point2))
+            return;
+        edge.count = 1;
+        if (x(edge.point1) > x(edge.point2) || x(edge.point1) == x(edge.point2) && y(edge.point1) > y(edge.point2)) {
+            std::swap(edge.point1, edge.point2);
+            edge.count *= -1;
+        }
+        if (x(edge.point1) == x(edge.point2))
+            edge.count *= -1;
+        dest.push_back(edge);
+    }
+
+    template<typename Container, typename It>
+    static void intersectEdges(Container& dest, It begin, It end) {
+        // pair sometimes has good uses. boost.polygon's authors should be banned from using pair for life.
+        //                   <         <      p1,                 p2        >,          <property, count> >    I'm using property to hold index.
+        std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, std::pair<int, int>>> segments;
+        size_t size = end - begin;
+        segments.reserve(size);
+        for (size_t i = 0; i < size; ++i) {
+            segments.emplace_back(std::make_pair(
+                std::make_pair(toScanlineBasePoint(begin[i].point1), toScanlineBasePoint(begin[i].point2)),
+                std::make_pair(i, begin[i].count)));
+        }
+
+        std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, std::pair<int, int>> > intersected;
+        intersected.reserve(size);
+        bp::line_intersection<Unit>::validate_scan(intersected, segments.begin(), segments.end());
 
         Container result;
         result.reserve(intersected.size());
         for (auto& segment: intersected) {
-            auto edge = begin[segment.second];
+            auto edge = begin[segment.second.first];
             edge.point1 = segment.first.first;
             edge.point2 = segment.first.second;
+            edge.count = segment.second.second;
             result.push_back(edge);
         }
 
@@ -192,10 +206,14 @@ struct Scan {
         std::sort(begin, end, lessEdge);
     }
 
-    static const auto lessScanlineEdge = chainLess(
-        [](const ScanlineEdge& e1, const ScanlineEdge& e2){return x(e1.yIntercept) < x(e2.yIntercept);},
-        [](const ScanlineEdge& e1, const ScanlineEdge& e2){return x(e1.atEndpoint) < x(e2.atEndpoint);},
-        lessSlope);
+    static bool lessScanlineEdge(const ScanlineEdge& e1, const ScanlineEdge& e2)
+    {
+        return chainLess(
+            e1, e2,
+            [](const ScanlineEdge& e1, const ScanlineEdge& e2){return e1.yIntercept < e2.yIntercept; },
+            [](const ScanlineEdge& e1, const ScanlineEdge& e2){return e1.atEndpoint < e2.atEndpoint; },
+            lessSlope);
+    }
 
     template<typename It, typename Callback0, typename... Callback>
     void callCallback(Unit x, HighPrecision y, It begin, It end, const Callback0& callback0, const Callback&... callback)
@@ -276,10 +294,10 @@ struct ExcludeOppositeEdges {
             for (auto otherIt = begin+1; otherIt != end; ++otherIt) {
                 if (!otherIt->exclude && begin->edge->count == -otherIt->edge->count) {
                     // Only use X,Y for comparison
-                    auto p1 = toScanlineBasePoint(begin->edge->p1);
-                    auto p2 = toScanlineBasePoint(begin->edge->p2);
-                    auto op1 = toScanlineBasePoint(otherIt->edge->p1);
-                    auto op2 = toScanlineBasePoint(otherIt->edge->p2);
+                    auto p1 = toScanlineBasePoint(begin->edge->point1);
+                    auto p2 = toScanlineBasePoint(begin->edge->point2);
+                    auto op1 = toScanlineBasePoint(otherIt->edge->point1);
+                    auto op2 = toScanlineBasePoint(otherIt->edge->point2);
                     if (p1 == op1 && p2 == op2) {
                         begin->exlude = true;
                         otherIt->exclude = true;
