@@ -110,6 +110,15 @@ struct ScanlineEdge : Bases... {
     ScanlineEdge& operator=(ScanlineEdge&&) = default;
 };
 
+struct ScanlineEdgeExclude {
+    bool exclude = false;
+};
+
+struct ScanlineEdgeCount {
+    int countBefore = 0;
+    int countAfter = 0;
+};
+
 template<typename TScanlineEdge>
 struct Scan {
     using ScanlineEdge = TScanlineEdge;
@@ -155,6 +164,34 @@ struct Scan {
         return x(e1.point1) < x(e2.point1);
     }
 
+    template<typename Container, typename It>
+    static bool intersectEdges(Container& dest, It begin, It end) {
+        //std::vector<std::pair<ScanlineBasePoint, ScanlineBasePoint>> segments;
+        //segments.reserve(src.size());
+        //for (auto& edge)
+        //    segments.emplace_back(toScanlineBasePoint(edge.point1), toScanlineBasePoint(edge.point2));
+
+        std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, int> > intersected;
+        intersected.reserve(end - begin);
+        bp::line_intersection<Unit>::validate_scan(intersected, begin, end);
+
+        Container result;
+        result.reserve(intersected.size());
+        for (auto& segment: intersected) {
+            auto edge = begin[segment.second];
+            edge.point1 = segment.first.first;
+            edge.point2 = segment.first.second;
+            result.push_back(edge);
+        }
+
+        dest = move(result);
+    }
+
+    template<typename EdgeIt>
+    static bool sortEdges(EdgeIt begin, EdgeIt end) {
+        std::sort(begin, end, lessEdge);
+    }
+
     static const auto lessScanlineEdge = chainLess(
         [](const ScanlineEdge& e1, const ScanlineEdge& e2){return x(e1.yIntercept) < x(e2.yIntercept);},
         [](const ScanlineEdge& e1, const ScanlineEdge& e2){return x(e1.atEndpoint) < x(e2.atEndpoint);},
@@ -180,7 +217,6 @@ struct Scan {
     {
         if (edgeBegin == edgeEnd)
             return;
-        std::sort(edgeBegin, edgeEnd, lessEdge);
 
         Unit scanX = x(*edgeBegin);
         std::vector<ScanlineEdge> scanlineEdges;
@@ -227,5 +263,33 @@ struct Scan {
         }
     }
 }; // Scan
+
+struct ExcludeOppositeEdges {
+    template<typename Unit, typename HighPrecision, typename It>
+    void operator()(Unit x, HighPrecision y, It begin, It end)
+    {
+        while (true) {
+            while (begin != end && begin->exlude)
+                ++begin;
+            if (begin == end)
+                break;
+            for (auto otherIt = begin+1; otherIt != end; ++otherIt) {
+                if (!otherIt->exclude && begin->edge->count == -otherIt->edge->count) {
+                    // Only use X,Y for comparison
+                    auto p1 = toScanlineBasePoint(begin->edge->p1);
+                    auto p2 = toScanlineBasePoint(begin->edge->p2);
+                    auto op1 = toScanlineBasePoint(otherIt->edge->p1);
+                    auto op2 = toScanlineBasePoint(otherIt->edge->p2);
+                    if (p1 == op1 && p2 == op2) {
+                        begin->exlude = true;
+                        otherIt->exclude = true;
+                        break;
+                    }
+                }
+            }
+            ++begin;
+        }
+    }
+};
 
 } // namespace FlexScan
