@@ -24,8 +24,8 @@ namespace FlexScan {
 
 namespace bp = boost::polygon;
 
-template<typename T, typename Less0, typename... Less>
-bool chainLess(const T& a, const T& b, const Less0& less0, const Less&... less)
+template<typename T, typename Less0, typename... TLess>
+bool chainLess(const T& a, const T& b, const Less0& less0, const TLess&... less)
 {
     return less0(a, b) || !less0(b, a) && chainLess(a, b, less...);
 }
@@ -96,7 +96,7 @@ struct Scan {
     using Edge = typename ScanlineEdge::Edge;
     using Point = typename ScanlineEdge::Point;
     using Unit = typename ScanlineEdge::Unit;
-    using HighPrecision = bp::high_precision_type<Unit>;
+    using HighPrecision = typename ScanlineEdge::HighPrecision;
     using ScanlineBase = bp::scanline_base<Unit>;
     using ScanlineBasePoint = typename ScanlineBase::Point;
 
@@ -115,15 +115,17 @@ struct Scan {
         return y(e.point2) - y(e.point1);
     }
 
-    static bool lessSlope(const Edge& e1, const Edge& e2)
-    {
-        return ScanlineBase::less_slope(dx(e1), dy(e1), dx(e2), dy(e2));
-    }
+    struct LessSlope {
+        bool operator()(const Edge& e1, const Edge& e2) const
+        {
+            return ScanlineBase::less_slope(dx(e1), dy(e1), dx(e2), dy(e2));
+        }
 
-    static bool lessSlope(const ScanlineEdge& e1, const ScanlineEdge& e2)
-    {
-        return lessSlope(*e1->edge, *e2->edge);
-    }
+        bool operator()(const ScanlineEdge& e1, const ScanlineEdge& e2) const
+        {
+            return (*this)(*e1.edge, *e2.edge);
+        }
+    };
 
     static HighPrecision evalAtXforY(Unit x, const Edge& edge)
     {
@@ -202,7 +204,7 @@ struct Scan {
     }
 
     template<typename EdgeIt>
-    static bool sortEdges(EdgeIt begin, EdgeIt end) {
+    static void sortEdges(EdgeIt begin, EdgeIt end) {
         std::sort(begin, end, lessEdge);
     }
 
@@ -212,7 +214,7 @@ struct Scan {
             e1, e2,
             [](const ScanlineEdge& e1, const ScanlineEdge& e2){return e1.yIntercept < e2.yIntercept; },
             [](const ScanlineEdge& e1, const ScanlineEdge& e2){return e1.atEndpoint < e2.atEndpoint; },
-            lessSlope);
+            LessSlope{});
     }
 
     template<typename It, typename Callback0, typename... Callback>
@@ -236,10 +238,10 @@ struct Scan {
         if (edgeBegin == edgeEnd)
             return;
 
-        Unit scanX = x(*edgeBegin);
+        Unit scanX = x(edgeBegin->point1);
         std::vector<ScanlineEdge> scanlineEdges;
         while (edgeBegin != edgeEnd) {
-            while (x(*edgeBegin) == scanX) {
+            while (x(edgeBegin->point1) == scanX) {
                 ScanlineEdge sledge{&*edgeBegin};
                 sledge.atPoint1 = true;
                 scanlineEdges.push_back(sledge);
@@ -249,7 +251,7 @@ struct Scan {
             for (auto& scanlineEdge: scanlineEdges) {
                 auto& edge = *scanlineEdge.edge;
                 scanlineEdge.yIntercept = evalAtXforY(scanX, edge);
-                scanlineEdge.atEndpoint = scanX == x(edge) || scanX == x(edge);
+                scanlineEdge.atEndpoint = scanX == x(edge.point1) || scanX == x(edge.point1);
             }
 
             sort(begin(scanlineEdges), end(scanlineEdges), lessScanlineEdge);
@@ -274,10 +276,16 @@ struct Scan {
                 scanlineEdges.end());
             scanX = std::numeric_limits<Unit>::max();
             for (auto& e: scanlineEdges)
-                scanX = min(scanX, x(e.edge->point1));
+                scanX = std::min(scanX, x(e.edge->point2));
+
+            //printf("scanX           %d\n", scanX);
 
             if (edgeBegin != edgeEnd)
-                scanX = min(scanX, x(edgeBegin->point1));
+                scanX = std::min(scanX, x(edgeBegin->point1));
+
+            //printf("scanX           %d\n", scanX);
+            //printf("scanlineEdges   %d\n", scanlineEdges.size());
+            //printf("edges left      %d\n\n", edgeEnd-edgeBegin);
         }
     }
 }; // Scan
