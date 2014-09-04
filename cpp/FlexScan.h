@@ -37,13 +37,19 @@ bool chainLess(const T& a, const T& b)
     return false;
 }
 
-template<typename TPoint, typename... Bases>
-struct Edge: Bases... {
+template<typename Iterator>
+using ScanlineEdgeFromIterator_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<Iterator>())>::type>::type;
+
+template<typename PolygonSet>
+using PointFromPolygonSet_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<PolygonSet>().begin()->begin())>::type>::type;
+
+template<typename TPoint, template<typename Derived> class... Bases>
+struct Edge : Bases<Edge<TPoint, Bases...>>... {
     using Point = TPoint;
 
     Point point1;
     Point point2;
-    int count = 0;
+    int deltaCount = 0;
 
     Edge(Point point1, Point point2) :
         point1(point1),
@@ -58,8 +64,13 @@ struct Edge: Bases... {
     Edge& operator=(Edge&&) = default;
 };
 
-template<typename TEdge, typename... Bases>
-struct ScanlineEdge : Bases... {
+template<typename Derived>
+struct EdgeNext {
+    Derived* next = nullptr;
+};
+
+template<typename TEdge, template<typename Derived> class... Bases>
+struct ScanlineEdge : Bases<ScanlineEdge<TEdge, Bases...>>... {
     using Edge = TEdge;
     using Point = typename Edge::Point;
     using Unit = typename bp::point_traits<Point>::coordinate_type;
@@ -82,10 +93,12 @@ struct ScanlineEdge : Bases... {
     ScanlineEdge& operator=(ScanlineEdge&&) = default;
 };
 
+template<typename Derived>
 struct ScanlineEdgeExclude {
     bool exclude = false;
 };
 
+template<typename Derived>
 struct ScanlineEdgeCount {
     int countBefore = 0;
     int countAfter = 0;
@@ -169,27 +182,27 @@ struct Scan {
     static void insertEdge(Container& dest, Edge edge, bool allowZeroLength = false) {
         if (!allowZeroLength && toScanlineBasePoint(edge.point1) == toScanlineBasePoint(edge.point2))
             return;
-        edge.count = 1;
+        edge.deltaCount = 1;
         if (x(edge.point1) > x(edge.point2) || x(edge.point1) == x(edge.point2) && y(edge.point1) > y(edge.point2)) {
             std::swap(edge.point1, edge.point2);
-            edge.count *= -1;
+            edge.deltaCount *= -1;
         }
         if (x(edge.point1) == x(edge.point2))
-            edge.count *= -1;
+            edge.deltaCount *= -1;
         dest.push_back(edge);
     }
 
     template<typename Container, typename It>
     static void intersectEdges(Container& dest, It begin, It end) {
         // pair sometimes has good uses. boost.polygon's authors should be banned from using pair for life.
-        //                   <         <      p1,                 p2        >,          <property, count> >    I'm using property to hold index.
+        //                   <         <      p1,                 p2        >,          <property, deltaCount> >    I'm using property to hold index.
         std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, std::pair<int, int>>> segments;
         size_t size = end - begin;
         segments.reserve(size);
         for (size_t i = 0; i < size; ++i) {
             segments.emplace_back(std::make_pair(
                 std::make_pair(toScanlineBasePoint(begin[i].point1), toScanlineBasePoint(begin[i].point2)),
-                std::make_pair(i, begin[i].count)));
+                std::make_pair(i, begin[i].deltaCount)));
         }
 
         std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, std::pair<int, int>> > intersected;
@@ -202,7 +215,7 @@ struct Scan {
             auto edge = begin[segment.second.first];
             edge.point1 = segment.first.first;
             edge.point2 = segment.first.second;
-            edge.count = segment.second.second;
+            edge.deltaCount = segment.second.second;
             result.push_back(edge);
         }
 
@@ -224,15 +237,15 @@ struct Scan {
     }
 
     template<typename It, typename Callback0, typename... Callback>
-    static void callCallback(Unit x, HighPrecision y, It begin, It end, const Callback0& callback0, const Callback&... callback)
+    static void callCallback(Unit scanX, HighPrecision scanY, It begin, It end, const Callback0& callback0, const Callback&... callback)
     {
         //printf("   ...\n");
-        callback0(x, y, begin, end);
-        callCallback(x, y, begin, end, callback...);
+        callback0(scanX, scanY, begin, end);
+        callCallback(scanX, scanY, begin, end, callback...);
     }
 
     template<typename It>
-    static void callCallback(Unit x, HighPrecision y, It begin, It end)
+    static void callCallback(Unit scanX, HighPrecision scanY, It begin, It end)
     {
         //printf("   end\n");
     }
@@ -315,7 +328,7 @@ struct ExcludeOppositeEdges {
     template<typename Unit, typename HighPrecision, typename It>
     void operator()(Unit x, HighPrecision y, It begin, It end) const
     {
-        using ScanlineEdge = typename std::remove_const<typename std::remove_reference<decltype(*begin)>::type>::type;
+        using ScanlineEdge = ScanlineEdgeFromIterator_t<It>;
         using Scan = Scan<ScanlineEdge>;
 
         //printf("ExcludeOppositeEdges %d\n", end-begin);
@@ -325,7 +338,7 @@ struct ExcludeOppositeEdges {
             if (begin == end)
                 break;
             for (auto otherIt = begin+1; otherIt != end; ++otherIt) {
-                if (!otherIt->exclude && begin->edge->count == -otherIt->edge->count) {
+                if (!otherIt->exclude && begin->edge->deltaCount == -otherIt->edge->deltaCount) {
                     // Only use X,Y for comparison
                     auto p1 = Scan::toScanlineBasePoint(begin->edge->point1);
                     auto p2 = Scan::toScanlineBasePoint(begin->edge->point2);
@@ -349,38 +362,38 @@ struct AccumulateCount {
     mutable int currentCount = 0;
 
     template<typename Unit, typename HighPrecision, typename It>
-    void operator()(Unit xIn, HighPrecision yIn, It begin, It end) const
+    void operator()(Unit scanX, HighPrecision scanY, It begin, It end) const
     {
-        using ScanlineEdge = typename std::remove_const<typename std::remove_reference<decltype(*begin)>::type>::type;
+        using ScanlineEdge = ScanlineEdgeFromIterator_t<It>;
         using Scan = Scan<ScanlineEdge>;
 
         //printf("AccumulateCount %d\n", end-begin);
         while (begin != end) {
             if (x(begin->edge->point1) == x(begin->edge->point2)) {
-                if (begin->edge->count == 1) {
+                if (begin->edge->deltaCount == 1) {
                     begin->countBefore = currentCount - 1;
                     begin->countAfter = currentCount;
                 }
-                else if (begin->edge->count == -1) {
+                else if (begin->edge->deltaCount == -1) {
                     begin->countBefore = currentCount;
                     begin->countAfter = currentCount - 1;
                 }
-                //printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) count=%d\n",
+                //printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) deltaCount=%d\n",
                 //    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
                 //    x(begin->edge->point1), y(begin->edge->point1),
                 //    x(begin->edge->point2), y(begin->edge->point2),
-                //    begin->edge->count);
+                //    begin->edge->deltaCount);
             }
             else {
                 begin->countBefore = currentCount;
                 if (!begin->exclude)
-                    currentCount += begin->edge->count;
+                    currentCount += begin->edge->deltaCount;
                 begin->countAfter = currentCount;
-                //printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) count=%d\n",
+                //printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) deltaCount=%d\n",
                 //    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
                 //    x(begin->edge->point1), y(begin->edge->point1),
                 //    x(begin->edge->point2), y(begin->edge->point2),
-                //    begin->edge->count);
+                //    begin->edge->deltaCount);
             }
             ++begin;
         }
@@ -388,23 +401,92 @@ struct AccumulateCount {
     }
 };
 
+template<typename ScanlineEdge, typename Condition>
+struct SetNext {
+public:
+    Condition condition;
+
+    SetNext(Condition condition) :
+        condition(condition)
+    {
+    }
+
+    SetNext(const SetNext&) = default;
+    SetNext(SetNext&&) = default;
+    SetNext& operator=(const SetNext&) = default;
+    SetNext& operator=(SetNext&&) = default;
+
+private:
+    mutable std::vector<ScanlineEdge*> edges;
+
+    static int getAdjustedDeltaCount(const ScanlineEdge& e) {
+        int i = e.edge->deltaCount;
+        if (e.atPoint2)
+            i = -i;
+        if (x(e.edge->point1) == x(e.edge->point2))
+            i = -i;
+        return i;
+    }
+
+public:
+    template<typename Unit, typename HighPrecision, typename It>
+    void operator()(Unit scanX, HighPrecision scanY, It begin, It end) const
+    {
+        using Scan = Scan<ScanlineEdge>;
+
+        //printf("SetNext %d\n", end-begin);
+        edges.clear();
+        edges.reserve(end-begin);
+        for (auto it = begin; it < end; ++it)
+            if (it->atEndpoint)
+                edges.push_back(&*it);
+
+        auto b = edges.begin();
+        auto e = edges.end();
+        while (b != e) {
+            int deltaCount = getAdjustedDeltaCount(**b);
+            if (deltaCount && condition(**b)) {
+                auto otherIt = e-1;
+                while (otherIt != b && (getAdjustedDeltaCount(**otherIt) != -deltaCount || !condition(**otherIt)))
+                    --otherIt;
+                if (otherIt != b) {
+                    if (deltaCount < 0)
+                        (*b)->edge->next = (*otherIt)->edge;
+                    else
+                        (*otherIt)->edge->next = (*b)->edge;
+                    --e;
+                    edges.erase(otherIt);
+                }
+            }
+            ++b;
+        }
+        //printf("~SetNext\n");
+    }
+};
+
+template<typename ScanlineEdge, typename Condition>
+SetNext<ScanlineEdge, Condition> makeSetNext(Condition condition) {
+    return{condition};
+}
+
 template<typename PolygonSet>
 void cleanPolygonSet(PolygonSet& ps) {
-    using Point = typename std::remove_const<typename std::remove_reference<decltype(*ps.begin()->begin())>::type>::type;
-    using Edge = Edge<Point>;
+    using Point = PointFromPolygonSet_t<PolygonSet>;
+    using Edge = Edge<Point, EdgeNext>;
     using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeExclude, ScanlineEdgeCount>;
     using Scan = Scan<ScanlineEdge>;
 
     std::vector<Edge> edges;
-    //Scan::insertPolygons(edges, ps.begin(), ps.end());
-    Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {100000, -100000}, {100000, 0}, {0, 0}});
+    Scan::insertPolygons(edges, ps.begin(), ps.end());
+    //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {100000, -100000}, {100000, 0}, {0, 0}});
     //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {0, 0}});
     Scan::intersectEdges(edges, edges.begin(), edges.end());
     Scan::sortEdges(edges.begin(), edges.end());
     Scan::scan(
         edges.begin(), edges.end(),
         ExcludeOppositeEdges{},
-        AccumulateCount{});
+        AccumulateCount{},
+        makeSetNext<ScanlineEdge>([](ScanlineEdge& e){return !e.exclude && e.countBefore == 0 && e.countAfter == 1 || e.countBefore == 1 && e.countAfter == 0; }));
 }
 
 } // namespace FlexScan
