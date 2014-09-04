@@ -22,6 +22,10 @@ jscut.priv.cam = jscut.priv.cam || {};
 (function () {
     "use strict";
 
+    function dist(x1, y1, x2, y2) {
+        return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    }
+
     // Does the line from p1 to p2 cross outside of bounds?
     function crosses(bounds, p1, p2) {
         if (bounds == null)
@@ -124,6 +128,38 @@ jscut.priv.cam = jscut.priv.cam || {};
             current = jscut.priv.path.offset(current, -cutterDia * (1 - overlap));
         }
         return mergePaths(bounds, allPaths);
+    };
+
+    // Compute paths for pocket operation on Clipper geometry. Returns array
+    // of CamPath. cutterDia is in Clipper units. overlap is in the range [0, 1).
+    jscut.priv.cam.hspocket = function (geometry, cutterDia, overlap, climb) {
+        "use strict";
+
+        var memoryBlocks = [];
+
+        var cGeometry = jscut.priv.path.convertPathsToCpp(memoryBlocks, geometry);
+
+        var resultPathsRef = Module._malloc(4);
+        var resultNumPathsRef = Module._malloc(4);
+        var resultPathSizesRef = Module._malloc(4);
+        memoryBlocks.push(resultPathsRef);
+        memoryBlocks.push(resultNumPathsRef);
+        memoryBlocks.push(resultPathSizesRef);
+
+        //extern "C" void hspocket(
+        //    double** paths, int numPaths, int* pathSizes, double cutterDia,
+        //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
+        Module.ccall(
+            'hspocket',
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+
+        var result = jscut.priv.path.convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
+
+        for (var i = 0; i < memoryBlocks.length; ++i)
+            Module._free(memoryBlocks[i]);
+
+        return result;
     };
 
     // Compute paths for outline operation on Clipper geometry. Returns array
@@ -291,10 +327,6 @@ jscut.priv.cam = jscut.priv.cam || {};
 
         function getY(p) {
             return -p.Y * scale + offsetY;
-        }
-
-        function dist(x1, y1, x2, y2) {
-            return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         }
 
         function convertPoint(p) {
