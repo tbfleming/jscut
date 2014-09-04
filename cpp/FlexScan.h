@@ -226,7 +226,7 @@ struct Scan {
     template<typename It, typename Callback0, typename... Callback>
     static void callCallback(Unit x, HighPrecision y, It begin, It end, const Callback0& callback0, const Callback&... callback)
     {
-        printf("   ...\n");
+        //printf("   ...\n");
         callback0(x, y, begin, end);
         callCallback(x, y, begin, end, callback...);
     }
@@ -234,7 +234,7 @@ struct Scan {
     template<typename It>
     static void callCallback(Unit x, HighPrecision y, It begin, It end)
     {
-        printf("   end\n");
+        //printf("   end\n");
     }
 
     template<typename EdgeIt, typename... Callback>
@@ -259,7 +259,7 @@ struct Scan {
             for (auto& scanlineEdge: scanlineEdges) {
                 auto& edge = *scanlineEdge.edge;
                 scanlineEdge.yIntercept = evalAtXforY(scanX, edge);
-                scanlineEdge.atEndpoint = scanX == x(edge.point1) || scanX == x(edge.point1);
+                scanlineEdge.atEndpoint = scanX == x(edge.point1) || scanX == x(edge.point2);
             }
 
             sort(begin(scanlineEdges), end(scanlineEdges), lessScanlineEdge);
@@ -272,12 +272,24 @@ struct Scan {
                         ++e;
                 for (auto it = scanlineEdgeIt; it < e; ++it) {
                     auto& edge = *it->edge;
-                    it->atPoint1 = scanX == x(edge.point1);
-                    it->atPoint2 = scanX == x(edge.point2);
+                    if (x(it->edge->point1) != x(it->edge->point2)) {
+                        it->atPoint1 = scanX == x(edge.point1);
+                        it->atPoint2 = scanX == x(edge.point2);
+                    }
+                    //printf("atEndpoint: %d, atPoint1: %d, atPoint2: %d, yIntercept: %d, (%d, %d), (%d, %d) %s\n",
+                    //    it->atEndpoint, it->atPoint1, it->atPoint2, int(it->yIntercept),
+                    //    x(edge.point1), y(edge.point1), x(edge.point2), y(edge.point2),
+                    //    x(edge.point1) == x(edge.point2) ? "vertical" : "");
                 }
-                printf("call\n");
+                //printf("call\n");
                 callCallback(scanX, scanlineEdgeIt->yIntercept, scanlineEdgeIt, e, callback...);
-                scanlineEdgeIt = e;
+                while (scanlineEdgeIt < e && (x(scanlineEdgeIt->edge->point1) != x(scanlineEdgeIt->edge->point2) || scanlineEdgeIt->atPoint2))
+                    ++scanlineEdgeIt;
+                for (auto it = scanlineEdgeIt; it < e; ++it) {
+                    it->yIntercept = y(it->edge->point2);
+                    it->atPoint1 = false;
+                    it->atPoint2 = true;
+                }
             }
 
             scanlineEdges.erase(
@@ -287,14 +299,14 @@ struct Scan {
             for (auto& e: scanlineEdges)
                 scanX = std::min(scanX, x(e.edge->point2));
 
-            printf("scanX           %d\n", scanX);
+            //printf("scanX           %d\n", scanX);
 
             if (edgeBegin != edgeEnd)
                 scanX = std::min(scanX, x(edgeBegin->point1));
 
-            printf("scanX           %d\n", scanX);
-            printf("scanlineEdges   %d\n", scanlineEdges.size());
-            printf("edges left      %d\n\n", edgeEnd-edgeBegin);
+            //printf("scanX           %d\n", scanX);
+            //printf("scanlineEdges   %d\n", scanlineEdges.size());
+            //printf("edges left      %d\n\n", edgeEnd-edgeBegin);
         }
     }
 }; // Scan
@@ -306,7 +318,7 @@ struct ExcludeOppositeEdges {
         using ScanlineEdge = typename std::remove_const<typename std::remove_reference<decltype(*begin)>::type>::type;
         using Scan = Scan<ScanlineEdge>;
 
-        printf("ExcludeOppositeEdges %d\n", end-begin);
+        //printf("ExcludeOppositeEdges %d\n", end-begin);
         while (true) {
             while (begin != end && begin->exclude)
                 ++begin;
@@ -329,11 +341,11 @@ struct ExcludeOppositeEdges {
             }
             ++begin;
         }
-        printf("~ExcludeOppositeEdges\n");
+        //printf("~ExcludeOppositeEdges\n");
     }
 };
 
-struct FillCount {
+struct AccumulateCount {
     mutable int currentCount = 0;
 
     template<typename Unit, typename HighPrecision, typename It>
@@ -342,25 +354,37 @@ struct FillCount {
         using ScanlineEdge = typename std::remove_const<typename std::remove_reference<decltype(*begin)>::type>::type;
         using Scan = Scan<ScanlineEdge>;
 
-        printf("FillCount %d\n", end-begin);
+        //printf("AccumulateCount %d\n", end-begin);
         while (begin != end) {
             if (x(begin->edge->point1) == x(begin->edge->point2)) {
-                if (begin->atPoint1) {
-                    begin->countBefore = currentCount - begin->edge->count;
+                if (begin->edge->count == 1) {
+                    begin->countBefore = currentCount - 1;
                     begin->countAfter = currentCount;
                 }
-                printf("[%d -> %d]: (%d, %d) (%d, %d) %d\n", begin->countBefore, begin->countAfter, x(begin->edge->point1), y(begin->edge->point1), x(begin->edge->point2), y(begin->edge->point2), begin->edge->count);
+                else if (begin->edge->count == -1) {
+                    begin->countBefore = currentCount;
+                    begin->countAfter = currentCount - 1;
+                }
+                //printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) count=%d\n",
+                //    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
+                //    x(begin->edge->point1), y(begin->edge->point1),
+                //    x(begin->edge->point2), y(begin->edge->point2),
+                //    begin->edge->count);
             }
             else {
                 begin->countBefore = currentCount;
                 if (!begin->exclude)
                     currentCount += begin->edge->count;
                 begin->countAfter = currentCount;
-                printf(" %d -> %d : (%d, %d) (%d, %d) %d\n", begin->countBefore, begin->countAfter, x(begin->edge->point1), y(begin->edge->point1), x(begin->edge->point2), y(begin->edge->point2), begin->edge->count);
+                //printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) count=%d\n",
+                //    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
+                //    x(begin->edge->point1), y(begin->edge->point1),
+                //    x(begin->edge->point2), y(begin->edge->point2),
+                //    begin->edge->count);
             }
             ++begin;
         }
-        printf("~FillCount\n");
+        //printf("~AccumulateCount\n");
     }
 };
 
@@ -380,7 +404,7 @@ void cleanPolygonSet(PolygonSet& ps) {
     Scan::scan(
         edges.begin(), edges.end(),
         ExcludeOppositeEdges{},
-        FillCount{});
+        AccumulateCount{});
 }
 
 } // namespace FlexScan

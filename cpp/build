@@ -3,8 +3,8 @@ em++ \
  -I ../../boost_1_56_0 \
  -D use_lines \
  -std=c++11 \
- -O3 \
- --llvm-lto 3 \
+ -O1 \
+ --llvm-lto 0 \
  --memory-init-file 0 \
  -Wall \
  -Wextra \

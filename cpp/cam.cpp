@@ -217,7 +217,7 @@ static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
         }
     }
 
-    printf("offset construct: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - constructStartTime).count());
+    //printf("offset construct: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - constructStartTime).count());
 
     return raw;
 }
