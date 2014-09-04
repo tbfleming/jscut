@@ -19,6 +19,7 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <algorithm>
+#include <type_traits>
 
 namespace FlexScan {
 
@@ -143,12 +144,17 @@ struct Scan {
             insertPoints(dest, it->begin(), it->end(), closed, allowZeroLength);
     }
 
+    template<typename Container, typename SrcContainer>
+    static void insertPoints(Container& dest, const SrcContainer& src, bool closed = true, bool allowZeroLength = false) {
+        insertPoints(dest, src.begin(), src.end(), closed, allowZeroLength);
+    }
+
     template<typename Container, typename It>
     static void insertPoints(Container& dest, It begin, It end, bool closed = true, bool allowZeroLength = false) {
         size_t size = end - begin;
         for (size_t i = 0; i < size; ++i) {
-            Point* p1 = &begin[i];
-            Point* p2;
+            const Point* p1 = &begin[i];
+            const Point* p2;
             if (i+1 < size)
                 p2 = &begin[i+1];
             else if (closed)
@@ -218,19 +224,21 @@ struct Scan {
     }
 
     template<typename It, typename Callback0, typename... Callback>
-    void callCallback(Unit x, HighPrecision y, It begin, It end, const Callback0& callback0, const Callback&... callback)
+    static void callCallback(Unit x, HighPrecision y, It begin, It end, const Callback0& callback0, const Callback&... callback)
     {
+        printf("   ...\n");
         callback0(x, y, begin, end);
         callCallback(x, y, begin, end, callback...);
     }
 
     template<typename It>
-    void callCallback(Unit x, HighPrecision y, It begin, It end)
+    static void callCallback(Unit x, HighPrecision y, It begin, It end)
     {
+        printf("   end\n");
     }
 
     template<typename EdgeIt, typename... Callback>
-    void operator()(
+    static void scan(
         EdgeIt edgeBegin,
         EdgeIt edgeEnd,
         Callback... callback)
@@ -240,8 +248,8 @@ struct Scan {
 
         Unit scanX = x(edgeBegin->point1);
         std::vector<ScanlineEdge> scanlineEdges;
-        while (edgeBegin != edgeEnd) {
-            while (x(edgeBegin->point1) == scanX) {
+        while (edgeBegin != edgeEnd || !scanlineEdges.empty()) {
+            while (edgeBegin != edgeEnd && x(edgeBegin->point1) == scanX) {
                 ScanlineEdge sledge{&*edgeBegin};
                 sledge.atPoint1 = true;
                 scanlineEdges.push_back(sledge);
@@ -267,7 +275,8 @@ struct Scan {
                     it->atPoint1 = scanX == x(edge.point1);
                     it->atPoint2 = scanX == x(edge.point2);
                 }
-                callCallback(scanX, scanlineEdgeIt->yIntercept, scanlineEdgeIt, e);
+                printf("call\n");
+                callCallback(scanX, scanlineEdgeIt->yIntercept, scanlineEdgeIt, e, callback...);
                 scanlineEdgeIt = e;
             }
 
@@ -278,44 +287,100 @@ struct Scan {
             for (auto& e: scanlineEdges)
                 scanX = std::min(scanX, x(e.edge->point2));
 
-            //printf("scanX           %d\n", scanX);
+            printf("scanX           %d\n", scanX);
 
             if (edgeBegin != edgeEnd)
                 scanX = std::min(scanX, x(edgeBegin->point1));
 
-            //printf("scanX           %d\n", scanX);
-            //printf("scanlineEdges   %d\n", scanlineEdges.size());
-            //printf("edges left      %d\n\n", edgeEnd-edgeBegin);
+            printf("scanX           %d\n", scanX);
+            printf("scanlineEdges   %d\n", scanlineEdges.size());
+            printf("edges left      %d\n\n", edgeEnd-edgeBegin);
         }
     }
 }; // Scan
 
 struct ExcludeOppositeEdges {
     template<typename Unit, typename HighPrecision, typename It>
-    void operator()(Unit x, HighPrecision y, It begin, It end)
+    void operator()(Unit x, HighPrecision y, It begin, It end) const
     {
+        using ScanlineEdge = typename std::remove_const<typename std::remove_reference<decltype(*begin)>::type>::type;
+        using Scan = Scan<ScanlineEdge>;
+
+        printf("ExcludeOppositeEdges %d\n", end-begin);
         while (true) {
-            while (begin != end && begin->exlude)
+            while (begin != end && begin->exclude)
                 ++begin;
             if (begin == end)
                 break;
             for (auto otherIt = begin+1; otherIt != end; ++otherIt) {
                 if (!otherIt->exclude && begin->edge->count == -otherIt->edge->count) {
                     // Only use X,Y for comparison
-                    auto p1 = toScanlineBasePoint(begin->edge->point1);
-                    auto p2 = toScanlineBasePoint(begin->edge->point2);
-                    auto op1 = toScanlineBasePoint(otherIt->edge->point1);
-                    auto op2 = toScanlineBasePoint(otherIt->edge->point2);
+                    auto p1 = Scan::toScanlineBasePoint(begin->edge->point1);
+                    auto p2 = Scan::toScanlineBasePoint(begin->edge->point2);
+                    auto op1 = Scan::toScanlineBasePoint(otherIt->edge->point1);
+                    auto op2 = Scan::toScanlineBasePoint(otherIt->edge->point2);
                     if (p1 == op1 && p2 == op2) {
-                        begin->exlude = true;
+                        begin->exclude = true;
                         otherIt->exclude = true;
+                        printf("   excluded opposites\n");
                         break;
                     }
                 }
             }
             ++begin;
         }
+        printf("~ExcludeOppositeEdges\n");
     }
 };
+
+struct FillCount {
+    mutable int currentCount = 0;
+
+    template<typename Unit, typename HighPrecision, typename It>
+    void operator()(Unit xIn, HighPrecision yIn, It begin, It end) const
+    {
+        using ScanlineEdge = typename std::remove_const<typename std::remove_reference<decltype(*begin)>::type>::type;
+        using Scan = Scan<ScanlineEdge>;
+
+        printf("FillCount %d\n", end-begin);
+        while (begin != end) {
+            if (x(begin->edge->point1) == x(begin->edge->point2)) {
+                if (begin->atPoint1) {
+                    begin->countBefore = currentCount - begin->edge->count;
+                    begin->countAfter = currentCount;
+                }
+                printf("[%d -> %d]: (%d, %d) (%d, %d) %d\n", begin->countBefore, begin->countAfter, x(begin->edge->point1), y(begin->edge->point1), x(begin->edge->point2), y(begin->edge->point2), begin->edge->count);
+            }
+            else {
+                begin->countBefore = currentCount;
+                if (!begin->exclude)
+                    currentCount += begin->edge->count;
+                begin->countAfter = currentCount;
+                printf(" %d -> %d : (%d, %d) (%d, %d) %d\n", begin->countBefore, begin->countAfter, x(begin->edge->point1), y(begin->edge->point1), x(begin->edge->point2), y(begin->edge->point2), begin->edge->count);
+            }
+            ++begin;
+        }
+        printf("~FillCount\n");
+    }
+};
+
+template<typename PolygonSet>
+void cleanPolygonSet(PolygonSet& ps) {
+    using Point = typename std::remove_const<typename std::remove_reference<decltype(*ps.begin()->begin())>::type>::type;
+    using Edge = Edge<Point>;
+    using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeExclude, ScanlineEdgeCount>;
+    using Scan = Scan<ScanlineEdge>;
+
+    std::vector<Edge> edges;
+    //Scan::insertPolygons(edges, ps.begin(), ps.end());
+    Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {100000, -100000}, {100000, 0}, {0, 0}});
+    //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {0, 0}});
+    Scan::intersectEdges(edges, edges.begin(), edges.end());
+    Scan::sortEdges(edges.begin(), edges.end());
+    Scan::scan(
+        edges.begin(), edges.end(),
+        ExcludeOppositeEdges{},
+        FillCount{});
+}
 
 } // namespace FlexScan

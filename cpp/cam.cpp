@@ -129,16 +129,6 @@ namespace boost {
 //    double distToCurrentPos;
 //};
 
-static void clean(PolygonSet& ps) {
-    // !!!! todo: convert from psd instead of pwhs
-    PolygonSetData psd{ps.begin(), ps.end()};
-    PolygonWithHolesSet pwhs;
-    psd.get(pwhs);
-    printf("pwhs polys: %d\n", pwhs.size());
-    ps.clear();
-    convert(ps, pwhs);
-}
-
 static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
     if (amount == 0)
         return path;
@@ -238,7 +228,7 @@ static PolygonSet offset(const Polygon& path, int amount, bool closed) {
     result.push_back(move(raw));
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
-    clean(result);
+    FlexScan::cleanPolygonSet(result);
     printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
 
     return result;
@@ -248,12 +238,12 @@ static PolygonSet offset(const PolygonSet& ps, int amount, bool closed) {
     PolygonSet result;
     for (auto& poly: ps) {
         Polygon raw = rawOffset(poly, amount, closed);
-        printf("%d -> %d\n", poly.size(), raw.size());
+        //printf("%d -> %d\n", poly.size(), raw.size());
         result.push_back(move(raw));
     }
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
-    clean(result);
+    FlexScan::cleanPolygonSet(result);
     printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
     printf("polys: %d\n", result.size());
 
@@ -312,8 +302,8 @@ extern "C" void hspocket(
         int precision = lround(inchToClipperScale / 5000);
 
         PolygonSet safeArea = offset(geometry, -cutterDia / 2, true);
-        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea);
-        //return;
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea);
+        return;
 
         Polygon spiral;
         {
