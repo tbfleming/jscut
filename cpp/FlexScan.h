@@ -153,8 +153,10 @@ struct Scan {
 
     template<typename Container, typename It>
     static void insertPolygons(Container& dest, It begin, It end, bool closed = true, bool allowZeroLength = false) {
-        for (auto it = begin; it < end; ++it)
+        for (auto it = begin; it < end; ++it) {
             insertPoints(dest, it->begin(), it->end(), closed, allowZeroLength);
+            break; // !!!!!!!!!!!!!!!!
+        }
     }
 
     template<typename Container, typename SrcContainer>
@@ -266,6 +268,9 @@ struct Scan {
                 ScanlineEdge sledge{&*edgeBegin};
                 sledge.atPoint1 = true;
                 scanlineEdges.push_back(sledge);
+                printf("add: (%d, %d), (%d, %d) %s\n",
+                    x(edgeBegin->point1), y(edgeBegin->point1), x(edgeBegin->point2), y(edgeBegin->point2),
+                    x(edgeBegin->point1) == x(edgeBegin->point2) ? "vertical" : "");
                 ++edgeBegin;
             }
 
@@ -276,6 +281,14 @@ struct Scan {
             }
 
             sort(begin(scanlineEdges), end(scanlineEdges), lessScanlineEdge);
+
+            printf("\nscan line:\n");
+            for (auto& e: scanlineEdges) {
+                printf("    atEndpoint: %d, atPoint1: %d?, atPoint2: %d? (%d, %d), (%d, %d) %s\n",
+                    e.atEndpoint, e.atPoint1, e.atPoint2,
+                    x(e.edge->point1), y(e.edge->point1), x(e.edge->point2), y(e.edge->point2),
+                    x(e.edge->point1) == x(e.edge->point2) ? "vertical" : "");
+            }
 
             auto scanlineEdgeIt = begin(scanlineEdges);
             while (scanlineEdgeIt != end(scanlineEdges)) {
@@ -302,6 +315,15 @@ struct Scan {
                     it->yIntercept = y(it->edge->point2);
                     it->atPoint1 = false;
                     it->atPoint2 = true;
+                }
+            }
+
+            for (auto& e: scanlineEdges) {
+                if (e.atPoint2) {
+                    printf("drop atEndpoint: %d, atPoint1: %d, atPoint2: %d (%d, %d), (%d, %d) %s\n",
+                        e.atEndpoint, e.atPoint1, e.atPoint2,
+                        x(e.edge->point1), y(e.edge->point1), x(e.edge->point2), y(e.edge->point2),
+                        x(e.edge->point1) == x(e.edge->point2) ? "vertical" : "");
                 }
             }
 
@@ -367,37 +389,71 @@ struct AccumulateCount {
         using ScanlineEdge = ScanlineEdgeFromIterator_t<It>;
         using Scan = Scan<ScanlineEdge>;
 
-        //printf("AccumulateCount %d\n", end-begin);
+        printf("AccumulateCount %d\n", end-begin);
         while (begin != end) {
-            if (x(begin->edge->point1) == x(begin->edge->point2)) {
-                if (begin->edge->deltaCount == 1) {
-                    begin->countBefore = currentCount - 1;
-                    begin->countAfter = currentCount;
+            // prep left-side vertical
+            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
+                if (!it->exclude && it->atPoint1 && it->edge->deltaCount > 0) {
+                    currentCount -= it->edge->deltaCount;
+                    printf("prep: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                        it->atPoint1, it->atPoint2,
+                        x(it->edge->point1), y(it->edge->point1),
+                        x(it->edge->point2), y(it->edge->point2),
+                        it->atPoint1, it->atPoint2,
+                        it->edge->deltaCount);
                 }
-                else if (begin->edge->deltaCount == -1) {
-                    begin->countBefore = currentCount;
-                    begin->countAfter = currentCount - 1;
-                }
-                //printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) deltaCount=%d\n",
-                //    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
-                //    x(begin->edge->point1), y(begin->edge->point1),
-                //    x(begin->edge->point2), y(begin->edge->point2),
-                //    begin->edge->deltaCount);
             }
-            else {
+
+            // vertical
+            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
+                if (it->atPoint1) {
+                    it->countBefore = currentCount;
+                    if (!it->exclude)
+                        currentCount += it->edge->deltaCount;
+                    it->countAfter = currentCount;
+                }
+                printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                    it->countBefore, it->countAfter, it->atPoint1, it->atPoint2,
+                    x(it->edge->point1), y(it->edge->point1),
+                    x(it->edge->point2), y(it->edge->point2),
+                    it->atPoint1, it->atPoint2,
+                    it->edge->deltaCount);
+            }
+
+            // undo right-side vertical
+            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
+                if (!it->exclude && it->atPoint1 && it->edge->deltaCount < 0) {
+                    currentCount -= it->edge->deltaCount;
+                    printf("undo: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                        it->atPoint1, it->atPoint2,
+                        x(it->edge->point1), y(it->edge->point1),
+                        x(it->edge->point2), y(it->edge->point2),
+                        it->atPoint1, it->atPoint2,
+                        it->edge->deltaCount);
+                }
+            }
+
+            // finished with vertical
+            while (begin != end && x(begin->edge->point1) == x(begin->edge->point2))
+                ++begin;
+
+            // non-vertical
+            while (begin != end && x(begin->edge->point1) != x(begin->edge->point2)) {
                 begin->countBefore = currentCount;
                 if (!begin->exclude)
                     currentCount += begin->edge->deltaCount;
                 begin->countAfter = currentCount;
-                //printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) deltaCount=%d\n",
-                //    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
-                //    x(begin->edge->point1), y(begin->edge->point1),
-                //    x(begin->edge->point2), y(begin->edge->point2),
-                //    begin->edge->deltaCount);
+                printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
+                    x(begin->edge->point1), y(begin->edge->point1),
+                    x(begin->edge->point2), y(begin->edge->point2),
+                    begin->atPoint1, begin->atPoint2,
+                    begin->edge->deltaCount);
+                ++begin;
             }
-            ++begin;
         }
-        //printf("~AccumulateCount\n");
+
+        printf("~AccumulateCount\n");
     }
 };
 
@@ -417,7 +473,7 @@ public:
     SetNext& operator=(SetNext&&) = default;
 
 private:
-    mutable std::vector<ScanlineEdge*> edges;
+    mutable std::vector<ScanlineEdge*> candidates;
 
     static int getAdjustedDeltaCount(const ScanlineEdge& e) {
         int i = e.edge->deltaCount;
@@ -435,28 +491,26 @@ public:
         using Scan = Scan<ScanlineEdge>;
 
         //printf("SetNext %d\n", end-begin);
-        edges.clear();
-        edges.reserve(end-begin);
+        candidates.clear();
+        candidates.reserve(end-begin);
         for (auto it = begin; it < end; ++it)
-            if (it->atEndpoint)
-                edges.push_back(&*it);
+            if (it->atEndpoint && it->edge->deltaCount && condition(*it))
+                candidates.push_back(&*it);
 
-        auto b = edges.begin();
-        auto e = edges.end();
+        auto b = candidates.begin();
+        auto e = candidates.end();
         while (b != e) {
             int deltaCount = getAdjustedDeltaCount(**b);
-            if (deltaCount && condition(**b)) {
-                auto otherIt = e-1;
-                while (otherIt != b && (getAdjustedDeltaCount(**otherIt) != -deltaCount || !condition(**otherIt)))
-                    --otherIt;
-                if (otherIt != b) {
-                    if (deltaCount < 0)
-                        (*b)->edge->next = (*otherIt)->edge;
-                    else
-                        (*otherIt)->edge->next = (*b)->edge;
-                    --e;
-                    edges.erase(otherIt);
-                }
+            auto otherIt = e-1;
+            while (otherIt != b && getAdjustedDeltaCount(**otherIt) != -deltaCount)
+                --otherIt;
+            if (otherIt != b) {
+                if (deltaCount < 0)
+                    (*b)->edge->next = (*otherIt)->edge;
+                else
+                    (*otherIt)->edge->next = (*b)->edge;
+                --e;
+                candidates.erase(otherIt);
             }
             ++b;
         }
@@ -469,6 +523,36 @@ SetNext<ScanlineEdge, Condition> makeSetNext(Condition condition) {
     return{condition};
 }
 
+template<typename PolygonSet, typename It>
+void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
+    while (begin != end) {
+        if (begin->next) {
+            //printf("\n");
+            ps.emplace_back();
+            auto& polygon = ps.back();
+            auto* edge = &*begin;
+            while (true) {
+                //printf("%d: %d, %d -> %d, %d deltaCount=%d\n", edge-&*begin, x(edge->point1), y(edge->point1), x(edge->point2), y(edge->point2), edge->deltaCount);
+                auto* next = edge->next;
+                edge->next = nullptr;
+                edge = next;
+                if (edge) {
+                    int i = edge->deltaCount;
+                    if (x(edge->point1) == x(edge->point2))
+                        i = -i;
+                    if (i > 0)
+                        polygon.emplace_back(edge->point1);
+                    else
+                        polygon.emplace_back(edge->point2);
+                }
+                else
+                    break;
+            }
+        }
+        ++begin;
+    }
+}
+
 template<typename PolygonSet>
 void cleanPolygonSet(PolygonSet& ps) {
     using Point = PointFromPolygonSet_t<PolygonSet>;
@@ -479,14 +563,24 @@ void cleanPolygonSet(PolygonSet& ps) {
     std::vector<Edge> edges;
     Scan::insertPolygons(edges, ps.begin(), ps.end());
     //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {100000, -100000}, {100000, 0}, {0, 0}});
+    //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {100000, -100000}, {100000, 0}, {0, 0}});
     //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {0, 0}});
-    Scan::intersectEdges(edges, edges.begin(), edges.end());
+    //Scan::intersectEdges(edges, edges.begin(), edges.end());
     Scan::sortEdges(edges.begin(), edges.end());
     Scan::scan(
         edges.begin(), edges.end(),
-        ExcludeOppositeEdges{},
+        //ExcludeOppositeEdges{},
         AccumulateCount{},
         makeSetNext<ScanlineEdge>([](ScanlineEdge& e){return !e.exclude && e.countBefore == 0 && e.countAfter == 1 || e.countBefore == 1 && e.countAfter == 0; }));
+
+    ps.clear();
+    fillPolygonSetFromEdges(ps, edges.begin(), edges.end());
+
+    for (auto& poly: ps) {
+        printf("\n");
+        for (auto& point: poly)
+            printf("%d, %d\n", x(point), y(point));
+    }
 }
 
 } // namespace FlexScan
