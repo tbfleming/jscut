@@ -38,11 +38,42 @@ bool combineLess(const T& a, const T& b)
     return false;
 }
 
+template<typename Unit>
+using ManhattanAreaFromUnit_t = typename bp::coordinate_traits<Unit>::manhattan_area_type;
+
+template<typename Point>
+using UnitFromPoint_t = typename bp::point_traits<Point>::coordinate_type;
+
+template<typename Point>
+using ManhattanAreaFromPoint_t = ManhattanAreaFromUnit_t<UnitFromPoint_t<Point>>;
+
+template<typename Polygon>
+using PointFromPolygon_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<Polygon>().begin())>::type>::type;
+
+template<typename Polygon>
+using UnitFromPolygon_t = UnitFromPoint_t<PointFromPolygon_t<Polygon>>;
+
+template<typename PolygonSet>
+using PolygonFromPolygonSet_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<PolygonSet>().begin())>::type>::type;
+
+template<typename PolygonSet>
+using PointFromPolygonSet_t = PointFromPolygon_t<PolygonFromPolygonSet_t<PolygonSet>>;
+
+template<typename PolygonSet>
+using UnitFromPolygonSet_t = UnitFromPolygon_t<PolygonFromPolygonSet_t<PolygonSet>>;
+
 template<typename Iterator>
 using ScanlineEdgeFromIterator_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<Iterator>())>::type>::type;
 
-template<typename PolygonSet>
-using PointFromPolygonSet_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<PolygonSet>().begin()->begin())>::type>::type;
+static double deltaAngleForError(double e, double r) {
+    e = std::min(r/2, e);
+    return acos(2*(1-e/r)*(1-e/r)-1);
+}
+
+template<typename Point>
+static ManhattanAreaFromPoint_t<Point> dot(const Point& a, const Point& b) {
+    return ManhattanAreaFromPoint_t<Point>{x(a)*x(b)} + ManhattanAreaFromPoint_t<Point>{y(a)*y(b)};
+}
 
 template<typename TPoint, template<typename Derived> class... Bases>
 struct Edge : Bases<Edge<TPoint, Bases...>>... {

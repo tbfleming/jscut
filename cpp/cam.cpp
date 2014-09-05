@@ -17,7 +17,7 @@
 
 #define _USE_MATH_DEFINES
 
-#include "FlexScan.h"
+#include "offset.h"
 
 #include <algorithm>
 #include <chrono>
@@ -51,34 +51,6 @@ static Point& operator*=(Point& a, int scale) {
     a.x(a.x()*scale);
     a.y(a.y()*scale);
     return a;
-}
-
-static long long dot(const Point& a, const Point& b) {
-    return (long long)x(a)*x(b) + (long long)y(a)*y(b);
-}
-
-static double deltaAngleForError(double e, double r) {
-    e = min(r/2, e);
-    return acos(2*(1-e/r)*(1-e/r)-1);
-}
-
-void convert(PolygonSet& ppp, const PolygonWithHoles& pwh) {
-    Polygon xxx;
-    for (auto& x: pwh)
-        xxx.push_back(x);
-    ppp.push_back(move(xxx));
-    for (auto it = pwh.begin_holes(); it != pwh.end_holes(); ++it)
-    {
-        Polygon g;
-        for (auto& x: *it)
-            g.push_back(x);
-        ppp.push_back(move(g));
-    }
-}
-
-void convert(PolygonSet& ppp, const PolygonWithHolesSet& pwhs) {
-    for (auto& pwh: pwhs)
-        convert(ppp, pwh);
 }
 
 namespace boost {
@@ -128,127 +100,6 @@ namespace boost {
 //    Path path;
 //    double distToCurrentPos;
 //};
-
-static Polygon rawOffset(const Polygon& path, int amount, bool closed) {
-    if (amount == 0)
-        return path;
-    if (path.size() < 2)
-        return{};
-
-    auto constructStartTime = std::chrono::high_resolution_clock::now();
-
-    auto processSegment = [](Polygon& raw, const Point& p0, const Point& p1, const Point& p2, int amount) {
-        if (p1 == p0)
-            return;
-
-        auto getNormal = [](const Point& p1, const Point& p2, int amount) -> Point {
-            double length = euclidean_distance(p1, p2);
-            return{lround(double(y(p2)-y(p1))*amount/length), lround(double(x(p1)-x(p2))*amount/length)};
-        };
-
-        auto normal01 = getNormal(p0, p1, amount);
-        auto normal12 = getNormal(p1, p2, amount);
-        auto o = orientation(Segment{p1, p1+normal01}, Segment{p1, p1+normal12});
-        if (amount < 0)
-            o = -o;
-
-        // turn left
-        if (o == 1 || o == 0 && dot(normal01, normal12) < 0) {
-            raw.push_back(p1+normal01);
-
-            double baseAngle = atan2(y(normal01), x(normal01));
-            double q = ((double)x(normal01)*x(normal12) + (double)y(normal01)*y(normal12)) / amount / amount;
-            q = min(1.0, max(-1.0, q));
-            double sweepAngle = acos(q);
-            int numSegments = ceil(sweepAngle / deltaAngleForError(arcTolerance, labs(amount)));
-            if (amount < 0) {
-                baseAngle += M_PI;
-                sweepAngle = -sweepAngle;
-            }
-
-            for (int i = 1; i < numSegments; ++i) {
-                double angle = baseAngle + sweepAngle*i/numSegments;
-                raw.push_back({lround(x(p1)+amount*cos(angle)), lround(y(p1)+amount*sin(angle))});
-            }
-
-            raw.push_back(p1+normal12);
-        }
-
-        // straight
-        else if (o == 0) {
-            raw.push_back(p1+normal01);
-        }
-
-        // turn right
-        else {
-            raw.push_back(p1+normal01);
-            raw.push_back(p1);
-            raw.push_back(p1+normal12);
-        }
-    };
-
-    Polygon raw;
-    if (closed) {
-        const Point* p0 = &path.back();
-        const Point* p1 = &path[0];
-        for (size_t i = 0; i+1 < path.size(); ++i) {
-            const Point* p2 = &path[i+1];
-            processSegment(raw, *p0, *p1, *p2, amount);
-            p0 = p1;
-            p1 = p2;
-        }
-        const Point* p2 = &path[0];
-        processSegment(raw, *p0, *p1, *p2, amount);
-    }
-    else {
-        const Point* p0 = &path[1];
-        const Point* p1 = &path[0];
-        for (size_t i = 0; i+1 < path.size(); ++i) {
-            const Point* p2 = &path[i+1];
-            processSegment(raw, *p0, *p1, *p2, amount);
-            p0 = p1;
-            p1 = p2;
-        }
-        for (size_t i = path.size()-1; i > 0; --i) {
-            const Point* p2 = &path[i-1];
-            processSegment(raw, *p0, *p1, *p2, amount);
-            p0 = p1;
-            p1 = p2;
-        }
-    }
-
-    //printf("offset construct: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - constructStartTime).count());
-
-    return raw;
-}
-
-static PolygonSet offset(const Polygon& path, int amount, bool closed) {
-    Polygon raw = rawOffset(path, amount, closed);
-    PolygonSet result;
-    result.push_back(move(raw));
-
-    auto cleanStartTime = std::chrono::high_resolution_clock::now();
-    result = FlexScan::cleanPolygonSet(result, FlexScan::PositiveWinding{});
-    printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
-
-    return result;
-}
-
-static PolygonSet offset(const PolygonSet& ps, int amount, bool closed) {
-    PolygonSet result;
-    for (auto& poly: ps) {
-        Polygon raw = rawOffset(poly, amount, closed);
-        //printf("%d -> %d\n", poly.size(), raw.size());
-        result.push_back(move(raw));
-    }
-
-    auto cleanStartTime = std::chrono::high_resolution_clock::now();
-    result = FlexScan::cleanPolygonSet(result, FlexScan::PositiveWinding{});
-    printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
-    printf("polys: %d\n", result.size());
-
-    return result;
-}
 
 // Convert paths to C format
 static void convertPathsToC(
@@ -301,7 +152,7 @@ extern "C" void hspocket(
         int minProgress = lround(stepover / 8);
         int precision = lround(inchToClipperScale / 5000);
 
-        PolygonSet safeArea = offset(geometry, -cutterDia / 2, true);
+        PolygonSet safeArea = FlexScan::offset(geometry, -cutterDia / 2, arcTolerance, true);
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea);
         return;
 
@@ -312,7 +163,7 @@ extern "C" void hspocket(
             while (true) {
                 double r = angle / M_PI / 2 * stepover;
                 spiral.push_back({lround(r * cos(-angle) + startX), lround(r * sin(-angle) + startY)});
-                double deltaAngle = deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
+                double deltaAngle = FlexScan::deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
                 angle += deltaAngle;
                 if (r >= spiralR)
                     break;
@@ -357,8 +208,8 @@ extern "C" void hspocket(
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral});
         return;
 
-
-        PolygonSet cutArea = offset(spiral, cutterDia / 2, false);
+        PolygonSet cutArea{move(spiral)};
+        cutArea = FlexScan::offset(cutArea, cutterDia / 2, arcTolerance, false);
         //PolygonSet cutterPaths;
         //cutterPaths.push_back(move(spiral));
 
