@@ -24,3 +24,9 @@ handlers:
   static_dir: lib
   http_headers:
       Access-Control-Allow-Origin: "*"
+
+- url: /jscut_standalone.tar.gz
+  static_files: jscut_standalone.tar.gz
+  http_headers:
+      Access-Control-Allow-Origin: "*"
+  upload: jscut_standalone.tar.gz

@@ -32,8 +32,8 @@ default:
 	    hspocket.cpp \
 	    -I ../../boost_1_56_0 \
 	    -std=c++11 \
-	    -O1 \
-	    --llvm-lto 0 \
+	    -O3 \
+	    --llvm-lto 1 \
 	    --memory-init-file 0 \
 	    -Wall \
 	    -Wextra \
@@ -56,6 +56,9 @@ standalone: default
 	cp -a $(SNAPSHOT_FILES) jscut_standalone
 	cp -f config_standalone.js jscut_standalone/config.js
 	tar czf jscut_standalone.tar.gz jscut_standalone
+
+deploy: standalone
+	appcfg.py update .
 
 clean:
 	rm -rf jscut_standalone

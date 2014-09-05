@@ -3,7 +3,7 @@
 //      config_standalone.js    This gets renamed to config.js when jscut_standalone.tar.gz is generated.
 
 var options = {
-    // Attempt to fetch cam-cpp.js and cam-cpp.js.mem from these locations in order.
+    // Attempt to fetch cam-cpp.js from these locations in order.
     // 'js' works in the standalone version, but not the version hosted at jscut.org
     // (the file is too big to be hosted there). 'js' also works locally if you run
     // 'make' from a Git clone. 'http://api.jscut.org/js' works whenever network
