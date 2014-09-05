@@ -56,10 +56,18 @@ struct Edge : Bases<Edge<TPoint, Bases...>>... {
     // How much to change the winding number when crossing edge in scan order
     int deltaWindingNumber = 0;
 
+    // Constructor reorders points and sets deltaWindingNumber
     Edge(Point point1, Point point2) :
         point1(point1),
-        point2(point2)
+        point2(point2),
+        deltaWindingNumber(1)
     {
+        if (x(this->point1) > x(this->point2) || x(this->point1) == x(this->point2) && y(this->point1) > y(this->point2)) {
+            std::swap(this->point1, this->point2);
+            this->deltaWindingNumber *= -1;
+        }
+        if (x(this->point1) == x(this->point2))
+            this->deltaWindingNumber *= -1;
     }
 
     Edge() = default;
@@ -181,23 +189,10 @@ struct Scan {
                 p2 = &begin[0];
             else
                 break;
-            insertEdge(dest, {*p1, *p2}, allowZeroLength);
+            if (allowZeroLength || toScanlineBasePoint(*p1) != toScanlineBasePoint(*p2))
+                dest.push_back({*p1, *p2});
         }
     };
-
-    template<typename Container>
-    static void insertEdge(Container& dest, Edge edge, bool allowZeroLength = false) {
-        if (!allowZeroLength && toScanlineBasePoint(edge.point1) == toScanlineBasePoint(edge.point2))
-            return;
-        edge.deltaWindingNumber = 1;
-        if (x(edge.point1) > x(edge.point2) || x(edge.point1) == x(edge.point2) && y(edge.point1) > y(edge.point2)) {
-            std::swap(edge.point1, edge.point2);
-            edge.deltaWindingNumber *= -1;
-        }
-        if (x(edge.point1) == x(edge.point2))
-            edge.deltaWindingNumber *= -1;
-        dest.push_back(edge);
-    }
 
     template<typename Container, typename It>
     static void intersectEdges(Container& dest, It begin, It end) {
