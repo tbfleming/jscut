@@ -1,5 +1,6 @@
 em++ \
  cam.cpp \
+ hspocket.cpp \
  -I ../../boost_1_56_0 \
  -D use_lines \
  -std=c++11 \
