@@ -392,69 +392,33 @@ struct ExcludeOppositeEdges {
 };
 
 struct AccumulateCount {
-    mutable int currentCount = 0;
+    mutable int leftCount = 0;
+    mutable int rightCount = 0;
 
     template<typename Unit, typename HighPrecision, typename It>
     void operator()(Unit scanX, HighPrecision scanY, It begin, It end) const
     {
+        const bool debug = false;
         using ScanlineEdge = ScanlineEdgeFromIterator_t<It>;
         using Scan = Scan<ScanlineEdge>;
 
-        printf("AccumulateCount %d\n", end-begin);
+        if (debug)
+            printf("AccumulateCount %d\n", end-begin);
         while (begin != end) {
-            // prep left-side vertical
-            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
-                if (!it->exclude && it->atPoint1 && it->edge->deltaCount > 0) {
-                    currentCount -= it->edge->deltaCount;
-                    printf("prep: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
-                        it->atPoint1, it->atPoint2,
-                        x(it->edge->point1), y(it->edge->point1),
-                        x(it->edge->point2), y(it->edge->point2),
-                        it->atPoint1, it->atPoint2,
-                        it->edge->deltaCount);
-                }
-            }
-
-            // vertical
-            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
-                if (it->atPoint1) {
-                    it->countBefore = currentCount;
-                    if (!it->exclude)
-                        currentCount += it->edge->deltaCount;
-                    it->countAfter = currentCount;
-                }
-                printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
-                    it->countBefore, it->countAfter, it->atPoint1, it->atPoint2,
-                    x(it->edge->point1), y(it->edge->point1),
-                    x(it->edge->point2), y(it->edge->point2),
-                    it->atPoint1, it->atPoint2,
-                    it->edge->deltaCount);
-            }
-
-            // undo right-side vertical
-            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
-                if (!it->exclude && it->atPoint1 && it->edge->deltaCount < 0) {
-                    currentCount -= it->edge->deltaCount;
-                    printf("undo: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
-                        it->atPoint1, it->atPoint2,
-                        x(it->edge->point1), y(it->edge->point1),
-                        x(it->edge->point2), y(it->edge->point2),
-                        it->atPoint1, it->atPoint2,
-                        it->edge->deltaCount);
-                }
-            }
-
-            // finished with vertical
-            while (begin != end && x(begin->edge->point1) == x(begin->edge->point2))
-                ++begin;
-
             // non-vertical
             while (begin != end && x(begin->edge->point1) != x(begin->edge->point2)) {
-                if (!begin->atPoint2) {
-                    begin->countBefore = currentCount;
-                    if (!begin->exclude)
-                        currentCount += begin->edge->deltaCount;
-                    begin->countAfter = currentCount;
+                if (begin->atPoint1)
+                    begin->countBefore = rightCount;
+                if (!begin->exclude)
+                {
+                    if (!begin->atPoint1)
+                        leftCount += begin->edge->deltaCount;
+                    if (!begin->atPoint2)
+                        rightCount += begin->edge->deltaCount;
+                }
+                if (begin->atPoint1)
+                    begin->countAfter = rightCount;
+                if (debug) {
                     printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
                         begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
                         x(begin->edge->point1), y(begin->edge->point1),
@@ -464,9 +428,45 @@ struct AccumulateCount {
                 }
                 ++begin;
             }
+
+            // vertical
+            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
+                it->countBefore = leftCount;
+                if (!it->exclude)
+                    leftCount += it->edge->deltaCount;
+                it->countAfter = leftCount;
+                if (debug) {
+                    printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                        it->countBefore, it->countAfter, it->atPoint1, it->atPoint2,
+                        x(it->edge->point1), y(it->edge->point1),
+                        x(it->edge->point2), y(it->edge->point2),
+                        it->atPoint1, it->atPoint2,
+                        it->edge->deltaCount);
+                }
+            }
+
+            // undo vertical
+            for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
+                if (!it->exclude) {
+                    leftCount -= it->edge->deltaCount;
+                    if (debug) {
+                        printf("prep: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                            it->atPoint1, it->atPoint2,
+                            x(it->edge->point1), y(it->edge->point1),
+                            x(it->edge->point2), y(it->edge->point2),
+                            it->atPoint1, it->atPoint2,
+                            it->edge->deltaCount);
+                    }
+                }
+            }
+
+            // finished with vertical
+            while (begin != end && x(begin->edge->point1) == x(begin->edge->point2))
+                ++begin;
         }
 
-        printf("~AccumulateCount\n");
+        if (debug)
+            printf("~AccumulateCount\n");
     }
 };
 
@@ -582,7 +582,7 @@ void cleanPolygonSet(PolygonSet& ps) {
     Scan::sortEdges(edges.begin(), edges.end());
     Scan::scan(
         edges.begin(), edges.end(),
-        //ExcludeOppositeEdges{},
+        ExcludeOppositeEdges{},
         AccumulateCount{},
         makeSetNext<ScanlineEdge>([](ScanlineEdge& e){return !e.exclude && e.countBefore == 0 && e.countAfter == 1 || e.countBefore == 1 && e.countAfter == 0; }));
 
