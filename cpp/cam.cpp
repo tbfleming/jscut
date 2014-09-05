@@ -228,7 +228,7 @@ static PolygonSet offset(const Polygon& path, int amount, bool closed) {
     result.push_back(move(raw));
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
-    FlexScan::cleanPolygonSet(result);
+    result = FlexScan::cleanPolygonSet(result, FlexScan::PositiveWinding{});
     printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
 
     return result;
@@ -243,7 +243,7 @@ static PolygonSet offset(const PolygonSet& ps, int amount, bool closed) {
     }
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
-    FlexScan::cleanPolygonSet(result);
+    result = FlexScan::cleanPolygonSet(result, FlexScan::PositiveWinding{});
     printf("offset clean: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
     printf("polys: %d\n", result.size());
 

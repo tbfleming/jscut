@@ -535,6 +535,15 @@ SetNext<ScanlineEdge, Condition> makeSetNext(Condition condition) {
     return{condition};
 }
 
+struct PositiveWinding {
+    template<typename ScanlineEdge>
+    bool operator()(const ScanlineEdge& e) const{
+        return !e.exclude && (
+            e.windingNumberBefore == 0 && e.windingNumberAfter == 1 ||
+            e.windingNumberBefore == 1 && e.windingNumberAfter == 0);
+    }
+};
+
 template<typename PolygonSet, typename It>
 void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
     while (begin != end) {
@@ -565,8 +574,8 @@ void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
     }
 }
 
-template<typename PolygonSet>
-void cleanPolygonSet(PolygonSet& ps) {
+template<typename PolygonSet, typename Winding>
+PolygonSet cleanPolygonSet(const PolygonSet& ps, Winding winding) {
     using Point = PointFromPolygonSet_t<PolygonSet>;
     using Edge = Edge<Point, EdgeNext>;
     using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeExclude, ScanlineEdgeWindingNumber>;
@@ -577,22 +586,24 @@ void cleanPolygonSet(PolygonSet& ps) {
     //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {100000, -100000}, {100000, 0}, {0, 0}});
     //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {100000, -100000}, {100000, 0}, {0, 0}});
     //Scan::insertPoints(edges, std::vector<Point>{{0, -100000}, {0, 0}});
-    //Scan::intersectEdges(edges, edges.begin(), edges.end());
+    Scan::intersectEdges(edges, edges.begin(), edges.end());
     Scan::sortEdges(edges.begin(), edges.end());
     Scan::scan(
         edges.begin(), edges.end(),
         ExcludeOppositeEdges{},
         AccumulateWindingNumber{},
-        makeSetNext<ScanlineEdge>([](ScanlineEdge& e){return !e.exclude && e.windingNumberBefore == 0 && e.windingNumberAfter == 1 || e.windingNumberBefore == 1 && e.windingNumberAfter == 0; }));
+        makeSetNext<ScanlineEdge>(winding));
 
-    ps.clear();
-    fillPolygonSetFromEdges(ps, edges.begin(), edges.end());
+    PolygonSet result;
+    fillPolygonSetFromEdges(result, edges.begin(), edges.end());
 
-    for (auto& poly: ps) {
-        printf("\n");
-        for (auto& point: poly)
-            printf("%d, %d\n", x(point), y(point));
-    }
+    //for (auto& poly: ps) {
+    //    printf("\n");
+    //    for (auto& point: poly)
+    //        printf("%d, %d\n", x(point), y(point));
+    //}
+
+    return result;
 }
 
 } // namespace FlexScan
