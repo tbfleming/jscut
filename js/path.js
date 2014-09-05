@@ -23,7 +23,7 @@ jscut.priv.path = jscut.priv.path || {};
     "use strict";
     jscut.priv.path.inchToClipperScale = 100000;                           // Scale inch to Clipper
     jscut.priv.path.cleanPolyDist = jscut.priv.path.inchToClipperScale / 100000;
-    jscut.priv.path.arcTolerance = jscut.priv.path.inchToClipperScale / 10000;
+    jscut.priv.path.arcTolerance = jscut.priv.path.inchToClipperScale / 40000;
 
     // Linearize a cubic bezier. Returns ['L', x2, y2, x3, y3, ...]. The return value doesn't
     // include (p1x, p1y); it's part of the previous segment.
@@ -183,6 +183,106 @@ jscut.priv.path = jscut.priv.path || {};
         }
         return result;
     };
+
+    // Convert Clipper paths to C format. Returns [double** cPaths, int cNumPaths, int* cPathSizes].
+    jscut.priv.path.convertPathsToCpp = function(memoryBlocks, paths) {
+        var doubleSize = 8;
+
+        var cPaths = Module._malloc(paths.length * 4);
+        memoryBlocks.push(cPaths);
+        var cPathsBase = cPaths >> 2;
+
+        var cPathSizes = Module._malloc(paths.length * 4);
+        memoryBlocks.push(cPathSizes);
+        var cPathSizesBase = cPathSizes >> 2;
+
+        for (var i = 0; i < paths.length; ++i) {
+            var path = paths[i];
+
+            var cPath = Module._malloc(path.length * 2 * doubleSize + 4);
+            memoryBlocks.push(cPath);
+            if (cPath & 4)
+                cPath += 4;
+            //console.log("-> " + cPath.toString(16));
+            var pathArray = new Float64Array(Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
+
+            for (var j = 0; j < path.length; ++j) {
+                var point = path[j];
+                pathArray[j * 2] = point.X;
+                pathArray[j * 2 + 1] = point.Y;
+            }
+
+            Module.HEAPU32[cPathsBase + i] = cPath;
+            Module.HEAPU32[cPathSizesBase + i] = path.length;
+        }
+
+        return [cPaths, paths.length, cPathSizes];
+    }
+
+    // Convert C format paths to array of CamPath. double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
+    jscut.priv.path.convertPathsFromCppToCamPath = function(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
+        var cPaths = Module.HEAPU32[cPathsRef >> 2];
+        memoryBlocks.push(cPaths);
+        var cPathsBase = cPaths >> 2;
+
+        var cNumPaths = Module.HEAPU32[cNumPathsRef >> 2];
+
+        var cPathSizes = Module.HEAPU32[cPathSizesRef >> 2];
+        memoryBlocks.push(cPathSizes);
+        var cPathSizesBase = cPathSizes >> 2;
+
+        var convertedPaths = [];
+        for (var i = 0; i < cNumPaths; ++i) {
+            var pathSize = Module.HEAPU32[cPathSizesBase + i];
+            var cPath = Module.HEAPU32[cPathsBase + i];
+            // cPath contains value to pass to Module._free(). The aligned version contains the actual data.
+            memoryBlocks.push(cPath);
+            if (cPath & 4)
+                cPath += 4;
+            var pathArray = new Float64Array(Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
+
+            var convertedPath = [];
+            convertedPaths.push({ path: convertedPath, safeToClose: false });
+            for (var j = 0; j < pathSize; ++j)
+                convertedPath.push({
+                    X: pathArray[j * 2],
+                    Y: pathArray[j * 2 + 1]
+                });
+        }
+
+        return convertedPaths;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Simplify and clean up Clipper geometry. fillRule is ClipperLib.PolyFillType.
     jscut.priv.path.simplifyAndClean = function (geometry, fillRule) {

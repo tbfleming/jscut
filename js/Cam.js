@@ -130,236 +130,36 @@ jscut.priv.cam = jscut.priv.cam || {};
         return mergePaths(bounds, allPaths);
     };
 
-    // Convert Clipper paths to C format. Returns [double** cPaths, int cNumPaths, int* cPathSizes].
-    function convertPathsToCpp(memoryBlocks, paths) {
-        var doubleSize = 8;
-
-        var cPaths = Module._malloc(paths.length * 4);
-        memoryBlocks.push(cPaths);
-        var cPathsBase = cPaths >> 2;
-
-        var cPathSizes = Module._malloc(paths.length * 4);
-        memoryBlocks.push(cPathSizes);
-        var cPathSizesBase = cPathSizes >> 2;
-
-        for(var i = 0; i < paths.length; ++i) {
-            var path = paths[i];
-
-            var cPath = Module._malloc(path.length * 2 * doubleSize + 4);
-            memoryBlocks.push(cPath);
-            if (cPath & 4)
-                cPath += 4;
-            //console.log("-> " + cPath.toString(16));
-            var pathArray = new Float64Array(Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
-
-            for (var j = 0; j < path.length; ++j) {
-                var point = path[j];
-                pathArray[j*2] = point.X;
-                pathArray[j*2 + 1] = point.Y;
-            }
-
-            Module.HEAPU32[cPathsBase + i] = cPath;
-            Module.HEAPU32[cPathSizesBase + i] = path.length;
-        }
-
-        return [cPaths, paths.length, cPathSizes];
-    }
-
-    // Convert C format paths to array of CamPath. double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
-    function convertPathsFromCppToCamPath(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
-        var cPaths = Module.HEAPU32[cPathsRef >> 2];
-        memoryBlocks.push(cPaths);
-        var cPathsBase = cPaths >> 2;
-
-        var cNumPaths = Module.HEAPU32[cNumPathsRef >> 2];
-
-        var cPathSizes = Module.HEAPU32[cPathSizesRef >> 2];
-        memoryBlocks.push(cPathSizes);
-        var cPathSizesBase = cPathSizes >> 2;
-
-        var convertedPaths = [];
-        for (var i = 0; i < cNumPaths; ++i) {
-            var pathSize = Module.HEAPU32[cPathSizesBase + i];
-            var cPath = Module.HEAPU32[cPathsBase + i];
-            // cPath contains value to pass to Module._free(). The aligned version contains the actual data.
-            memoryBlocks.push(cPath);
-            if (cPath & 4)
-                cPath += 4;
-            var pathArray = new Float64Array(Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
-
-            var convertedPath = [];
-            convertedPaths.push({ path: convertedPath, safeToClose: false });
-            for (var j = 0; j < pathSize; ++j)
-                convertedPath.push({
-                    X: pathArray[j * 2],
-                    Y: pathArray[j * 2 + 1]
-                });
-        }
-
-        return convertedPaths;
-    }
-
     // Compute paths for pocket operation on Clipper geometry. Returns array
     // of CamPath. cutterDia is in Clipper units. overlap is in the range [0, 1).
     jscut.priv.cam.hspocket = function (geometry, cutterDia, overlap, climb) {
         "use strict";
 
-        if (1) {
-            var memoryBlocks = [];
+        var memoryBlocks = [];
 
-            var cGeometry = convertPathsToCpp(memoryBlocks, geometry);
+        var cGeometry = jscut.priv.path.convertPathsToCpp(memoryBlocks, geometry);
 
-            var resultPathsRef = Module._malloc(4);
-            var resultNumPathsRef = Module._malloc(4);
-            var resultPathSizesRef = Module._malloc(4);
-            memoryBlocks.push(resultPathsRef);
-            memoryBlocks.push(resultNumPathsRef);
-            memoryBlocks.push(resultPathSizesRef);
+        var resultPathsRef = Module._malloc(4);
+        var resultNumPathsRef = Module._malloc(4);
+        var resultPathSizesRef = Module._malloc(4);
+        memoryBlocks.push(resultPathsRef);
+        memoryBlocks.push(resultNumPathsRef);
+        memoryBlocks.push(resultPathSizesRef);
 
-            //extern "C" void hspocket(
-            //    double** paths, int numPaths, int* pathSizes, double cutterDia,
-            //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
-            Module.ccall(
-                'hspocket',
-                'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
-                [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+        //extern "C" void hspocket(
+        //    double** paths, int numPaths, int* pathSizes, double cutterDia,
+        //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
+        Module.ccall(
+            'hspocket',
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
 
-            var result = convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
+        var result = jscut.priv.path.convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
 
-            for (var i = 0; i < memoryBlocks.length; ++i)
-                Module._free(memoryBlocks[i]);
+        for (var i = 0; i < memoryBlocks.length; ++i)
+            Module._free(memoryBlocks[i]);
 
-            return result;
-        }
-
-
-
-
-
-
-
-
-
-
-        var startX = 67 / 25.4 * jscut.priv.path.inchToClipperScale;
-        var startY = 72 / 25.4 * jscut.priv.path.inchToClipperScale;
-        var stepover = cutterDia / 4;
-        var spiralR = 60 / 25.4 * jscut.priv.path.inchToClipperScale;
-        var minRadius = cutterDia;
-        var minProgress = stepover / 8;
-        var precision = jscut.priv.path.inchToClipperScale / 5000;
-
-        var safeArea = jscut.priv.path.offset(geometry, -cutterDia / 2);
-
-        var spiral = [];
-        var angle = 0;
-        while (true) {
-            var r = angle / 2 / Math.PI * stepover;
-            spiral.push({ X: r * Math.cos(-angle) + startX, Y: r * Math.sin(-angle) + startY });
-            angle += Math.PI * 2 / 100;
-            if (r >= spiralR)
-                break;
-        }
-
-        spiral = (function () {
-            var clipper = new ClipperLib.Clipper();
-            clipper.AddPath(spiral, ClipperLib.PolyType.ptSubject, false);
-            clipper.AddPaths(safeArea, ClipperLib.PolyType.ptClip, true);
-            var result = new ClipperLib.PolyTree();
-            clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
-            var childs = result.Childs();
-            for (var i = 0; i < childs.length; ++i) {
-                var path = childs[i].Contour();
-                for (var j = 0; j < path.length; ++j)
-                    if (path[j].X == startX && path[j].Y == startY) {
-                        path.reverse();
-                        return path;
-                    }
-            }
-            return [];
-        })();
-        //return [{ path: spiral, safeToClose: false }];
-
-        var cutterPath = [spiral];
-        var currentX, currentY;
-
-        function updateCurrentPos() {
-            var lastPath = cutterPath[cutterPath.length - 1];
-            var lastPos = lastPath[lastPath.length - 1];
-            currentX = lastPos.X;
-            currentY = lastPos.Y;
-        }
-        updateCurrentPos();
-
-        var cutArea = jscut.priv.path.offset(cutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
-
-        //cutArea = cutArea.concat(cutterPath);
-        //var camPaths = [];
-        //for (var i = 0; i < cutArea.length; ++i)
-        //    camPaths.push({ path: cutArea[i], safeToClose: false });
-        //return camPaths;
-
-        var loopStartTime = Date.now();
-
-        var yyy = 100;
-        var xxx = 0;
-        while (true) {
-            console.log(xxx);
-            //if (++xxx >= yyy)
-            //    break;
-            var front = jscut.priv.path.offset(cutArea, -cutterDia / 2 + stepover);
-            var back = jscut.priv.path.offset(cutArea, -cutterDia / 2 + minProgress);
-            var q = jscut.priv.path.clip(front, safeArea, ClipperLib.ClipType.ctIntersection);
-            q = jscut.priv.path.offset(q, -minRadius);
-            q = jscut.priv.path.offset(q, minRadius);
-            for (var i = 0; i < q.length; ++i)
-                q[i].push(q[i][0]);
-
-            var clipper = new ClipperLib.Clipper();
-            clipper.AddPaths(q, ClipperLib.PolyType.ptSubject, false);
-            clipper.AddPaths(back, ClipperLib.PolyType.ptClip, true);
-            var result = new ClipperLib.PolyTree();
-            clipper.Execute(ClipperLib.ClipType.ctDifference, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
-            var childs = result.Childs();
-
-            var closestPath = [];
-            var closestDist = 0;
-            for (var i = 0; i < childs.length; ++i) {
-                var path = childs[i].Contour();
-                var d = dist(path[path.length - 1].X, path[path.length - 1].Y, currentX, currentY);
-                if (closestPath.length == 0 || d < closestDist) {
-                    path.reverse();
-                    var pathCutArea = jscut.priv.path.offset([path], cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
-                    pathCutArea = jscut.priv.path.clip(pathCutArea, cutArea, ClipperLib.ClipType.ctDifference);
-                    if (pathCutArea.length > 0) {
-                        closestPath = path;
-                        closestDist = d;
-                    }
-                }
-            }
-
-            if (closestPath.length == 0)
-                break;
-
-            var newCutterPath = [closestPath];
-            newCutterPath = ClipperLib.Clipper.CleanPolygons(newCutterPath, precision);
-            cutterPath.push(closestPath);
-            updateCurrentPos();
-
-            var newCutArea = jscut.priv.path.offset(newCutterPath, cutterDia / 2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
-            if (++xxx >= yyy) {
-                //cutterPath = cutArea.concat(newCutArea);
-                break;
-            }
-            cutArea = jscut.priv.path.clip(cutArea, newCutArea, ClipperLib.ClipType.ctUnion);
-        }
-
-        console.log("hspocket loop: " + (Date.now() - loopStartTime));
-
-        var camPaths = [];
-        for (var i = 0; i < cutterPath.length; ++i)
-            camPaths.push({ path: cutterPath[i], safeToClose: false });
-        return camPaths;
+        return result;
     };
 
     // Compute paths for outline operation on Clipper geometry. Returns array
