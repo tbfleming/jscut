@@ -119,12 +119,12 @@ struct Scan {
         return{x(p), y(p)};
     }
 
-    static bool dx(const Edge& e)
+    static Unit dx(const Edge& e)
     {
         return x(e.point2) - x(e.point1);
     }
 
-    static bool dy(const Edge& e)
+    static Unit dy(const Edge& e)
     {
         return y(e.point2) - y(e.point1);
     }
@@ -155,7 +155,7 @@ struct Scan {
     static void insertPolygons(Container& dest, It begin, It end, bool closed = true, bool allowZeroLength = false) {
         for (auto it = begin; it < end; ++it) {
             insertPoints(dest, it->begin(), it->end(), closed, allowZeroLength);
-            break; // !!!!!!!!!!!!!!!!
+            //break; // !!!!!!!!!!!!!!!!
         }
     }
 
@@ -258,6 +258,7 @@ struct Scan {
         EdgeIt edgeEnd,
         Callback... callback)
     {
+        const bool debug = false;
         if (edgeBegin == edgeEnd)
             return;
 
@@ -268,9 +269,11 @@ struct Scan {
                 ScanlineEdge sledge{&*edgeBegin};
                 sledge.atPoint1 = true;
                 scanlineEdges.push_back(sledge);
-                printf("add: (%d, %d), (%d, %d) %s\n",
-                    x(edgeBegin->point1), y(edgeBegin->point1), x(edgeBegin->point2), y(edgeBegin->point2),
-                    x(edgeBegin->point1) == x(edgeBegin->point2) ? "vertical" : "");
+                if (debug) {
+                    printf("add: (%d, %d), (%d, %d) %s\n",
+                        x(edgeBegin->point1), y(edgeBegin->point1), x(edgeBegin->point2), y(edgeBegin->point2),
+                        x(edgeBegin->point1) == x(edgeBegin->point2) ? "vertical" : "");
+                }
                 ++edgeBegin;
             }
 
@@ -282,12 +285,18 @@ struct Scan {
 
             sort(begin(scanlineEdges), end(scanlineEdges), lessScanlineEdge);
 
-            printf("\nscan line:\n");
-            for (auto& e: scanlineEdges) {
-                printf("    atEndpoint: %d, atPoint1: %d?, atPoint2: %d? (%d, %d), (%d, %d) %s\n",
-                    e.atEndpoint, e.atPoint1, e.atPoint2,
-                    x(e.edge->point1), y(e.edge->point1), x(e.edge->point2), y(e.edge->point2),
-                    x(e.edge->point1) == x(e.edge->point2) ? "vertical" : "");
+            if (debug) {
+                printf("\nscan line:\n");
+                for (auto& e: scanlineEdges) {
+                    printf("    atEndpoint: %d, atPoint1: %d?, atPoint2: %d? (%d, %d), (%d, %d) %s\n",
+                        e.atEndpoint, e.atPoint1, e.atPoint2,
+                        x(e.edge->point1), y(e.edge->point1), x(e.edge->point2), y(e.edge->point2),
+                        x(e.edge->point1) == x(e.edge->point2) ? "vertical" : "");
+                }
+                for (size_t i = 0; i < scanlineEdges.size()-1; ++i) {
+                    printf("\n%d < %d?  %d\n", i, i+1, LessSlope{}(scanlineEdges[i], scanlineEdges[i+1]));
+                    printf("%d < %d?  %d\n", i+1, i, LessSlope{}(scanlineEdges[i+1], scanlineEdges[i]));
+                }
             }
 
             auto scanlineEdgeIt = begin(scanlineEdges);
@@ -318,12 +327,14 @@ struct Scan {
                 }
             }
 
-            for (auto& e: scanlineEdges) {
-                if (e.atPoint2) {
-                    printf("drop atEndpoint: %d, atPoint1: %d, atPoint2: %d (%d, %d), (%d, %d) %s\n",
-                        e.atEndpoint, e.atPoint1, e.atPoint2,
-                        x(e.edge->point1), y(e.edge->point1), x(e.edge->point2), y(e.edge->point2),
-                        x(e.edge->point1) == x(e.edge->point2) ? "vertical" : "");
+            if (debug) {
+                for (auto& e: scanlineEdges) {
+                    if (e.atPoint2) {
+                        printf("drop atEndpoint: %d, atPoint1: %d, atPoint2: %d (%d, %d), (%d, %d) %s\n",
+                            e.atEndpoint, e.atPoint1, e.atPoint2,
+                            x(e.edge->point1), y(e.edge->point1), x(e.edge->point2), y(e.edge->point2),
+                            x(e.edge->point1) == x(e.edge->point2) ? "vertical" : "");
+                    }
                 }
             }
 
@@ -439,16 +450,18 @@ struct AccumulateCount {
 
             // non-vertical
             while (begin != end && x(begin->edge->point1) != x(begin->edge->point2)) {
-                begin->countBefore = currentCount;
-                if (!begin->exclude)
-                    currentCount += begin->edge->deltaCount;
-                begin->countAfter = currentCount;
-                printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
-                    begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
-                    x(begin->edge->point1), y(begin->edge->point1),
-                    x(begin->edge->point2), y(begin->edge->point2),
-                    begin->atPoint1, begin->atPoint2,
-                    begin->edge->deltaCount);
+                if (!begin->atPoint2) {
+                    begin->countBefore = currentCount;
+                    if (!begin->exclude)
+                        currentCount += begin->edge->deltaCount;
+                    begin->countAfter = currentCount;
+                    printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                        begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
+                        x(begin->edge->point1), y(begin->edge->point1),
+                        x(begin->edge->point2), y(begin->edge->point2),
+                        begin->atPoint1, begin->atPoint2,
+                        begin->edge->deltaCount);
+                }
                 ++begin;
             }
         }
