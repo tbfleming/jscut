@@ -50,7 +50,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                     <button type="button" class="btn btn-primary" onclick="saveSettingsLocalStorage(function () { $('#save-settings-modal').modal('hide') })">In Browser</button>
                     <button type="button" class="btn btn-primary" onclick="saveSettingsLocalFile(function () { $('#save-settings-modal').modal('hide') })">Local file</button>
                     <button type="button" class="btn btn-primary" onclick="$('#save-settings-modal').modal('hide');$('#save-gist-warning').modal('show')">Gist</button>
-                    <button type="button" class="btn btn-primary" onclick="saveSettingsGoogle(function () { $('#save-settings-modal').modal('hide') })">Google Drive</button>
+                    <button type="button" class="btn btn-primary" id="saveSettingsGoogle1" data-bind="visible: enableGoogleDrive" onclick="saveSettingsGoogle(function () { $('#save-settings-modal').modal('hide') })">Google Drive</button>
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" onclick="saveGcodeLocalFile(function () { $('#save-gcode-modal').modal('hide') })">Local file</button>
-                    <button type="button" class="btn btn-primary" onclick="saveGcodeGoogle(function () { $('#save-gcode-modal').modal('hide') })">Google Drive</button>
+                    <button type="button" class="btn btn-primary" id="saveGcodeGoogle1" data-bind="visible: enableGoogleDrive" onclick="saveGcodeGoogle(function () { $('#save-gcode-modal').modal('hide') })">Google Drive</button>
                     <button type="button" class="btn btn-primary" onclick="chiliSaveGcode()">ChiliPeppr</button>
                 </div>
             </div>
@@ -346,8 +346,8 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Open SVG<strong class="caret"></strong></a>
                                 <ul class="dropdown-menu">
                                     <li><a href="#" class="choose-file">Local<input type="file" id="choose-svg-file" multiple></a></li>
-                                    <li><a href="#" onclick="openSvgGoogle()">Google Drive</a></li>
-                                    <li><a href="#" onclick="openSvgDropbox()">Dropbox</a></li>
+                                    <li><a href="#" id="openSvgGoogle1" data-bind="visible: enableGoogleDrive" onclick="openSvgGoogle()">Google Drive</a></li>
+                                    <li><a href="#" id="openSvgDropbox1" data-bind="visible: enableDropbox" onclick="openSvgDropbox()">Dropbox</a></li>
                                 </ul>
                             </li>
                             <li class="dropdown">
@@ -355,7 +355,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                 <ul class="dropdown-menu">
                                     <li><a href="#" onclick="showLoadSettingsFromLocalStorageModal()">In Browser</a></li>
                                     <li><a href="#" class="choose-file">Local<input type="file" id="choose-settings-file"></a></li>
-                                    <li><a href="#" onclick="loadSettingsGoogle()">Google Drive</a></li>
+                                    <li><a href="#" id="loadSettingsGoogle1" data-bind="visible: enableGoogleDrive" onclick="loadSettingsGoogle()">Google Drive</a></li>
                                 </ul>
                             </li>
                             <li><a href="#" onclick="showSaveSettingsModal()">Save Settings</a></li>

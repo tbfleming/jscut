@@ -15,15 +15,15 @@ var options = {
     // Caution: never check the following files into Git or bad things happen:
     //      js/cam-cpp.js
     //      js/cam-cpp.js.mem
-    camCppPaths: ['js', 'http://api.jscut.org/js'],
+    camCppPaths: ['js'],
 
     // Enable Google Drive integration?
     // This only works when the app is served directly from jscut.org.
-    enableGoogleDrive: true,
+    enableGoogleDrive: false,
 
     // Enable Dropbox integration?
     // This only works when the app is served directly from jscut.org.
-    enableDropbox: true,
+    enableDropbox: false,
 
     // Debug run times
     profile: false,

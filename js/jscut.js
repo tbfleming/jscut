@@ -17,6 +17,8 @@
 
 function MiscViewModel() {
     var self = this;
+    self.enableGoogleDrive = ko.observable(options.enableGoogleDrive);
+    self.enableDropbox = ko.observable(options.enableDropbox);
     self.saveSettingsFilename = ko.observable("settings.jscut");
     self.loadLocalStorageFilename = ko.observable("settings.jscut");
     self.launchChiliUrl = ko.observable(null);
@@ -128,6 +130,12 @@ ko.applyBindings(miscViewModel, $("#LaunchChiliPeppr")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-warning")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-result")[0]);
 ko.applyBindings(miscViewModel, $("#load-local-storage-settings-modal")[0]);
+ko.applyBindings(miscViewModel, $("#saveSettingsGoogle1")[0]);
+ko.applyBindings(miscViewModel, $("#saveGcodeGoogle1")[0]);
+ko.applyBindings(miscViewModel, $("#openSvgGoogle1")[0]);
+ko.applyBindings(miscViewModel, $("#loadSettingsGoogle1")[0]);
+ko.applyBindings(miscViewModel, $("#openSvgDropbox1")[0]);
+
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {
