@@ -49,7 +49,7 @@ struct Edge : Bases<Edge<TPoint, Bases...>>... {
 
     Point point1;
     Point point2;
-    int deltaCount = 0;
+    int deltaWindingNumber = 0;
 
     Edge(Point point1, Point point2) :
         point1(point1),
@@ -99,9 +99,9 @@ struct ScanlineEdgeExclude {
 };
 
 template<typename Derived>
-struct ScanlineEdgeCount {
-    int countBefore = 0;
-    int countAfter = 0;
+struct ScanlineEdgeWindingNumber {
+    int windingNumberBefore = 0;
+    int windingNumberAfter = 0;
 };
 
 template<typename TScanlineEdge>
@@ -184,27 +184,27 @@ struct Scan {
     static void insertEdge(Container& dest, Edge edge, bool allowZeroLength = false) {
         if (!allowZeroLength && toScanlineBasePoint(edge.point1) == toScanlineBasePoint(edge.point2))
             return;
-        edge.deltaCount = 1;
+        edge.deltaWindingNumber = 1;
         if (x(edge.point1) > x(edge.point2) || x(edge.point1) == x(edge.point2) && y(edge.point1) > y(edge.point2)) {
             std::swap(edge.point1, edge.point2);
-            edge.deltaCount *= -1;
+            edge.deltaWindingNumber *= -1;
         }
         if (x(edge.point1) == x(edge.point2))
-            edge.deltaCount *= -1;
+            edge.deltaWindingNumber *= -1;
         dest.push_back(edge);
     }
 
     template<typename Container, typename It>
     static void intersectEdges(Container& dest, It begin, It end) {
         // pair sometimes has good uses. boost.polygon's authors should be banned from using pair for life.
-        //                   <         <      p1,                 p2        >,          <property, deltaCount> >    I'm using property to hold index.
+        //                   <         <      p1,                 p2        >,          <property, deltaWindingNumber> >    I'm using property to hold index.
         std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, std::pair<int, int>>> segments;
         size_t size = end - begin;
         segments.reserve(size);
         for (size_t i = 0; i < size; ++i) {
             segments.emplace_back(std::make_pair(
                 std::make_pair(toScanlineBasePoint(begin[i].point1), toScanlineBasePoint(begin[i].point2)),
-                std::make_pair(i, begin[i].deltaCount)));
+                std::make_pair(i, begin[i].deltaWindingNumber)));
         }
 
         std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, std::pair<int, int>> > intersected;
@@ -217,7 +217,7 @@ struct Scan {
             auto edge = begin[segment.second.first];
             edge.point1 = segment.first.first;
             edge.point2 = segment.first.second;
-            edge.deltaCount = segment.second.second;
+            edge.deltaWindingNumber = segment.second.second;
             result.push_back(edge);
         }
 
@@ -371,7 +371,7 @@ struct ExcludeOppositeEdges {
             if (begin == end)
                 break;
             for (auto otherIt = begin+1; otherIt != end; ++otherIt) {
-                if (!otherIt->exclude && begin->edge->deltaCount == -otherIt->edge->deltaCount) {
+                if (!otherIt->exclude && begin->edge->deltaWindingNumber == -otherIt->edge->deltaWindingNumber) {
                     // Only use X,Y for comparison
                     auto p1 = Scan::toScanlineBasePoint(begin->edge->point1);
                     auto p2 = Scan::toScanlineBasePoint(begin->edge->point2);
@@ -391,9 +391,9 @@ struct ExcludeOppositeEdges {
     }
 };
 
-struct AccumulateCount {
-    mutable int leftCount = 0;
-    mutable int rightCount = 0;
+struct AccumulateWindingNumber {
+    mutable int leftWindingNumber = 0;
+    mutable int rightWindingNumber = 0;
 
     template<typename Unit, typename HighPrecision, typename It>
     void operator()(Unit scanX, HighPrecision scanY, It begin, It end) const
@@ -403,59 +403,59 @@ struct AccumulateCount {
         using Scan = Scan<ScanlineEdge>;
 
         if (debug)
-            printf("AccumulateCount %d\n", end-begin);
+            printf("AccumulateWindingNumber %d\n", end-begin);
         while (begin != end) {
             // non-vertical
             while (begin != end && x(begin->edge->point1) != x(begin->edge->point2)) {
                 if (begin->atPoint1)
-                    begin->countBefore = rightCount;
+                    begin->windingNumberBefore = rightWindingNumber;
                 if (!begin->exclude)
                 {
                     if (!begin->atPoint1)
-                        leftCount += begin->edge->deltaCount;
+                        leftWindingNumber += begin->edge->deltaWindingNumber;
                     if (!begin->atPoint2)
-                        rightCount += begin->edge->deltaCount;
+                        rightWindingNumber += begin->edge->deltaWindingNumber;
                 }
                 if (begin->atPoint1)
-                    begin->countAfter = rightCount;
+                    begin->windingNumberAfter = rightWindingNumber;
                 if (debug) {
-                    printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
-                        begin->countBefore, begin->countAfter, begin->atPoint1, begin->atPoint2,
+                    printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaWindingNumber=%d\n",
+                        begin->windingNumberBefore, begin->windingNumberAfter, begin->atPoint1, begin->atPoint2,
                         x(begin->edge->point1), y(begin->edge->point1),
                         x(begin->edge->point2), y(begin->edge->point2),
                         begin->atPoint1, begin->atPoint2,
-                        begin->edge->deltaCount);
+                        begin->edge->deltaWindingNumber);
                 }
                 ++begin;
             }
 
             // vertical
             for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
-                it->countBefore = leftCount;
+                it->windingNumberBefore = leftWindingNumber;
                 if (!it->exclude)
-                    leftCount += it->edge->deltaCount;
-                it->countAfter = leftCount;
+                    leftWindingNumber += it->edge->deltaWindingNumber;
+                it->windingNumberAfter = leftWindingNumber;
                 if (debug) {
-                    printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
-                        it->countBefore, it->countAfter, it->atPoint1, it->atPoint2,
+                    printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaWindingNumber=%d\n",
+                        it->windingNumberBefore, it->windingNumberAfter, it->atPoint1, it->atPoint2,
                         x(it->edge->point1), y(it->edge->point1),
                         x(it->edge->point2), y(it->edge->point2),
                         it->atPoint1, it->atPoint2,
-                        it->edge->deltaCount);
+                        it->edge->deltaWindingNumber);
                 }
             }
 
             // undo vertical
             for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
                 if (!it->exclude) {
-                    leftCount -= it->edge->deltaCount;
+                    leftWindingNumber -= it->edge->deltaWindingNumber;
                     if (debug) {
-                        printf("prep: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaCount=%d\n",
+                        printf("prep: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaWindingNumber=%d\n",
                             it->atPoint1, it->atPoint2,
                             x(it->edge->point1), y(it->edge->point1),
                             x(it->edge->point2), y(it->edge->point2),
                             it->atPoint1, it->atPoint2,
-                            it->edge->deltaCount);
+                            it->edge->deltaWindingNumber);
                     }
                 }
             }
@@ -466,7 +466,7 @@ struct AccumulateCount {
         }
 
         if (debug)
-            printf("~AccumulateCount\n");
+            printf("~AccumulateWindingNumber\n");
     }
 };
 
@@ -488,8 +488,8 @@ public:
 private:
     mutable std::vector<ScanlineEdge*> candidates;
 
-    static int getAdjustedDeltaCount(const ScanlineEdge& e) {
-        int i = e.edge->deltaCount;
+    static int getAdjustedDeltaWindingNumber(const ScanlineEdge& e) {
+        int i = e.edge->deltaWindingNumber;
         if (e.atPoint2)
             i = -i;
         if (x(e.edge->point1) == x(e.edge->point2))
@@ -507,18 +507,18 @@ public:
         candidates.clear();
         candidates.reserve(end-begin);
         for (auto it = begin; it < end; ++it)
-            if (it->atEndpoint && it->edge->deltaCount && condition(*it))
+            if (it->atEndpoint && it->edge->deltaWindingNumber && condition(*it))
                 candidates.push_back(&*it);
 
         auto b = candidates.begin();
         auto e = candidates.end();
         while (b != e) {
-            int deltaCount = getAdjustedDeltaCount(**b);
+            int deltaWindingNumber = getAdjustedDeltaWindingNumber(**b);
             auto otherIt = e-1;
-            while (otherIt != b && getAdjustedDeltaCount(**otherIt) != -deltaCount)
+            while (otherIt != b && getAdjustedDeltaWindingNumber(**otherIt) != -deltaWindingNumber)
                 --otherIt;
             if (otherIt != b) {
-                if (deltaCount < 0)
+                if (deltaWindingNumber < 0)
                     (*b)->edge->next = (*otherIt)->edge;
                 else
                     (*otherIt)->edge->next = (*b)->edge;
@@ -545,12 +545,12 @@ void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
             auto& polygon = ps.back();
             auto* edge = &*begin;
             while (true) {
-                //printf("%d: %d, %d -> %d, %d deltaCount=%d\n", edge-&*begin, x(edge->point1), y(edge->point1), x(edge->point2), y(edge->point2), edge->deltaCount);
+                //printf("%d: %d, %d -> %d, %d deltaWindingNumber=%d\n", edge-&*begin, x(edge->point1), y(edge->point1), x(edge->point2), y(edge->point2), edge->deltaWindingNumber);
                 auto* next = edge->next;
                 edge->next = nullptr;
                 edge = next;
                 if (edge) {
-                    int i = edge->deltaCount;
+                    int i = edge->deltaWindingNumber;
                     if (x(edge->point1) == x(edge->point2))
                         i = -i;
                     if (i > 0)
@@ -570,7 +570,7 @@ template<typename PolygonSet>
 void cleanPolygonSet(PolygonSet& ps) {
     using Point = PointFromPolygonSet_t<PolygonSet>;
     using Edge = Edge<Point, EdgeNext>;
-    using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeExclude, ScanlineEdgeCount>;
+    using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeExclude, ScanlineEdgeWindingNumber>;
     using Scan = Scan<ScanlineEdge>;
 
     std::vector<Edge> edges;
@@ -583,8 +583,8 @@ void cleanPolygonSet(PolygonSet& ps) {
     Scan::scan(
         edges.begin(), edges.end(),
         ExcludeOppositeEdges{},
-        AccumulateCount{},
-        makeSetNext<ScanlineEdge>([](ScanlineEdge& e){return !e.exclude && e.countBefore == 0 && e.countAfter == 1 || e.countBefore == 1 && e.countAfter == 0; }));
+        AccumulateWindingNumber{},
+        makeSetNext<ScanlineEdge>([](ScanlineEdge& e){return !e.exclude && e.windingNumberBefore == 0 && e.windingNumberAfter == 1 || e.windingNumberBefore == 1 && e.windingNumberAfter == 0; }));
 
     ps.clear();
     fillPolygonSetFromEdges(ps, edges.begin(), edges.end());
