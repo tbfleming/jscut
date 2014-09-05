@@ -488,11 +488,13 @@ public:
 private:
     mutable std::vector<ScanlineEdge*> candidates;
 
-    static int getAdjustedDeltaWindingNumber(const ScanlineEdge& e) {
-        int i = e.edge->deltaWindingNumber;
-        if (e.atPoint2)
+    // negative: polygon travels from edge to scan point
+    // positive: polygon travels from scan point to edge
+    static int getEdgeDirection(const ScanlineEdge& scanlineEdge) {
+        int i = scanlineEdge.edge->deltaWindingNumber;
+        if (scanlineEdge.atPoint2)
             i = -i;
-        if (x(e.edge->point1) == x(e.edge->point2))
+        if (x(scanlineEdge.edge->point1) == x(scanlineEdge.edge->point2))
             i = -i;
         return i;
     }
@@ -513,12 +515,12 @@ public:
         auto b = candidates.begin();
         auto e = candidates.end();
         while (b != e) {
-            int deltaWindingNumber = getAdjustedDeltaWindingNumber(**b);
+            int edgeDirection = getEdgeDirection(**b);
             auto otherIt = e-1;
-            while (otherIt != b && getAdjustedDeltaWindingNumber(**otherIt) != -deltaWindingNumber)
+            while (otherIt != b && getEdgeDirection(**otherIt) != -edgeDirection)
                 --otherIt;
             if (otherIt != b) {
-                if (deltaWindingNumber < 0)
+                if (edgeDirection < 0)
                     (*b)->edge->next = (*otherIt)->edge;
                 else
                     (*otherIt)->edge->next = (*b)->edge;
