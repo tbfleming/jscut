@@ -127,6 +127,8 @@ struct Scan {
     using ScanlineBase = bp::scanline_base<Unit>;
     using ScanlineBasePoint = typename ScanlineBase::Point;
 
+    // Use 1: talk to Boost.Polygon
+    // Use 2: ignore extra data in Point when comparing
     static ScanlineBasePoint toScanlineBasePoint(Point p)
     {
         return{x(p), y(p)};
@@ -154,11 +156,12 @@ struct Scan {
         }
     };
 
-    static HighPrecision evalAtXforY(Unit x, const Edge& edge)
+    static HighPrecision getYIntercept(Unit x, const Edge& edge)
     {
         return ScanlineBase::evalAtXforY(x, toScanlineBasePoint(edge.point1), toScanlineBasePoint(edge.point2));
     }
 
+    // Comparitor for sorting edges into scan order. Y values don't matter.
     static bool lessEdge(const Edge& e1, const Edge& e2)
     {
         return x(e1.point1) < x(e2.point1);
@@ -166,10 +169,8 @@ struct Scan {
 
     template<typename Container, typename It>
     static void insertPolygons(Container& dest, It begin, It end, bool closed = true, bool allowZeroLength = false) {
-        for (auto it = begin; it < end; ++it) {
+        for (auto it = begin; it < end; ++it)
             insertPoints(dest, it->begin(), it->end(), closed, allowZeroLength);
-            //break; // !!!!!!!!!!!!!!!!
-        }
     }
 
     template<typename Container, typename SrcContainer>
@@ -194,10 +195,11 @@ struct Scan {
         }
     };
 
+    // Split edges at intersections
     template<typename Container, typename It>
     static void intersectEdges(Container& dest, It begin, It end) {
-        // pair sometimes has good uses. boost.polygon's authors should be banned from using pair for life.
-        //                   <         <      p1,                 p2        >,          <property, deltaWindingNumber> >    I'm using property to hold index.
+        // boost.polygon's authors should be banned from using pair for life.
+        //                   <         <      p1,                 p2        >,     <property, deltaWindingNumber> >    I'm using property to hold index.
         std::vector<std::pair<std::pair<ScanlineBasePoint, ScanlineBasePoint>, std::pair<int, int>>> segments;
         size_t size = end - begin;
         segments.reserve(size);
@@ -252,6 +254,7 @@ struct Scan {
         //printf("   end\n");
     }
 
+    // Scan edges. Edges must not have any intersections and must already be sorted using lessEdge.
     template<typename EdgeIt, typename... Callback>
     static void scan(
         EdgeIt edgeBegin,
@@ -279,7 +282,7 @@ struct Scan {
 
             for (auto& scanlineEdge: scanlineEdges) {
                 auto& edge = *scanlineEdge.edge;
-                scanlineEdge.yIntercept = evalAtXforY(scanX, edge);
+                scanlineEdge.yIntercept = getYIntercept(scanX, edge);
                 scanlineEdge.atEndpoint = scanX == x(edge.point1) || scanX == x(edge.point2);
             }
 
@@ -341,18 +344,12 @@ struct Scan {
             scanlineEdges.erase(
                 std::remove_if(scanlineEdges.begin(), scanlineEdges.end(), [](const ScanlineEdge& e){return e.atPoint2; }),
                 scanlineEdges.end());
+
             scanX = std::numeric_limits<Unit>::max();
             for (auto& e: scanlineEdges)
                 scanX = std::min(scanX, x(e.edge->point2));
-
-            //printf("scanX           %d\n", scanX);
-
             if (edgeBegin != edgeEnd)
                 scanX = std::min(scanX, x(edgeBegin->point1));
-
-            //printf("scanX           %d\n", scanX);
-            //printf("scanlineEdges   %d\n", scanlineEdges.size());
-            //printf("edges left      %d\n\n", edgeEnd-edgeBegin);
         }
     }
 }; // Scan
