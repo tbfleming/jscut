@@ -29,7 +29,6 @@ default:
 	cd cpp && em++ \
 	    cam.cpp \
 	    separateTabs.cpp \
-	    hspocket.cpp \
 	    -I ../../boost_1_56_0 \
 	    -std=c++11 \
 	    -O3 \
@@ -47,7 +46,7 @@ default:
 	    -s DISABLE_EXCEPTION_CATCHING=1 \
 	    -s FORCE_ALIGNED_MEMORY=1 \
 	    -s NO_EXIT_RUNTIME=1 \
-	    -s EXPORTED_FUNCTIONS="['_hspocket', '_separateTabs']" \
+	    -s EXPORTED_FUNCTIONS="['_separateTabs']" \
 	    -o ../js/cam-cpp.js
 
 standalone: default
