@@ -15,10 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-var options = {
-    'profile': false,
-};
-
 function MiscViewModel() {
     var self = this;
     self.saveSettingsFilename = ko.observable("settings.jscut");
@@ -48,6 +44,63 @@ var operationsViewModel;
 var tabsViewModel;
 var gcodeConversionViewModel;
 var miscViewModel;
+
+function loadScript(path, loadedCallback, errorCallback) {
+    var done = false;
+    var script = document.createElement('script');
+
+    function handleLoad() {
+        if (!done) {
+            done = true;
+            loadedCallback();
+        }
+    }
+
+    function handleReadyStateChange() {
+        var state;
+
+        if (!done) {
+            done = true;
+            if (script.readyState === "complete")
+                loadedCallback();
+            else
+                errorCallback();
+        }
+    }
+
+    function handleError() {
+        if (!done) {
+            done = true;
+            errorCallback();
+        }
+    }
+
+    script.onload = handleLoad;
+    script.onreadystatechange = handleReadyStateChange;
+    script.onerror = handleError;
+    script.src = path;
+    document.body.appendChild(script);
+}
+
+var downloadCppStarted = false;
+function downloadCpp() {
+    downloadCppStarted = true;
+    if (options.camCppPaths.length == 0) {
+        console.log('Error: nothing left to try; cam-cpp is unavailable.\n');
+        return;
+    }
+    var nextLocation = options.camCppPaths.shift();
+    var script = nextLocation + "/cam-cpp.js";
+
+    loadScript(
+        script,
+        function () { console.log('cam-cpp found: ' + script); },
+        downloadCpp);
+}
+window.addEventListener("load", function () {
+    if (!downloadCppStarted)
+        downloadCpp();
+}, false);
 
 svgViewModel = new SvgViewModel();
 materialViewModel = new MaterialViewModel();

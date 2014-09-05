@@ -233,7 +233,54 @@ jscut.priv.cam = jscut.priv.cam || {};
         return result;
     }
 
+    var displayedCppTabError = false;
+
     function separateTabs(cutterPath, tabGeometry) {
+        "use strict";
+
+        if (tabGeometry.length == 0)
+            return [cutterPath];
+        if (typeof Module == 'undefined') {
+            if (!displayedCppTabError) {
+                showAlert("Failed to load cam-cpp.js; tabs will be missing", "alert-danger", false);
+                displayedCppTabError = true;
+            }
+            return cutterPath;
+        }
+
+        var memoryBlocks = [];
+
+        var cCutterPath = jscut.priv.path.convertPathsToCpp(memoryBlocks, cutterPath);
+        var cTabGeometry = jscut.priv.path.convertPathsToCpp(memoryBlocks, tabGeometry);
+
+        var resultPathsRef = Module._malloc(4);
+        var resultNumPathsRef = Module._malloc(4);
+        var resultPathSizesRef = Module._malloc(4);
+        memoryBlocks.push(resultPathsRef);
+        memoryBlocks.push(resultNumPathsRef);
+        memoryBlocks.push(resultPathSizesRef);
+
+        //extern "C" void separateTabs(
+        //    double** pathPolygons, int numPaths, int* pathSizes,
+        //    double** tabPolygons, int numTabPolygons, int* tabPolygonSizes,
+        //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
+        Module.ccall(
+            'separateTabs',
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [cCutterPath[0], cCutterPath[1], cCutterPath[2], cTabGeometry[0], cTabGeometry[1], cTabGeometry[2], resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+
+        var result = jscut.priv.path.convertPathsFromCpp(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
+
+        for (var i = 0; i < memoryBlocks.length; ++i)
+            Module._free(memoryBlocks[i]);
+
+        return result;
+
+
+
+
+
+
         var tabSegments = jscut.priv.path.clipOpenPaths([cutterPath], tabGeometry, ClipperLib.ClipType.ctIntersection);
         var normalSegments = jscut.priv.path.clipOpenPaths([cutterPath], tabGeometry, ClipperLib.ClipType.ctDifference);
 

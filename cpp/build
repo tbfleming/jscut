@@ -1,8 +1,8 @@
 em++ \
  cam.cpp \
+ separateTabs.cpp \
  hspocket.cpp \
  -I ../../boost_1_56_0 \
- -D use_lines \
  -std=c++11 \
  -O1 \
  --llvm-lto 0 \
@@ -19,5 +19,5 @@ em++ \
  -s DISABLE_EXCEPTION_CATCHING=1 \
  -s FORCE_ALIGNED_MEMORY=1 \
  -s NO_EXIT_RUNTIME=1 \
- -s EXPORTED_FUNCTIONS="['_hspocket']" \
-
+ -s EXPORTED_FUNCTIONS="['_hspocket', '_separateTabs']" \
+ -o cam-cpp.js

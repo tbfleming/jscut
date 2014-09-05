@@ -219,6 +219,40 @@ jscut.priv.path = jscut.priv.path || {};
         return [cPaths, paths.length, cPathSizes];
     }
 
+    // Convert C format paths to Clipper paths. double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
+    jscut.priv.path.convertPathsFromCpp = function (memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
+        var cPaths = Module.HEAPU32[cPathsRef >> 2];
+        memoryBlocks.push(cPaths);
+        var cPathsBase = cPaths >> 2;
+
+        var cNumPaths = Module.HEAPU32[cNumPathsRef >> 2];
+
+        var cPathSizes = Module.HEAPU32[cPathSizesRef >> 2];
+        memoryBlocks.push(cPathSizes);
+        var cPathSizesBase = cPathSizes >> 2;
+
+        var convertedPaths = [];
+        for (var i = 0; i < cNumPaths; ++i) {
+            var pathSize = Module.HEAPU32[cPathSizesBase + i];
+            var cPath = Module.HEAPU32[cPathsBase + i];
+            // cPath contains value to pass to Module._free(). The aligned version contains the actual data.
+            memoryBlocks.push(cPath);
+            if (cPath & 4)
+                cPath += 4;
+            var pathArray = new Float64Array(Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
+
+            var convertedPath = [];
+            convertedPaths.push(convertedPath);
+            for (var j = 0; j < pathSize; ++j)
+                convertedPath.push({
+                    X: pathArray[j * 2],
+                    Y: pathArray[j * 2 + 1]
+                });
+        }
+
+        return convertedPaths;
+    }
+
     // Convert C format paths to array of CamPath. double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
     jscut.priv.path.convertPathsFromCppToCamPath = function(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
         var cPaths = Module.HEAPU32[cPathsRef >> 2];
