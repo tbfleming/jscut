@@ -25,14 +25,15 @@ namespace FlexScan {
 
 namespace bp = boost::polygon;
 
+// Combine less comparitors
 template<typename T, typename Less0, typename... TLess>
-bool chainLess(const T& a, const T& b, const Less0& less0, const TLess&... less)
+bool combineLess(const T& a, const T& b, const Less0& less0, const TLess&... less)
 {
-    return less0(a, b) || !less0(b, a) && chainLess(a, b, less...);
+    return less0(a, b) || !less0(b, a) && combineLess(a, b, less...);
 }
 
 template<typename T>
-bool chainLess(const T& a, const T& b)
+bool combineLess(const T& a, const T& b)
 {
     return false;
 }
@@ -47,8 +48,12 @@ template<typename TPoint, template<typename Derived> class... Bases>
 struct Edge : Bases<Edge<TPoint, Bases...>>... {
     using Point = TPoint;
 
+    // Scan must hit point1 at or before point2.
+    // x(point1) < x(point2) || x(point1) == x(point2) && y(point1) <= y(point2).
     Point point1;
     Point point2;
+
+    // How much to change the winding number when crossing edge in scan order
     int deltaWindingNumber = 0;
 
     Edge(Point point1, Point point2) :
@@ -231,7 +236,7 @@ struct Scan {
 
     static bool lessScanlineEdge(const ScanlineEdge& e1, const ScanlineEdge& e2)
     {
-        return chainLess(
+        return combineLess(
             e1, e2,
             [](const ScanlineEdge& e1, const ScanlineEdge& e2){return e1.yIntercept < e2.yIntercept; },
             [](const ScanlineEdge& e1, const ScanlineEdge& e2){return e1.atEndpoint < e2.atEndpoint; },
