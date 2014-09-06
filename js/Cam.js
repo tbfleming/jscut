@@ -192,6 +192,36 @@ jscut.priv.cam = jscut.priv.cam || {};
         return result;
     };
 
+    jscut.priv.cam.vEngrave = function (geometry, cutterDia) {
+        "use strict";
+
+        var memoryBlocks = [];
+
+        var cGeometry = jscut.priv.path.convertPathsToCpp(memoryBlocks, geometry);
+
+        var resultPathsRef = Module._malloc(4);
+        var resultNumPathsRef = Module._malloc(4);
+        var resultPathSizesRef = Module._malloc(4);
+        memoryBlocks.push(resultPathsRef);
+        memoryBlocks.push(resultNumPathsRef);
+        memoryBlocks.push(resultPathSizesRef);
+
+        //extern "C" void vEngrave(
+        //    double** paths, int numPaths, int* pathSizes, double cutterDia,
+        //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
+        Module.ccall(
+            'vEngrave',
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+
+        var result = jscut.priv.path.convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
+
+        for (var i = 0; i < memoryBlocks.length; ++i)
+            Module._free(memoryBlocks[i]);
+
+        return result;
+    };
+
     // Convert array of CamPath to array of Clipper path
     jscut.priv.cam.getClipperPathsFromCamPaths = function (paths) {
         var result = [];

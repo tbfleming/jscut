@@ -28,6 +28,7 @@ SNAPSHOT_FILES =        \
 COMPILE_FLAGS =                                     \
     cam.cpp                                         \
     separateTabs.cpp                                \
+    vEngrave.cpp                                    \
     -I ../../boost_1_56_0                           \
     -std=c++11                                      \
     --memory-init-file 0                            \
@@ -43,7 +44,7 @@ COMPILE_FLAGS =                                     \
     -s DISABLE_EXCEPTION_CATCHING=1                 \
     -s FORCE_ALIGNED_MEMORY=1                       \
     -s NO_EXIT_RUNTIME=1                            \
-    -s EXPORTED_FUNCTIONS="['_separateTabs']"       \
+    -s EXPORTED_FUNCTIONS="['_separateTabs', '_vEngrave']" \
     -o ../js/cam-cpp.js                             \
 
 RELEASE_FLAGS =                                     \
