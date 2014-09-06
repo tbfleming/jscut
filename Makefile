@@ -25,29 +25,42 @@ SNAPSHOT_FILES =        \
     test.svg            \
     todo.txt            \
 
+COMPILE_FLAGS =                                     \
+    cam.cpp                                         \
+    separateTabs.cpp                                \
+    -I ../../boost_1_56_0                           \
+    -std=c++11                                      \
+    --memory-init-file 0                            \
+    -Wall                                           \
+    -Wextra                                         \
+    -Wno-unused-function                            \
+    -Wno-unused-parameter                           \
+    -Wno-unused-variable                            \
+    -Wno-logical-op-parentheses                     \
+    -s ASSERTIONS=0                                 \
+    -s ALLOW_MEMORY_GROWTH=1                        \
+    -s SAFE_HEAP=0                                  \
+    -s DISABLE_EXCEPTION_CATCHING=1                 \
+    -s FORCE_ALIGNED_MEMORY=1                       \
+    -s NO_EXIT_RUNTIME=1                            \
+    -s EXPORTED_FUNCTIONS="['_separateTabs']"       \
+    -o ../js/cam-cpp.js                             \
+
+RELEASE_FLAGS =                                     \
+    $(COMPILE_FLAGS)                                \
+    -O3                                             \
+    --llvm-lto 1                                    \
+
+DEBUG_FLAGS =                                       \
+    $(COMPILE_FLAGS)                                \
+    -O0                                             \
+    --llvm-lto 0                                    \
+
 default:
-	cd cpp && em++ \
-	    cam.cpp \
-	    separateTabs.cpp \
-	    -I ../../boost_1_56_0 \
-	    -std=c++11 \
-	    -O3 \
-	    --llvm-lto 1 \
-	    --memory-init-file 0 \
-	    -Wall \
-	    -Wextra \
-	    -Wno-unused-parameter \
-	    -Wno-logical-op-parentheses \
-	    -Wno-unused-variable \
-	    -Wno-unused-function \
-	    -s ASSERTIONS=0 \
-	    -s ALLOW_MEMORY_GROWTH=1 \
-	    -s SAFE_HEAP=0 \
-	    -s DISABLE_EXCEPTION_CATCHING=1 \
-	    -s FORCE_ALIGNED_MEMORY=1 \
-	    -s NO_EXIT_RUNTIME=1 \
-	    -s EXPORTED_FUNCTIONS="['_separateTabs']" \
-	    -o ../js/cam-cpp.js
+	cd cpp && em++ $(RELEASE_FLAGS)
+
+debug:
+	cd cpp && em++ $(DEBUG_FLAGS)
 
 standalone: default
 	rm -rf jscut_standalone jscut_standalone.tar.gz
