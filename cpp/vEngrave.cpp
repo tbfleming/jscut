@@ -19,9 +19,39 @@
 #include "offset.h"
 #include <boost/polygon/voronoi.hpp>
 
+using namespace FlexScan;
 using namespace cam;
 using namespace std;
-namespace bp = boost::polygon;
+
+template<typename Derived>
+struct VoronoiEdge {
+    bool isGeometry = false;
+    bool isInGeometry = false;
+};
+
+struct SetIsInGeometry {
+    template<typename Unit, typename HighPrecision, typename It>
+    void operator()(Unit x, HighPrecision y, It begin, It end) const
+    {
+        while (begin != end) {
+            begin->edge->isInGeometry = begin->windingNumberBefore && begin->windingNumberAfter;
+            ++begin;
+        }
+    }
+};
+
+template<typename F>
+void getCorner(const Segment& s1, const Segment& s2, F f)
+{
+    if (low(s1) == low(s2))
+        f(low(s1), high(s1), high(s2));
+    else if (low(s1) == high(s2))
+        f(low(s1), high(s1), low(s2));
+    else if (high(s1) == low(s2))
+        f(high(s1), low(s1), high(s2));
+    else if (high(s1) == high(s2))
+        f(high(s1), low(s1), low(s2));
+}
 
 extern "C" void vEngrave(
     double** paths, int numPaths, int* pathSizes, double cutterDia,
@@ -29,6 +59,10 @@ extern "C" void vEngrave(
     )
 {
     try {
+        using Edge = Edge<Point, VoronoiEdge>;
+        using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber>;
+        using Scan = Scan<ScanlineEdge>;
+
         PolygonSet geometry = convertPathsFromC(paths, numPaths, pathSizes);
 
         vector<Segment> segments;
@@ -47,38 +81,52 @@ extern "C" void vEngrave(
             builder.insert_segment(x(low(segment)), y(low(segment)), x(high(segment)), y(high(segment)));
         builder.construct(&vd);
 
-        PolygonSet result;
+        vector<Edge> edges;
+        Scan::insertPolygons(edges, geometry.begin(), geometry.end(), true);
+        for (size_t i = 0; i < edges.size(); ++i)
+            edges[i].isGeometry = true;
+
         for (auto& edge: vd.edges())
             edge.color(0);
         int n = 0;
         for (auto& edge: vd.edges()) {
             if (edge.is_primary() && edge.is_finite() && !(edge.color()&1)) {
+                auto cell = edge.cell();
+                auto twinCell = edge.twin()->cell();
+
                 if (edge.is_linear()) {
-                    Polygon p{{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())}, {lround(edge.vertex1()->x()), lround(edge.vertex1()->y())}};
-                    result.emplace_back(move(p));
                     edge.color(1);
                     edge.twin()->color(1);
+                    Point p1{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())};
+                    Point p2{lround(edge.vertex1()->x()), lround(edge.vertex1()->y())};
+                    auto segment1 = segments[cell->source_index()];
+                    auto segment2 = segments[twinCell->source_index()];
+                    bool keep = true;
+                    getCorner(segment1, segment2, [&keep](Point center, Point e1, Point e2) {
+                        double c = dot(e1-center, e2-center) / euclidean_distance(e1, center) / euclidean_distance(e2, center);
+                        if (c <= cos(95/2/M_PI))
+                            keep = false;
+                    });
+                    if (keep)
+                        edges.emplace_back(Edge{p1, p2});
                 }
                 else if (edge.is_curved()) {
                     ++n;
                     Point point;
                     Segment segment;
 
-                    auto cell = edge.cell();
-                    auto twin = edge.twin()->cell();
-
                     if (cell->contains_point()) {
                         if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
                             point = low(segments[cell->source_index()]);
                         else
                             point = high(segments[cell->source_index()]);
-                        segment = segments[twin->source_index()];
+                        segment = segments[twinCell->source_index()];
                     }
                     else {
-                        if (twin->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
-                            point = low(segments[twin->source_index()]);
+                        if (twinCell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
+                            point = low(segments[twinCell->source_index()]);
                         else
-                            point = high(segments[twin->source_index()]);
+                            point = high(segments[twinCell->source_index()]);
                         segment = segments[cell->source_index()];
                     }
 
@@ -87,6 +135,18 @@ extern "C" void vEngrave(
             }
         }
         printf("n=%d\n", n);
+
+        Scan::intersectEdges(edges, edges.begin(), edges.end());
+        Scan::sortEdges(edges.begin(), edges.end());
+        Scan::scan(
+            edges.begin(), edges.end(),
+            makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
+            SetIsInGeometry{});
+
+        PolygonSet result;
+        for (auto& e: edges)
+            if (!e.isGeometry && e.isInGeometry)
+                result.emplace_back(Polygon{e.point1, e.point2});
 
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, result);
         return;
