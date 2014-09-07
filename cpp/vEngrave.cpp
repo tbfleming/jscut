@@ -53,6 +53,61 @@ void getCorner(const Segment& s1, const Segment& s2, F f)
         f(high(s1), low(s1), low(s2));
 }
 
+static double lenSquared(Point p)
+{
+    return (double)x(p)*x(p) + (double)y(p)*y(p);
+}
+
+static double projectionRatio(Point lineBegin, Point lineEnd, Point p)
+{
+    return (double)dot(lineEnd-lineBegin, p-lineBegin) / lenSquared(lineEnd-lineBegin);
+}
+
+// Linearize the parabola which is equidistant from p and s. The parabola's
+// endpoints are begin, end.
+template<typename Edge>
+void linearizeParabola(vector<Edge>& edges, Point p, Segment s, Point begin, Point end)
+{
+    auto p1 = low(s);
+    auto p2 = high(s);
+    auto deltaX = x(p2) - x(p1);
+    auto deltaY = y(p2) - y(p1);
+
+    size_t numSegments = 20;
+    auto tbegin = projectionRatio(p1, p2, begin);
+    auto tend = projectionRatio(p1, p2, end);
+
+    bool done = false;
+    while (!done) {
+        done = true;
+        Point lastPoint = begin;
+        for (size_t i = 1; i <= numSegments; ++i) {
+            double t = tbegin + (tend-tbegin)*i/numSegments;
+
+            // {xt, yt} traces s
+            auto xt = x(p1) + lround(deltaX * t);
+            auto yt = y(p1) + lround(deltaY * t);
+
+            // {ax, ay} is p relative to {xt, yt}
+            auto ax = x(p) - xt;
+            auto ay = y(p) - yt;
+
+            auto aLengthSquare = (double)ax*ax + (double)ay*ay;
+            auto denom = 2*((double)ax*deltaY - (double)ay*deltaX);
+
+            auto nextX = xt + lround((double)deltaY * aLengthSquare / denom);
+            auto nextY = yt - lround((double)deltaX * aLengthSquare / denom);
+
+            if (i < numSegments) {
+                edges.emplace_back(lastPoint, Point{nextX, nextY});
+                lastPoint = Point{nextX, nextY};
+            }
+        }
+        edges.emplace_back(lastPoint, end);
+    }
+    //printf(">\n");
+} // linearizeParabola
+
 extern "C" void vEngrave(
     double** paths, int numPaths, int* pathSizes, double cutterDia,
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
@@ -88,17 +143,16 @@ extern "C" void vEngrave(
 
         for (auto& edge: vd.edges())
             edge.color(0);
-        int n = 0;
         for (auto& edge: vd.edges()) {
             if (edge.is_primary() && edge.is_finite() && !(edge.color()&1)) {
                 auto cell = edge.cell();
                 auto twinCell = edge.twin()->cell();
+                Point p1{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())};
+                Point p2{lround(edge.vertex1()->x()), lround(edge.vertex1()->y())};
 
                 if (edge.is_linear()) {
                     edge.color(1);
                     edge.twin()->color(1);
-                    Point p1{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())};
-                    Point p2{lround(edge.vertex1()->x()), lround(edge.vertex1()->y())};
                     auto segment1 = segments[cell->source_index()];
                     auto segment2 = segments[twinCell->source_index()];
                     bool keep = true;
@@ -111,7 +165,6 @@ extern "C" void vEngrave(
                         edges.emplace_back(Edge{p1, p2});
                 }
                 else if (edge.is_curved()) {
-                    ++n;
                     Point point;
                     Segment segment;
 
@@ -130,11 +183,10 @@ extern "C" void vEngrave(
                         segment = segments[cell->source_index()];
                     }
 
-                    // ...
+                    linearizeParabola(edges, point, segment, p1, p2);
                 }
             }
         }
-        printf("n=%d\n", n);
 
         Scan::intersectEdges(edges, edges.begin(), edges.end());
         Scan::sortEdges(edges.begin(), edges.end());

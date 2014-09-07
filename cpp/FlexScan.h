@@ -72,7 +72,7 @@ static double deltaAngleForError(double e, double r) {
 
 template<typename Point>
 static ManhattanAreaFromPoint_t<Point> dot(const Point& a, const Point& b) {
-    return ManhattanAreaFromPoint_t<Point>{x(a)*x(b)} + ManhattanAreaFromPoint_t<Point>{y(a)*y(b)};
+    return ManhattanAreaFromPoint_t<Point>{x(a)}*x(b) + ManhattanAreaFromPoint_t<Point>{y(a)}*y(b);
 }
 
 template<typename TPoint, template<typename Derived> class... Bases>
