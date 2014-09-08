@@ -25,6 +25,7 @@ uniform float stopAtTime;
 
 attribute vec3 pos1;
 attribute vec3 pos2;
+attribute vec3 rawPos;
 attribute float startTime;
 attribute float endTime;
 attribute float vertex;
@@ -60,6 +61,8 @@ void main(void) {
     // vertex 09-11: upper circle triangle 2
     // vertex 12-14: connecting line triangle 1
     // vertex 15-17: connecting line triangle 2
+    // vertex 100: pos1 + rawPos
+    // vertex 101: clampedPos2 + rawPos
 
     int i = int(vertex);
     vec3 thisPos;
@@ -104,6 +107,10 @@ void main(void) {
             gl_Position = vec4(lower.x+delta.y, lower.y-delta.x, lower.z, 1.0);
         else if(i == 17)
             gl_Position = vec4(lower.x-delta.y, lower.y+delta.x, lower.z, 1.0);
+        else if(i == 100)
+            gl_Position = vec4((pos1.xy+rawPos.xy+pathXYOffset)*pathScale, pos1.z+rawPos.z, 1.0);
+        else if(i == 101)
+            gl_Position = vec4((clampedPos2.xy+rawPos.xy+pathXYOffset)*pathScale, clampedPos2.z+rawPos.z, 1.0);
     }
 
     float bottom = pathMinZ;

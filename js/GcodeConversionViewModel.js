@@ -166,6 +166,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
                 jscut.parseGcode(options, gcode),
                 self.unitConverter.fromInch(materialViewModel.matTopZ.toInch()),
                 self.unitConverter.fromInch(toolModel.diameter.toInch()),
+                toolModel.angle(),
                 self.unitConverter.fromInch(1));
             renderPath.setStopAtTime(renderPath.totalTime);
         }

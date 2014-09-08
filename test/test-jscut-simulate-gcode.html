@@ -10,13 +10,15 @@
 <body>
     <template id="top" is="auto-binding">
         <core-localstorage name="test-jscut-simulate-gcode-cutterDiameter" value="{{cutterDiameter}}"></core-localstorage>
+        <core-localstorage name="test-jscut-simulate-gcode-cutterAngle" value="{{cutterAngle}}"></core-localstorage>
         <core-localstorage name="test-jscut-simulate-gcode-cutterHeight" value="{{cutterHeight}}"></core-localstorage>
         <core-localstorage name="test-jscut-simulate-gcode-gcode" value="{{gcode}}"></core-localstorage>
 
         <jscut-parse-gcode gcode="{{gcode}}" parsedgcode="{{parsedGcode}}"></jscut-parse-gcode>
-        <jscut-simulate-gcode parsedgcode="{{parsedGcode}}" cutterdiameter="{{cutterDiameter}}" cutterheight="{{cutterHeight}}" time1="{{time1}}" time2="{{time2}}" maxtimeRounded="{{maxTime}}" elementsurl="../elements"></jscut-simulate-gcode>
+        <jscut-simulate-gcode width=800 height=800 parsedgcode="{{parsedGcode}}" cutterdiameter="{{cutterDiameter}}" cutterangle="{{cutterAngle}}" cutterheight=" {{cutterheight}}" time1="{{time1}}" time2="{{time2}}" maxtimerounded="{{maxTime}}" elementsurl="../elements"></jscut-simulate-gcode>
         <br><paper-slider pin editable value="{{time1}}" immediatevalue="{{time2}}" max="{{maxTime}}" step="0.1" id="paper_slider"></paper-slider>
         <br><input type="number" step="any" value="{{cutterDiameter}}">
+        <br><input type="number" step="any" value="{{cutterAngle}}">
         <br><input type="number" step="any" value="{{cutterHeight}}">
         <br><textarea value="{{gcode}}" rows="20" cols="60"></textarea>
     </template>

@@ -18,7 +18,7 @@
     </script>
 </polymer-element>
 
-<polymer-element name="jscut-simulate-gcode" attributes="width height gcode parsedGcode cutterDiameter cutterHeight time1 time2 maxTime maxTimeRounded elementsUrl">
+<polymer-element name="jscut-simulate-gcode" attributes="width height gcode parsedGcode cutterDiameter cutterAngle cutterHeight time1 time2 maxTime maxTimeRounded elementsUrl">
     <template>
         <canvas id="renderPathCanvas" width="{{width}}" height="{{height}}"></canvas>
     </template>
@@ -31,7 +31,7 @@
 
             function fill() {
                 if (filled) {
-                    renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterHeight);
+                    renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterAngle, self.cutterHeight);
                     self.maxTime = renderPath.totalTime;
                     self.maxTimeRounded = Math.ceil(renderPath.totalTime * 10) / 10;
                     self.time1 = self.maxTimeRounded;
@@ -50,6 +50,7 @@
                 gcode: '',
                 parsedGcode: [],
                 cutterDiameter: 0,
+                cutterAngle: 180,
                 cutterHeight: 0,
                 time1: 0,
                 time2: 0,
@@ -64,7 +65,7 @@
                     // fail. requestAnimationFrame works around this. Firefox doesn't have this problem.
                     window.requestAnimationFrame(function () {
                         renderPath = startRenderPath({}, self.$.renderPathCanvas, null, self.elementsUrl + '/../js', function (renderPath) {
-                            renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterHeight);
+                            renderPath.fillPathBuffer(self.parsedGcode, 0, self.cutterDiameter, self.cutterAngle, self.cutterHeight);
                             self.maxTime = renderPath.totalTime;
                             self.maxTimeRounded = Math.ceil(renderPath.totalTime * 10) / 10;
                             self.time1 = self.maxTimeRounded;
@@ -81,6 +82,7 @@
 
                 parsedGcodeChanged: fill,
                 cutterDiameterChanged: fill,
+                cutterAngleChanged: fill,
                 cutterHeightChanged: fill,
                 time1Changed: timeChanged,
                 time2Changed: timeChanged,
