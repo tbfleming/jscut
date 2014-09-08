@@ -197,7 +197,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
 
         if (previewGeometry.length != 0) {
             var offset = self.margin.toInch() * jscut.priv.path.inchToClipperScale;
-            if (self.camOp() == "Pocket" || self.camOp() == "Inside")
+            if (self.camOp() == "Pocket" || self.camOp() == "V Pocket" || self.camOp() == "Inside")
                 offset = -offset;
             if (self.camOp() != "Engrave" && offset != 0)
                 previewGeometry = jscut.priv.path.offset(previewGeometry, offset);
@@ -253,12 +253,14 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
 
         var geometry = self.combinedGeometry;
         var offset = self.margin.toInch() * jscut.priv.path.inchToClipperScale;
-        if (self.camOp() == "Pocket" || self.camOp() == "Inside")
+        if (self.camOp() == "Pocket" || self.camOp() == "V Pocket" || self.camOp() == "Inside")
             offset = -offset;
         if (self.camOp() != "Engrave" && offset != 0)
             geometry = jscut.priv.path.offset(geometry, offset);
 
         if (self.camOp() == "Pocket")
+            self.toolPaths(jscut.priv.cam.pocket(geometry, toolCamArgs.diameterClipper, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
+        else if (self.camOp() == "V Pocket")
             self.toolPaths(jscut.priv.cam.vEngrave(geometry, toolCamArgs.diameterClipper, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
         else if (self.camOp() == "Inside" || self.camOp() == "Outside") {
             var width = self.width.toInch() * jscut.priv.path.inchToClipperScale;

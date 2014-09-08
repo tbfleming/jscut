@@ -46,7 +46,7 @@ void main(void) {
     vec4 botColor = vec4(0.0, 0.0, 1.0, 1.0);
     vec4 transitionColor = vec4(0.0, 0.0, 0.0, 1.0);
 
-    float transition = min(.7, 100.0*max(abs(p0.z-p1.z), abs(p0.z-p2.z)));
+    float transition = min(.4, 100.0*max(abs(p0.z-p1.z), abs(p0.z-p2.z)));
     color = mix(topColor, botColor, tp.z);
     color = mix(color, transitionColor, transition);
 

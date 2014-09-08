@@ -176,6 +176,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
 
     self.offsetX.subscribe(self.generateGcode);
     self.offsetY.subscribe(self.generateGcode);
+    toolModel.angle.subscribe(self.generateGcode);
 
     self.toJson = function () {
         return {
