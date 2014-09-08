@@ -53,12 +53,17 @@ void getCorner(const Segment& s1, const Segment& s2, F f)
         f(high(s1), low(s1), low(s2));
 }
 
-static double lenSquared(Point p)
+static double lenSquared(PointWithZ p)
 {
     return (double)x(p)*x(p) + (double)y(p)*y(p);
 }
 
-static double projectionRatio(Point lineBegin, Point lineEnd, Point p)
+static double len(PointWithZ p)
+{
+    return sqrt(lenSquared(p));
+}
+
+static double projectionRatio(PointWithZ lineBegin, PointWithZ lineEnd, PointWithZ p)
 {
     return (double)dot(lineEnd-lineBegin, p-lineBegin) / lenSquared(lineEnd-lineBegin);
 }
@@ -66,12 +71,12 @@ static double projectionRatio(Point lineBegin, Point lineEnd, Point p)
 // Linearize the parabola which is equidistant from p and s. The parabola's
 // endpoints are begin, end.
 template<typename Edge>
-void linearizeParabola(vector<Edge>& edges, Point p, Segment s, Point begin, Point end)
+void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin, PointWithZ end, double inclinedAngle)
 {
-    auto p1 = low(s);
-    auto p2 = high(s);
-    auto deltaX = x(p2) - x(p1);
-    auto deltaY = y(p2) - y(p1);
+    PointWithZ p1 = low(s);
+    PointWithZ p2 = high(s);
+    int deltaX = x(p2) - x(p1);
+    int deltaY = y(p2) - y(p1);
 
     size_t numSegments = 20;
     auto tbegin = projectionRatio(p1, p2, begin);
@@ -80,32 +85,35 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, Point begin, Poi
     bool done = false;
     while (!done) {
         done = true;
-        Point lastPoint = begin;
-        for (size_t i = 1; i <= numSegments; ++i) {
+        PointWithZ lastPoint = begin;
+        for (size_t i = 0; i <= numSegments; ++i) {
             double t = tbegin + (tend-tbegin)*i/numSegments;
 
             // {xt, yt} traces s
-            auto xt = x(p1) + lround(deltaX * t);
-            auto yt = y(p1) + lround(deltaY * t);
+            int xt = x(p1) + lround(deltaX * t);
+            int yt = y(p1) + lround(deltaY * t);
 
             // {ax, ay} is p relative to {xt, yt}
-            auto ax = x(p) - xt;
-            auto ay = y(p) - yt;
+            int ax = x(p) - xt;
+            int ay = y(p) - yt;
 
-            auto aLengthSquare = (double)ax*ax + (double)ay*ay;
-            auto denom = 2*((double)ax*deltaY - (double)ay*deltaX);
+            double aLengthSquare = (double)ax*ax + (double)ay*ay;
+            double denom = 2*((double)ax*deltaY - (double)ay*deltaX);
 
-            auto nextX = xt + lround((double)deltaY * aLengthSquare / denom);
-            auto nextY = yt - lround((double)deltaX * aLengthSquare / denom);
+            int thisX = xt + lround((double)deltaY * aLengthSquare / denom);
+            int thisY = yt - lround((double)deltaX * aLengthSquare / denom);
+            int thisZ = -lround(len(Point{thisX, thisY} - p) / tan(inclinedAngle/2));
 
-            if (i < numSegments) {
-                edges.emplace_back(lastPoint, Point{nextX, nextY});
-                lastPoint = Point{nextX, nextY};
+            if (i == 0)
+                lastPoint.z = thisZ;
+            else if (i == numSegments)
+                edges.emplace_back(lastPoint, PointWithZ{end.x, end.y, thisZ});
+            else {
+                edges.emplace_back(lastPoint, PointWithZ{thisX, thisY, thisZ});
+                lastPoint = PointWithZ{thisX, thisY};
             }
         }
-        edges.emplace_back(lastPoint, end);
     }
-    //printf(">\n");
 } // linearizeParabola
 
 extern "C" void vEngrave(
@@ -113,8 +121,10 @@ extern "C" void vEngrave(
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
     )
 {
+    double inclinedAngle = 60 * 2 * M_PI / 360;
+
     try {
-        using Edge = Edge<Point, VoronoiEdge>;
+        using Edge = Edge<PointWithZ, VoronoiEdge>;
         using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber>;
         using Scan = Scan<ScanlineEdge>;
 
@@ -183,7 +193,7 @@ extern "C" void vEngrave(
                         segment = segments[cell->source_index()];
                     }
 
-                    linearizeParabola(edges, point, segment, p1, p2);
+                    linearizeParabola(edges, point, segment, p1, p2, inclinedAngle);
                 }
             }
         }
@@ -198,7 +208,7 @@ extern "C" void vEngrave(
         PolygonSet result;
         for (auto& e: edges)
             if (!e.isGeometry && e.isInGeometry)
-                result.emplace_back(Polygon{e.point1, e.point2});
+                result.emplace_back(Polygon{e.point1.toPoint(), e.point2.toPoint()});
 
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, result);
         return;

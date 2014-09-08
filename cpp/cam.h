@@ -31,6 +31,45 @@ namespace cam {
     static const long long cleanPolyDist = inchToClipperScale / 100000;
     static const long long arcTolerance = inchToClipperScale / 10000;
 
+    // 2D point with Z. This is not a 3D point. Z is extra data; most operations ignore Z.
+    struct PointWithZ {
+        using coordinate_type = int;
+
+        int x = 0;
+        int y = 0;
+        int z = 0;
+
+        PointWithZ(int x = 0, int y = 0, int z = 0) :
+            x{x},
+            y{y},
+            z{z}
+        {
+        }
+
+        PointWithZ(const PointWithZ&) = default;
+
+        PointWithZ(const Point& p) :
+            x(boost::polygon::x(p)),
+            y(boost::polygon::y(p))
+        {
+        }
+
+        PointWithZ& operator=(const PointWithZ&) = default;
+
+        Point toPoint() const
+        {
+            return{x, y};
+        }
+    };
+
+    static int x(PointWithZ p) {
+        return p.x;
+    }
+
+    static int y(PointWithZ p) {
+        return p.y;
+    }
+
     static Point operator+(const Point& a, const Point& b) {
         return{x(a)+x(b), y(a)+y(b)};
     }
@@ -40,8 +79,22 @@ namespace cam {
     }
 
     static Point& operator*=(Point& a, int scale) {
-        a.x(a.x()*scale);
-        a.y(a.y()*scale);
+        a.x(a.x() * scale);
+        a.y(a.y() * scale);
+        return a;
+    }
+
+    static PointWithZ operator+(const PointWithZ& a, const PointWithZ& b) {
+        return{x(a)+x(b), y(a)+y(b)};
+    }
+
+    static PointWithZ operator-(const PointWithZ& a, const PointWithZ& b) {
+        return{x(a)-x(b), y(a)-y(b)};
+    }
+
+    static PointWithZ& operator*=(PointWithZ& a, int scale) {
+        a.x = a.x * scale;
+        a.y = a.y * scale;
         return a;
     }
 

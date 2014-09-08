@@ -32,6 +32,7 @@ COMPILE_FLAGS =                                     \
     -I ../../boost_1_56_0                           \
     -std=c++11                                      \
     --memory-init-file 0                            \
+    -fcolor-diagnostics                             \
     -Wall                                           \
     -Wextra                                         \
     -Wno-unused-function                            \
@@ -62,6 +63,9 @@ default:
 
 debug:
 	cd cpp && em++ $(DEBUG_FLAGS)
+
+less:
+	make debug 2>&1 | less -R
 
 standalone: default
 	rm -rf jscut_standalone jscut_standalone.tar.gz

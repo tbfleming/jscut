@@ -63,7 +63,7 @@ template<typename PolygonSet>
 using UnitFromPolygonSet_t = UnitFromPolygon_t<PolygonFromPolygonSet_t<PolygonSet>>;
 
 template<typename Iterator>
-using ScanlineEdgeFromIterator_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<Iterator>())>::type>::type;
+using ObjectFromIterator_t = typename std::remove_const<typename std::remove_reference<decltype(*std::declval<Iterator>())>::type>::type;
 
 static double deltaAngleForError(double e, double r) {
     e = std::min(r/2, e);
@@ -220,10 +220,11 @@ struct Scan {
 
     template<typename Container, typename It>
     static void insertPoints(Container& dest, It begin, It end, bool closed = true, bool allowZeroLength = false) {
+        using InputPoint = ObjectFromIterator_t<It>;
         size_t size = end - begin;
         for (size_t i = 0; i < size; ++i) {
-            const Point* p1 = &begin[i];
-            const Point* p2;
+            const InputPoint* p1 = &begin[i];
+            const InputPoint* p2;
             if (i+1 < size)
                 p2 = &begin[i+1];
             else if (closed)
@@ -398,7 +399,7 @@ struct ExcludeOppositeEdges {
     template<typename Unit, typename HighPrecision, typename It>
     void operator()(Unit x, HighPrecision y, It begin, It end) const
     {
-        using ScanlineEdge = ScanlineEdgeFromIterator_t<It>;
+        using ScanlineEdge = ObjectFromIterator_t<It>;
         using Scan = Scan<ScanlineEdge>;
 
         //printf("ExcludeOppositeEdges %d\n", end-begin);
