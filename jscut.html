@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 Copyright 2014 Todd Fleming
 
 This file is part of jscut.
@@ -210,6 +210,11 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     </div>
                                     <div style="display: table-cell; width: 1000px; padding-right: 5px; text-align:right"><a id="opGenerate" href="#" data-bind="click: generateToolPath">Generate</a></div>
                                     <div style="display: table-cell; width: 1px; text-align:right"><label id="opShowDetail" data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
+                                </div>
+                                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && toolModel.angle() == 180">
+                                    <div style="display: table-cell"></div>
+                                    <div style="display: table-cell"></div>
+                                    <div style="display: table-cell">Set Tool Angle. This operation will not work until tool angle is set.</div>
                                 </div>
                                 <div style="display:table-row" data-bind="visible: showDetail">
                                     <div style="display: table-cell; width: 20px"></div>

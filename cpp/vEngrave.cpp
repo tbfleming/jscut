@@ -116,8 +116,8 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin
     }
 } // linearizeParabola
 
-extern "C" void vEngrave(
-    double** paths, int numPaths, int* pathSizes, double cutterDia,
+extern "C" void vPocket(
+    double** paths, int numPaths, int* pathSizes, double cutterDia, double cutterAngle,
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
     )
 {
@@ -128,6 +128,7 @@ extern "C" void vEngrave(
         using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber>;
         using Scan = Scan<ScanlineEdge>;
 
+        printf("a\n");
         PolygonSet geometry = convertPathsFromC(paths, numPaths, pathSizes);
 
         vector<Segment> segments;
@@ -140,19 +141,24 @@ extern "C" void vEngrave(
             }
         }
 
+        printf("b\n");
         bp::voronoi_diagram<double> vd;
         bp::default_voronoi_builder builder;
         for (auto& segment: segments)
             builder.insert_segment(x(low(segment)), y(low(segment)), x(high(segment)), y(high(segment)));
+        printf("c\n");
         builder.construct(&vd);
 
         vector<Edge> edges;
+        printf("d\n");
         Scan::insertPolygons(edges, geometry.begin(), geometry.end(), true);
+        printf("e\n");
         for (size_t i = 0; i < edges.size(); ++i)
             edges[i].isGeometry = true;
 
         for (auto& edge: vd.edges())
             edge.color(0);
+        printf("f\n");
         for (auto& edge: vd.edges()) {
             if (edge.is_primary() && edge.is_finite() && !(edge.color()&1)) {
                 auto cell = edge.cell();
@@ -198,6 +204,7 @@ extern "C" void vEngrave(
             }
         }
 
+        printf("g\n");
         Scan::intersectEdges(edges, edges.begin(), edges.end());
         Scan::sortEdges(edges.begin(), edges.end());
         Scan::scan(
@@ -205,11 +212,13 @@ extern "C" void vEngrave(
             makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
             SetIsInGeometry{});
 
+        printf("h\n");
         PolygonSet result;
         for (auto& e: edges)
             if (!e.isGeometry && e.isInGeometry)
                 result.emplace_back(Polygon{e.point1.toPoint(), e.point2.toPoint()});
 
+        printf("i\n");
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, result);
         return;
     }

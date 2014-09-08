@@ -192,8 +192,11 @@ jscut.priv.cam = jscut.priv.cam || {};
         return result;
     };
 
-    jscut.priv.cam.vEngrave = function (geometry, cutterDia) {
+    jscut.priv.cam.vPocket = function (geometry, cutterDia, cutterAngle) {
         "use strict";
+
+        if (cutterAngle <= 0 || cutterAngle >= 180)
+            return [];
 
         var memoryBlocks = [];
 
@@ -206,13 +209,13 @@ jscut.priv.cam = jscut.priv.cam || {};
         memoryBlocks.push(resultNumPathsRef);
         memoryBlocks.push(resultPathSizesRef);
 
-        //extern "C" void vEngrave(
-        //    double** paths, int numPaths, int* pathSizes, double cutterDia,
+        //extern "C" void vPocket(
+        //    double** paths, int numPaths, int* pathSizes, double cutterDia, double cutterAngle,
         //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
         Module.ccall(
-            'vEngrave',
-            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
-            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+            'vPocket',
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, cutterAngle, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
 
         var result = jscut.priv.path.convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
 

@@ -261,7 +261,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
         if (self.camOp() == "Pocket")
             self.toolPaths(jscut.priv.cam.pocket(geometry, toolCamArgs.diameterClipper, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
         else if (self.camOp() == "V Pocket")
-            self.toolPaths(jscut.priv.cam.vEngrave(geometry, toolCamArgs.diameterClipper, 1 - toolCamArgs.stepover, self.direction() == "Climb"));
+            self.toolPaths(jscut.priv.cam.vPocket(geometry, toolCamArgs.diameterClipper, toolModel.angle(), 1 - toolCamArgs.stepover, self.direction() == "Climb"));
         else if (self.camOp() == "Inside" || self.camOp() == "Outside") {
             var width = self.width.toInch() * jscut.priv.path.inchToClipperScale;
             if (width < toolCamArgs.diameterClipper)
