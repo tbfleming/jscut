@@ -71,7 +71,7 @@ static double projectionRatio(PointWithZ lineBegin, PointWithZ lineEnd, PointWit
 // Linearize the parabola which is equidistant from p and s. The parabola's
 // endpoints are begin, end.
 template<typename Edge>
-void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin, PointWithZ end, double inclinedAngle)
+void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin, PointWithZ end, double angle)
 {
     PointWithZ p1 = low(s);
     PointWithZ p2 = high(s);
@@ -102,7 +102,7 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin
 
             int thisX = xt + lround((double)deltaY * aLengthSquare / denom);
             int thisY = yt - lround((double)deltaX * aLengthSquare / denom);
-            int thisZ = -lround(len(Point{thisX, thisY} - p) / tan(inclinedAngle/2));
+            int thisZ = -lround(len(Point{thisX, thisY} - p) / tan(angle/2));
 
             if (i == 0)
                 lastPoint.z = thisZ;
@@ -121,7 +121,7 @@ extern "C" void vEngrave(
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
     )
 {
-    double inclinedAngle = 60 * 2 * M_PI / 360;
+    double angle = 60 * 2 * M_PI / 360;
 
     try {
         using Edge = Edge<PointWithZ, VoronoiEdge>;
@@ -193,7 +193,7 @@ extern "C" void vEngrave(
                         segment = segments[cell->source_index()];
                     }
 
-                    linearizeParabola(edges, point, segment, p1, p2, inclinedAngle);
+                    linearizeParabola(edges, point, segment, p1, p2, angle);
                 }
             }
         }

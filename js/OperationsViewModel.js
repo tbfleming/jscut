@@ -20,6 +20,7 @@ function ToolModel() {
     self.units = ko.observable("inch");
     self.unitConverter = new UnitConverter(self.units);
     self.diameter = ko.observable(.125);
+    self.angle = ko.observable(180);
     self.passDepth = ko.observable(.125);
     self.stepover = ko.observable(.4);
     self.rapidRate = ko.observable(100);
@@ -31,6 +32,11 @@ function ToolModel() {
     self.unitConverter.add(self.rapidRate);
     self.unitConverter.add(self.plungeRate);
     self.unitConverter.add(self.cutRate);
+
+    self.angle.subscribe(function (newValue) {
+        if (newValue <= 0 || newValue > 180)
+            self.angle(180);
+    });
 
     self.getCamArgs = function () {
         result = {
@@ -56,6 +62,7 @@ function ToolModel() {
         return {
             'units': self.units(),
             'diameter': self.diameter(),
+            'angle': self.angle(),
             'passDepth': self.passDepth(),
             'stepover': self.stepover(),
             'rapidRate': self.rapidRate(),
@@ -73,6 +80,7 @@ function ToolModel() {
         if (json) {
             f(json.units, self.units);
             f(json.diameter, self.diameter);
+            f(json.angle, self.angle);
             f(json.passDepth, self.passDepth);
             if (typeof json.overlap !== "undefined") // backwards compat
                 self.stepover(1 - json.overlap);
