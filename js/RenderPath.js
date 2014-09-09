@@ -192,8 +192,6 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
             pathVertexesPerLine = 18;
         }
 
-        var coneHeight = cutterDia / 2 * Math.cos(cutterAngleRad / 2) / Math.sin(cutterAngleRad / 2);
-
         pathNumVertexes = pathNumPoints * pathVertexesPerLine;
         var bufferContent = new Float32Array(pathNumPoints * pathStride * pathVertexesPerLine);
         pathBufferContent = bufferContent;
@@ -227,6 +225,9 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
             minZ = Math.min(minZ, z);
 
             if (isVBit) {
+                var coneHeight = -Math.min(z, prevZ, 0) + .1;
+                var coneDia = coneHeight * 2 * Math.sin(cutterAngleRad / 2) / Math.cos(cutterAngleRad / 2);
+
                 var rotAngle;
                 if (x == prevX && y == prevY)
                     rotAngle = 0;
@@ -268,18 +269,18 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
 
                     var index = 0;
                     if (1) {
-                        f(index++, 100, 0, -cutterDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
-                        f(index++, 101, 0, -cutterDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
+                        f(index++, 100, 0, -coneDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
+                        f(index++, 101, 0, -coneDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
                         f(index++, 100, 0, 0, 0, 1, 0);
                         f(index++, 100, 0, 0, 0, 1, 0);
-                        f(index++, 101, 0, -cutterDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
+                        f(index++, 101, 0, -coneDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
                         f(index++, 101, 0, 0, 0, 1, 0);
                         f(index++, 100, 0, 0, 0, 1, 0);
                         f(index++, 101, 0, 0, 0, 1, 0);
-                        f(index++, 100, 0, cutterDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
-                        f(index++, 100, 0, cutterDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
+                        f(index++, 100, 0, coneDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
+                        f(index++, 100, 0, coneDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
                         f(index++, 101, 0, 0, 0, 1, 0);
-                        f(index++, 101, 0, cutterDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
+                        f(index++, 101, 0, coneDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
                     }
 
                     var startAngle = rotAngle + Math.PI / 2 - planeContactAngle;
@@ -289,12 +290,12 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
                         var a2 = startAngle + (circleIndex + 1) / numHalfCircleSegments * (endAngle - startAngle);
                         //console.log("a1,a2: " + (a1 * 180 / Math.PI) + ", " + (a2 * 180 / Math.PI));
 
-                        f(index++, 100, cutterDia / 2 * Math.cos(a2), cutterDia / 2 * Math.sin(a2), coneHeight, 1, 0);
+                        f(index++, 100, coneDia / 2 * Math.cos(a2), coneDia / 2 * Math.sin(a2), coneHeight, 1, 0);
                         f(index++, 100, 0, 0, 0, 1, 0);
-                        f(index++, 100, cutterDia / 2 * Math.cos(a1), cutterDia / 2 * Math.sin(a1), coneHeight, 1, 0);
-                        f(index++, 101, cutterDia / 2 * Math.cos(a2 + Math.PI), cutterDia / 2 * Math.sin(a2 + Math.PI), coneHeight, 1, 0);
+                        f(index++, 100, coneDia / 2 * Math.cos(a1), coneDia / 2 * Math.sin(a1), coneHeight, 1, 0);
+                        f(index++, 101, coneDia / 2 * Math.cos(a2 + Math.PI), coneDia / 2 * Math.sin(a2 + Math.PI), coneHeight, 1, 0);
                         f(index++, 101, 0, 0, 0, 1, 0);
-                        f(index++, 101, cutterDia / 2 * Math.cos(a1 + Math.PI), cutterDia / 2 * Math.sin(a1 + Math.PI), coneHeight, 1, 0);
+                        f(index++, 101, coneDia / 2 * Math.cos(a1 + Math.PI), coneDia / 2 * Math.sin(a1 + Math.PI), coneHeight, 1, 0);
                     }
 
                     //if (index != pathVertexesPerLine)

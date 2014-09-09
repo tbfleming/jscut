@@ -294,8 +294,8 @@ popoverHover('#pxPerInch', "bottom", "SVG editors use different scales from each
 
 popoverHover('#tabsMaxCutDepth', "right", "Maximum depth operations may cut when they pass over tabs");
 
-popoverHover('#toolDiameter', "right", "Diameter of tool");
-popoverHover('#toolAngle', "right", "Angle of v cutter. 180 for normal (flat bottom) tools.");
+popoverHover('#toolDiameter', "right", "Diameter of tool. V Pocket ignores this. Simulate GCODE also ignores Diameter if Angle < 180.");
+popoverHover('#toolAngle', "right", "Angle of V cutter. 180 for normal (flat bottom) tools. V Pocket is the only operation which obeys this. Simulate GCODE always obeys it.");
 popoverHover('#toolPassDepth', "right", "Maximum depth the tool should plunge each pass. Use a smaller pass depth for harder materials and better quality.");
 popoverHover('#toolStepOver', "right", "What fraction of the tool diameter the tool should step over each time around a loop. Smaller values produce better cuts and reduce tool wear, but take longer to complete.");
 popoverHover('#toolRapidRate', "right", "The speed the tool moves while not cutting");
