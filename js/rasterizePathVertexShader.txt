@@ -28,7 +28,7 @@ attribute vec3 pos2;
 attribute vec3 rawPos;
 attribute float startTime;
 attribute float endTime;
-attribute float vertex;
+attribute float command;
 
 varying vec4 color;
 varying vec2 center;
@@ -55,16 +55,17 @@ void main(void) {
         upper = vec3((pos1.xy+pathXYOffset)*pathScale, pos1.z);
     }
 
-    // vertex 00-02: lower circle triangle 1
-    // vertex 03-05: lower circle triangle 2
-    // vertex 06-08: upper circle triangle 1
-    // vertex 09-11: upper circle triangle 2
-    // vertex 12-14: connecting line triangle 1
-    // vertex 15-17: connecting line triangle 2
-    // vertex 100: pos1 + rawPos
-    // vertex 101: clampedPos2 + rawPos
+    // command 00-02: lower circle triangle 1
+    // command 03-05: lower circle triangle 2
+    // command 06-08: upper circle triangle 1
+    // command 09-11: upper circle triangle 2
+    // command 12-14: connecting line triangle 1
+    // command 15-17: connecting line triangle 2
+    // command 100: pos1 + rawPos
+    // command 101: clampedPos2 + rawPos
+    // command 200: discard
 
-    int i = int(vertex);
+    int i = int(command);
     vec3 thisPos;
     if(i < 6)
         thisPos = lower;
@@ -111,6 +112,10 @@ void main(void) {
             gl_Position = vec4((pos1.xy+rawPos.xy+pathXYOffset)*pathScale, pos1.z+rawPos.z, 1.0);
         else if(i == 101)
             gl_Position = vec4((clampedPos2.xy+rawPos.xy+pathXYOffset)*pathScale, clampedPos2.z+rawPos.z, 1.0);
+        else if(i == 200) {
+            gl_Position = vec4(0, 0, 0, 1.0);
+            enable = 0.0;
+        }
     }
 
     float bottom = pathMinZ;

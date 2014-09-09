@@ -84,7 +84,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         rasterizePathProgram.rawPos = self.gl.getAttribLocation(rasterizePathProgram, "rawPos");
         rasterizePathProgram.startTime = self.gl.getAttribLocation(rasterizePathProgram, "startTime");
         rasterizePathProgram.endTime = self.gl.getAttribLocation(rasterizePathProgram, "endTime");
-        rasterizePathProgram.vertex = self.gl.getAttribLocation(rasterizePathProgram, "vertex");
+        rasterizePathProgram.command = self.gl.getAttribLocation(rasterizePathProgram, "command");
 
         self.gl.useProgram(null);
     }
@@ -115,7 +115,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         renderHeightMapProgram.pos1 = self.gl.getAttribLocation(renderHeightMapProgram, "pos1");
         renderHeightMapProgram.pos2 = self.gl.getAttribLocation(renderHeightMapProgram, "pos2");
         renderHeightMapProgram.thisPos = self.gl.getAttribLocation(renderHeightMapProgram, "thisPos");
-        //renderHeightMapProgram.vertex = self.gl.getAttribLocation(renderHeightMapProgram, "vertex");
+        //renderHeightMapProgram.command = self.gl.getAttribLocation(renderHeightMapProgram, "command");
 
         self.gl.useProgram(null);
     }
@@ -184,13 +184,6 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         pathNumPoints = path.length / inputStride;
         var numHalfCircleSegments = 10;
 
-        var halfCircleX = [];
-        var halfCircleY = [];
-        for (var i = 0; i <= numHalfCircleSegments * 2; ++i) {
-            halfCircleX.push(cutterDia / 2 * Math.cos(Math.PI * i / numHalfCircleSegments + Math.PI / 2));
-            halfCircleY.push(cutterDia / 2 * Math.sin(Math.PI * i / numHalfCircleSegments + Math.PI / 2));
-        }
-
         if (isVBit) {
             pathStride = 12;
             pathVertexesPerLine = 12 + numHalfCircleSegments * 6;
@@ -199,7 +192,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
             pathVertexesPerLine = 18;
         }
 
-        var coneTopZ = cutterDia / 2 * Math.cos(cutterAngleRad / 2) / Math.sin(cutterAngleRad / 2);
+        var coneHeight = cutterDia / 2 * Math.cos(cutterAngleRad / 2) / Math.sin(cutterAngleRad / 2);
 
         pathNumVertexes = pathNumPoints * pathVertexesPerLine;
         var bufferContent = new Float32Array(pathNumPoints * pathStride * pathVertexesPerLine);
@@ -239,47 +232,75 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
                     rotAngle = 0;
                 else
                     rotAngle = Math.atan2(y - prevY, x - prevX);
-                var rotCos = Math.cos(rotAngle);
-                var rotSin = Math.sin(rotAngle);
+                var xyDist = Math.sqrt((x - prevX) * (x - prevX) + (y - prevY) * (y - prevY));
 
-                var virtex = 0;
-                f = function (virtexId, rawX, rawY, rawZ) {
-                    var base = point * pathStride * pathVertexesPerLine + virtex * pathStride;
+                f = function (virtexIndex, command, rawX, rawY, rawZ, rotCos, rotSin, zOffset) {
+                    if (typeof zOffset == 'undefined')
+                        zOffset = 0;
+                    var base = point * pathStride * pathVertexesPerLine + virtexIndex * pathStride;
                     bufferContent[base + 0] = prevX;
                     bufferContent[base + 1] = prevY;
-                    bufferContent[base + 2] = prevZ;
+                    bufferContent[base + 2] = prevZ + zOffset;
                     bufferContent[base + 3] = x;
                     bufferContent[base + 4] = y;
-                    bufferContent[base + 5] = z;
+                    bufferContent[base + 5] = z + zOffset;
                     bufferContent[base + 6] = beginTime;
                     bufferContent[base + 7] = time;
-                    bufferContent[base + 8] = virtexId;
+                    bufferContent[base + 8] = command;
                     bufferContent[base + 9] = rawX * rotCos - rawY * rotSin;
                     bufferContent[base + 10] = rawY * rotCos + rawX * rotSin;
                     bufferContent[base + 11] = rawZ;
-                    ++virtex;
                 }
 
-                f(100, 0, -cutterDia / 2, coneTopZ);
-                f(101, 0, -cutterDia / 2, coneTopZ);
-                f(100, 0, 0, 0);
-                f(100, 0, 0, 0);
-                f(101, 0, -cutterDia / 2, coneTopZ);
-                f(101, 0, 0, 0);
-                f(100, 0, 0, 0);
-                f(101, 0, 0, 0);
-                f(100, 0, cutterDia / 2, coneTopZ);
-                f(100, 0, cutterDia / 2, coneTopZ);
-                f(101, 0, 0, 0);
-                f(101, 0, cutterDia / 2, coneTopZ);
+                if (Math.abs(z - prevZ) >= xyDist * Math.PI / 2 * Math.cos(cutterAngleRad / 2) / Math.sin(cutterAngleRad / 2)) {
+                    // plunge or retract
+                    var command = prevZ < z ? 100 : 101;
+                    var index = 0;
+                    console.log("!!!!! todo");
+                    while (index < pathVertexesPerLine)
+                        f(index++, 200, 0, 0, 0, 1, 0);
+                } else {
+                    // cut
+                    var planeContactAngle = Math.asin((prevZ - z) / xyDist * Math.sin(cutterAngleRad / 2) / Math.cos(cutterAngleRad / 2));
+                    //console.log("\nxyDist = ", xyDist);
+                    //console.log("delta z = " + (z - prevZ));
+                    //console.log("planeContactAngle = " + (planeContactAngle * 180 / Math.PI));
 
-                for (var circleIndex = 0; circleIndex < numHalfCircleSegments; ++circleIndex) {
-                    f(100, halfCircleX[circleIndex], halfCircleY[circleIndex], coneTopZ);
-                    f(100, 0, 0, 0);
-                    f(100, halfCircleX[circleIndex+1], halfCircleY[circleIndex+1], coneTopZ);
-                    f(101, halfCircleX[numHalfCircleSegments + circleIndex], halfCircleY[numHalfCircleSegments + circleIndex], coneTopZ);
-                    f(101, 0, 0, 0);
-                    f(101, halfCircleX[numHalfCircleSegments + circleIndex + 1], halfCircleY[numHalfCircleSegments + circleIndex + 1], coneTopZ);
+                    var index = 0;
+                    if (1) {
+                        f(index++, 100, 0, -cutterDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
+                        f(index++, 101, 0, -cutterDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
+                        f(index++, 100, 0, 0, 0, 1, 0);
+                        f(index++, 100, 0, 0, 0, 1, 0);
+                        f(index++, 101, 0, -cutterDia / 2, coneHeight, Math.cos(rotAngle - planeContactAngle), Math.sin(rotAngle - planeContactAngle));
+                        f(index++, 101, 0, 0, 0, 1, 0);
+                        f(index++, 100, 0, 0, 0, 1, 0);
+                        f(index++, 101, 0, 0, 0, 1, 0);
+                        f(index++, 100, 0, cutterDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
+                        f(index++, 100, 0, cutterDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
+                        f(index++, 101, 0, 0, 0, 1, 0);
+                        f(index++, 101, 0, cutterDia / 2, coneHeight, Math.cos(rotAngle + planeContactAngle), Math.sin(rotAngle + planeContactAngle));
+                    }
+
+                    var startAngle = rotAngle + Math.PI / 2 - planeContactAngle;
+                    var endAngle = rotAngle + 3 * Math.PI / 2 + planeContactAngle;
+                    for (var circleIndex = 0; circleIndex < numHalfCircleSegments; ++circleIndex) {
+                        var a1 = startAngle + circleIndex / numHalfCircleSegments * (endAngle - startAngle);
+                        var a2 = startAngle + (circleIndex + 1) / numHalfCircleSegments * (endAngle - startAngle);
+                        //console.log("a1,a2: " + (a1 * 180 / Math.PI) + ", " + (a2 * 180 / Math.PI));
+
+                        f(index++, 100, cutterDia / 2 * Math.cos(a2), cutterDia / 2 * Math.sin(a2), coneHeight, 1, 0);
+                        f(index++, 100, 0, 0, 0, 1, 0);
+                        f(index++, 100, cutterDia / 2 * Math.cos(a1), cutterDia / 2 * Math.sin(a1), coneHeight, 1, 0);
+                        f(index++, 101, cutterDia / 2 * Math.cos(a2 + Math.PI), cutterDia / 2 * Math.sin(a2 + Math.PI), coneHeight, 1, 0);
+                        f(index++, 101, 0, 0, 0, 1, 0);
+                        f(index++, 101, cutterDia / 2 * Math.cos(a1 + Math.PI), cutterDia / 2 * Math.sin(a1 + Math.PI), coneHeight, 1, 0);
+                    }
+
+                    //if (index != pathVertexesPerLine)
+                    //    console.log("oops...");
+                    //while (index < pathVertexesPerLine)
+                    //    f(index++, 200, 0, 0, 0, 1, 0);
                 }
             } else {
                 for (var virtex = 0; virtex < pathVertexesPerLine; ++virtex) {
@@ -306,7 +327,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
 
         pathXOffset = -(minX + maxX) / 2;
         pathYOffset = -(minY + maxY) / 2;
-        var size = Math.max(maxX - minX + 4 * cutterDia, maxY - minY + 4 * cutterDia);
+        var size = Math.max(maxX - minX /*+ 4 * cutterDia*/, maxY - minY /*+ 4 * cutterDia*/);
         pathScale = 2 / size;
         pathMinZ = minZ;
 
@@ -338,14 +359,14 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         self.gl.vertexAttribPointer(rasterizePathProgram.pos2, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
         self.gl.vertexAttribPointer(rasterizePathProgram.startTime, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
         self.gl.vertexAttribPointer(rasterizePathProgram.endTime, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 7 * Float32Array.BYTES_PER_ELEMENT);
-        self.gl.vertexAttribPointer(rasterizePathProgram.vertex, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+        self.gl.vertexAttribPointer(rasterizePathProgram.command, 1, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
         self.gl.vertexAttribPointer(rasterizePathProgram.rawPos, 3, self.gl.FLOAT, false, pathStride * Float32Array.BYTES_PER_ELEMENT, 9 * Float32Array.BYTES_PER_ELEMENT);
 
         self.gl.enableVertexAttribArray(rasterizePathProgram.pos1);
         self.gl.enableVertexAttribArray(rasterizePathProgram.pos2);
         self.gl.enableVertexAttribArray(rasterizePathProgram.startTime);
         self.gl.enableVertexAttribArray(rasterizePathProgram.endTime);
-        self.gl.enableVertexAttribArray(rasterizePathProgram.vertex);
+        self.gl.enableVertexAttribArray(rasterizePathProgram.command);
         if(isVBit)
             self.gl.enableVertexAttribArray(rasterizePathProgram.rawPos);
         self.gl.drawArrays(self.gl.TRIANGLES, 0, pathNumVertexes);
@@ -353,7 +374,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         self.gl.disableVertexAttribArray(rasterizePathProgram.pos2);
         self.gl.disableVertexAttribArray(rasterizePathProgram.startTime);
         self.gl.disableVertexAttribArray(rasterizePathProgram.endTime);
-        self.gl.disableVertexAttribArray(rasterizePathProgram.vertex);
+        self.gl.disableVertexAttribArray(rasterizePathProgram.command);
         self.gl.disableVertexAttribArray(rasterizePathProgram.rawPos);
 
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
@@ -494,13 +515,13 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         self.gl.vertexAttribPointer(renderHeightMapProgram.pos1, 2, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
         self.gl.vertexAttribPointer(renderHeightMapProgram.pos2, 2, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 4 * Float32Array.BYTES_PER_ELEMENT);
         self.gl.vertexAttribPointer(renderHeightMapProgram.thisPos, 2, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-        //self.gl.vertexAttribPointer(renderHeightMapProgram.vertex, 1, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+        //self.gl.vertexAttribPointer(renderHeightMapProgram.command, 1, self.gl.FLOAT, false, meshStride * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
 
         self.gl.enableVertexAttribArray(renderHeightMapProgram.pos0);
         self.gl.enableVertexAttribArray(renderHeightMapProgram.pos1);
         self.gl.enableVertexAttribArray(renderHeightMapProgram.pos2);
         self.gl.enableVertexAttribArray(renderHeightMapProgram.thisPos);
-        //self.gl.enableVertexAttribArray(renderHeightMapProgram.vertex);
+        //self.gl.enableVertexAttribArray(renderHeightMapProgram.command);
 
         self.gl.drawArrays(self.gl.TRIANGLES, 0, meshNumVertexes);
 
@@ -508,7 +529,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         self.gl.disableVertexAttribArray(renderHeightMapProgram.pos1);
         self.gl.disableVertexAttribArray(renderHeightMapProgram.pos2);
         self.gl.disableVertexAttribArray(renderHeightMapProgram.thisPos);
-        //self.gl.disableVertexAttribArray(renderHeightMapProgram.vertex);
+        //self.gl.disableVertexAttribArray(renderHeightMapProgram.command);
 
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
         self.gl.bindTexture(self.gl.TEXTURE_2D, null);
@@ -652,7 +673,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
             self.createPathTexture();
         if (needToDrawHeightMap) {
             self.drawHeightMap();
-            self.drawCutter();
+            //self.drawCutter();
         }
         pendingRequest = false;
 

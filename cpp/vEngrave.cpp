@@ -258,7 +258,7 @@ extern "C" void vPocket(
             }
         }
 
-        printf("i\n");
+        printf("i - done\n");
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, result);
         return;
     }
