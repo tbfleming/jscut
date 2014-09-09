@@ -258,8 +258,10 @@ struct Scan {
         result.reserve(intersected.size());
         for (auto& segment: intersected) {
             auto edge = begin[segment.second.first];
-            edge.point1 = segment.first.first;
-            edge.point2 = segment.first.second;
+            x(edge.point1, x(segment.first.first));
+            y(edge.point1, y(segment.first.first));
+            x(edge.point2, x(segment.first.second));
+            y(edge.point2, y(segment.first.second));
             edge.deltaWindingNumber = segment.second.second;
             result.push_back(edge);
         }

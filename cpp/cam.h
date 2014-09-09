@@ -66,8 +66,18 @@ namespace cam {
         return p.x;
     }
 
+    static int x(PointWithZ& p, int i) {
+        p.x = i;
+        return i;
+    }
+
     static int y(PointWithZ p) {
         return p.y;
+    }
+
+    static int y(PointWithZ& p, int i) {
+        p.y = i;
+        return i;
     }
 
     static Point operator+(const Point& a, const Point& b) {
@@ -102,6 +112,11 @@ namespace cam {
     void convertPathsToC(
         double**& cPaths, int& cNumPaths, int*& cPathSizes,
         const PolygonSet& paths);
+
+    // Convert paths to C format
+    void convertPathsToC(
+        double**& cPaths, int& cNumPaths, int*& cPathSizes,
+        const std::vector<std::vector<PointWithZ>>& paths);
 
     // Convert paths from C format
     PolygonSet convertPathsFromC(

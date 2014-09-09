@@ -293,6 +293,7 @@ jscut.priv.cam = jscut.priv.cam || {};
     //      paths:          Array of CamPath
     //      ramp:           Ramp these paths?
     //      scale:          Factor to convert Clipper units to gcode units
+    //      useZ:           Use Z coordinates in paths? (optional, defaults to false)
     //      offsetX:        Offset X (gcode units)
     //      offsetY:        Offset Y (gcode units)
     //      decimal:        Number of decimal places to keep in gcode
@@ -310,6 +311,7 @@ jscut.priv.cam = jscut.priv.cam || {};
         var paths = namedArgs.paths;
         var ramp = namedArgs.ramp;
         var scale = namedArgs.scale;
+        var useZ = namedArgs.useZ;
         var offsetX = namedArgs.offsetX;
         var offsetY = namedArgs.offsetY;
         var decimal = namedArgs.decimal;
@@ -323,6 +325,9 @@ jscut.priv.cam = jscut.priv.cam || {};
         var rapidFeedGcode = ' F' + namedArgs.rapidFeed;
         var tabGeometry = namedArgs.tabGeometry;
         var tabZ = namedArgs.tabZ;
+
+        if (typeof useZ == 'undefined')
+            useZ = false;
 
         if (typeof tabGeometry == 'undefined' || tabZ <= botZ) {
             tabGeometry = [];
@@ -348,7 +353,10 @@ jscut.priv.cam = jscut.priv.cam || {};
         }
 
         function convertPoint(p) {
-            return " X" + (p.X * scale + offsetX).toFixed(decimal) + ' Y' + (-p.Y * scale + offsetY).toFixed(decimal);
+            result = ' X' + (p.X * scale + offsetX).toFixed(decimal) + ' Y' + (-p.Y * scale + offsetY).toFixed(decimal);
+            if (useZ)
+                result += ' Z' + (p.Z * scale + topZ).toFixed(decimal);
+            return result;
         }
 
         for (var pathIndex = 0; pathIndex < paths.length; ++pathIndex) {
@@ -377,7 +385,7 @@ jscut.priv.cam = jscut.priv.cam || {};
                 currentZ = Math.max(finishedZ, tabZ);
 
                 var selectedPaths;
-                if (nextZ >= tabZ)
+                if (nextZ >= tabZ || useZ)
                     selectedPaths = [origPath];
                 else
                     selectedPaths = separatedPaths;
@@ -387,48 +395,50 @@ jscut.priv.cam = jscut.priv.cam || {};
                     if (selectedPath.length == 0)
                         continue;
 
-                    var selectedZ;
-                    if (selectedIndex & 1)
-                        selectedZ = tabZ;
-                    else
-                        selectedZ = nextZ;
+                    if (!useZ) {
+                        var selectedZ;
+                        if (selectedIndex & 1)
+                            selectedZ = tabZ;
+                        else
+                            selectedZ = nextZ;
 
-                    if (selectedZ < currentZ) {
-                        var executedRamp = false;
-                        if (ramp) {
-                            var minPlungeTime = (currentZ - selectedZ) / namedArgs.plungeFeed;
-                            var idealDist = namedArgs.cutFeed * minPlungeTime;
-                            var end;
-                            var totalDist = 0;
-                            for (end = 1; end < selectedPath.length; ++end) {
-                                if (totalDist > idealDist)
-                                    break;
-                                totalDist += 2 * dist(getX(selectedPath[end - 1]), getY(selectedPath[end - 1]), getX(selectedPath[end]), getY(selectedPath[end]));
-                            }
-                            if (totalDist > 0) {
-                                gcode += '; ramp\r\n'
-                                executedRamp = true;
-                                var rampPath = selectedPath.slice(0, end).concat(selectedPath.slice(0, end - 1).reverse());
-                                var distTravelled = 0;
-                                for (var i = 1; i < rampPath.length; ++i) {
-                                    distTravelled += dist(getX(rampPath[i - 1]), getY(rampPath[i - 1]), getX(rampPath[i]), getY(rampPath[i]));
-                                    var newZ = currentZ + distTravelled / totalDist * (selectedZ - currentZ);
-                                    gcode += 'G1' + convertPoint(rampPath[i]) + ' Z' + newZ.toFixed(decimal);
-                                    if (i == 1)
-                                        gcode += ' F' + Math.min(totalDist / minPlungeTime, namedArgs.cutFeed).toFixed(decimal) + '\r\n';
-                                    else
-                                        gcode += '\r\n';
+                        if (selectedZ < currentZ) {
+                            var executedRamp = false;
+                            if (ramp) {
+                                var minPlungeTime = (currentZ - selectedZ) / namedArgs.plungeFeed;
+                                var idealDist = namedArgs.cutFeed * minPlungeTime;
+                                var end;
+                                var totalDist = 0;
+                                for (end = 1; end < selectedPath.length; ++end) {
+                                    if (totalDist > idealDist)
+                                        break;
+                                    totalDist += 2 * dist(getX(selectedPath[end - 1]), getY(selectedPath[end - 1]), getX(selectedPath[end]), getY(selectedPath[end]));
+                                }
+                                if (totalDist > 0) {
+                                    gcode += '; ramp\r\n'
+                                    executedRamp = true;
+                                    var rampPath = selectedPath.slice(0, end).concat(selectedPath.slice(0, end - 1).reverse());
+                                    var distTravelled = 0;
+                                    for (var i = 1; i < rampPath.length; ++i) {
+                                        distTravelled += dist(getX(rampPath[i - 1]), getY(rampPath[i - 1]), getX(rampPath[i]), getY(rampPath[i]));
+                                        var newZ = currentZ + distTravelled / totalDist * (selectedZ - currentZ);
+                                        gcode += 'G1' + convertPoint(rampPath[i]) + ' Z' + newZ.toFixed(decimal);
+                                        if (i == 1)
+                                            gcode += ' F' + Math.min(totalDist / minPlungeTime, namedArgs.cutFeed).toFixed(decimal) + '\r\n';
+                                        else
+                                            gcode += '\r\n';
+                                    }
                                 }
                             }
+                            if (!executedRamp)
+                                gcode +=
+                                    '; plunge\r\n' +
+                                    'G1 Z' + selectedZ.toFixed(decimal) + plungeFeedGcode + '\r\n';
+                        } else if (selectedZ > currentZ) {
+                            gcode += retractForTabGcode;
                         }
-                        if (!executedRamp)
-                            gcode +=
-                                '; plunge\r\n' +
-                                'G1 Z' + selectedZ.toFixed(decimal) + plungeFeedGcode + '\r\n';
-                    } else if (selectedZ > currentZ) {
-                        gcode += retractForTabGcode;
-                    }
-                    currentZ = selectedZ;
+                        currentZ = selectedZ;
+                    } // !useZ
 
                     gcode += '; cut\r\n';
 
@@ -441,6 +451,8 @@ jscut.priv.cam = jscut.priv.cam || {};
                     }
                 } // selectedIndex
                 finishedZ = nextZ;
+                if (useZ)
+                    break;
             } // while (finishedZ > botZ)
             gcode += retractGcode;
         } // pathIndex

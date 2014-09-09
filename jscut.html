@@ -223,7 +223,7 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <tr>
                                                 <td><label class="control-label">Name</label>
                                                 <td><input id="opName" data-bind="value: name">
-                                            <tr>
+                                            <tr data-bind="visible: camOp()!='V Pocket'">
                                                 <td><label class="control-label">Ramp Plunge</label>
                                                 <td><input type="checkbox" data-bind="checked: ramp" />
                                             <tr>

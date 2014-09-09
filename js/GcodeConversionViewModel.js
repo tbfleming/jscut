@@ -140,6 +140,7 @@ function GcodeConversionViewModel(options, materialViewModel, toolModel, operati
                 paths:          op.toolPaths(),
                 ramp:           op.ramp(),
                 scale:          scale,
+                useZ:           op.camOp() == "V Pocket",
                 offsetX:        Number(self.offsetX()),
                 offsetY:        Number(self.offsetY()),
                 decimal:        4,

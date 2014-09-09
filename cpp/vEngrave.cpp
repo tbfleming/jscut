@@ -68,6 +68,18 @@ static double projectionRatio(PointWithZ lineBegin, PointWithZ lineEnd, PointWit
     return (double)dot(lineEnd-lineBegin, p-lineBegin) / lenSquared(lineEnd-lineBegin);
 }
 
+static double dist(Point p, const Segment& s)
+{
+    auto a = low(s);
+    auto delta = high(s)-low(s);
+    double l = len(delta);
+    Point n{lround(x(delta)/l), lround(y(delta)/l)};
+    int d = (int)dot(a - p, n);
+    return len(Point{
+        x(a) - x(p) - x(n) * d,
+        y(a) - y(p) - y(n) * d});
+}
+
 // Linearize the parabola which is equidistant from p and s. The parabola's
 // endpoints are begin, end.
 template<typename Edge>
@@ -121,7 +133,7 @@ extern "C" void vPocket(
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
     )
 {
-    double angle = 60 * 2 * M_PI / 360;
+    double angle = cutterAngle * M_PI / 180;
 
     try {
         using Edge = Edge<PointWithZ, VoronoiEdge>;
@@ -177,8 +189,27 @@ extern "C" void vPocket(
                         if (c <= cos(95/2/M_PI))
                             keep = false;
                     });
-                    if (keep)
-                        edges.emplace_back(Edge{p1, p2});
+                    if (!keep)
+                        continue;
+
+                    double dist1, dist2;
+                    if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT) {
+                        dist1 = len(p1 - low(segments[cell->source_index()]));
+                        dist2 = len(p2 - low(segments[cell->source_index()]));
+                    }
+                    else if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_END_POINT) {
+                        dist1 = len(p1 - high(segments[cell->source_index()]));
+                        dist2 = len(p2 - high(segments[cell->source_index()]));
+                    }
+                    else
+                    {
+                        dist1 = dist(p1, segments[cell->source_index()]);
+                        dist2 = dist(p2, segments[cell->source_index()]);
+                    }
+
+                    int z1 = -lround(dist1 / tan(angle/2));
+                    int z2 = -lround(dist2 / tan(angle/2));
+                    edges.emplace_back(Edge{{x(p1), y(p1), z1}, {x(p2), y(p2), z2}});
                 }
                 else if (edge.is_curved()) {
                     Point point;
@@ -204,19 +235,28 @@ extern "C" void vPocket(
             }
         }
 
-        printf("g\n");
+        printf("g1\n");
         Scan::intersectEdges(edges, edges.begin(), edges.end());
+        printf("g2\n");
         Scan::sortEdges(edges.begin(), edges.end());
+        printf("g3\n");
         Scan::scan(
             edges.begin(), edges.end(),
             makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
             SetIsInGeometry{});
 
         printf("h\n");
-        PolygonSet result;
-        for (auto& e: edges)
-            if (!e.isGeometry && e.isInGeometry)
-                result.emplace_back(Polygon{e.point1.toPoint(), e.point2.toPoint()});
+        vector<vector<PointWithZ>> result;
+        for (auto& e: edges) {
+            if (!e.isGeometry && e.isInGeometry) {
+                vector<PointWithZ> path;
+                path.emplace_back(e.point1.x, e.point1.y, 0);
+                path.emplace_back(e.point1);
+                path.emplace_back(e.point2);
+                path.emplace_back(e.point2.x, e.point2.y, 0);
+                result.emplace_back(move(path));
+            }
+        }
 
         printf("i\n");
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, result);

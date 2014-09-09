@@ -279,8 +279,9 @@ jscut.priv.path = jscut.priv.path || {};
             convertedPaths.push({ path: convertedPath, safeToClose: false });
             for (var j = 0; j < pathSize; ++j)
                 convertedPath.push({
-                    X: pathArray[j * 2],
-                    Y: pathArray[j * 2 + 1]
+                    X: pathArray[j * 3],
+                    Y: pathArray[j * 3 + 1],
+                    Z: pathArray[j * 3 + 2],
                 });
         }
 

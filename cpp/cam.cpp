@@ -47,6 +47,33 @@ void cam::convertPathsToC(
     }
 }
 
+// Convert paths to C format
+void cam::convertPathsToC(
+    double**& cPaths, int& cNumPaths, int*& cPathSizes,
+    const std::vector<std::vector<PointWithZ>>& paths
+    )
+{
+    //!!!! don't need double
+    cPaths = (double**)malloc(paths.size() * sizeof(double*));
+    cNumPaths = paths.size();
+    cPathSizes = (int*)malloc(paths.size() * sizeof(int));
+    for (size_t i = 0; i < paths.size(); ++i) {
+        const auto& path = paths[i];
+        cPathSizes[i] = path.size();
+        char* pathStorage = (char*)malloc(path.size() * 3 * sizeof(double) + sizeof(double) / 2);
+        // cPaths[i] contains the unaligned block so the javascript side can free it properly.
+        cPaths[i] = (double*)pathStorage;
+        if ((int)pathStorage & 4)
+            pathStorage += 4;
+        double* p = (double*)pathStorage;
+        for (size_t j = 0; j < path.size(); ++j) {
+            p[j*3] = path[j].x;
+            p[j*3+1] = path[j].y;
+            p[j*3+2] = path[j].z;
+        }
+    }
+}
+
 PolygonSet cam::convertPathsFromC(
     double** paths, int numPaths, int* pathSizes)
 {
