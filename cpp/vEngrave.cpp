@@ -73,11 +73,25 @@ static double dist(Point p, const Segment& s)
     auto a = low(s);
     auto delta = high(s)-low(s);
     double l = len(delta);
-    Point n{lround(x(delta)/l), lround(y(delta)/l)};
-    int d = (int)dot(a - p, n);
-    return len(Point{
-        x(a) - x(p) - x(n) * d,
-        y(a) - y(p) - y(n) * d});
+    double nx = x(delta)/l;
+    double ny = y(delta)/l;
+    double dot = (x(a) - x(p)) * nx + (y(a) - y(p)) * ny;
+    double rx = x(a) - x(p) - nx * dot;
+    double ry = y(a) - y(p) - ny * dot;
+    double result = sqrt(rx * rx + ry * ry);
+
+    //printf("    dist\n");
+    //printf("        a     = %d, %d\n", x(a), y(a));
+    //printf("        other = %d, %d\n", x(high(s)), y(high(s)));
+    //printf("        delta = %d, %d\n", x(delta), y(delta));
+    //printf("        l     = %f\n", l);
+    //printf("        n     = %f, %f\n", nx, ny);
+    //printf("        n len = %f\n", sqrt(nx*nx + ny*ny));
+    //printf("        dot   = %f\n", dot);
+    //printf("        r     = %f, %f\n", rx, ry);
+    //printf("        result= %f\n", result);
+
+    return result;
 }
 
 // Linearize the parabola which is equidistant from p and s. The parabola's
@@ -89,6 +103,8 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin
     PointWithZ p2 = high(s);
     int deltaX = x(p2) - x(p1);
     int deltaY = y(p2) - y(p1);
+
+    //printf("curve\n");
 
     size_t numSegments = 20;
     auto tbegin = projectionRatio(p1, p2, begin);
@@ -194,17 +210,30 @@ extern "C" void vPocket(
 
                     double dist1, dist2;
                     if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT) {
+                        //printf("Case A\n");
                         dist1 = len(p1 - low(segments[cell->source_index()]));
                         dist2 = len(p2 - low(segments[cell->source_index()]));
                     }
                     else if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_END_POINT) {
+                        //printf("Case B\n");
                         dist1 = len(p1 - high(segments[cell->source_index()]));
                         dist2 = len(p2 - high(segments[cell->source_index()]));
                     }
                     else
                     {
+                        //printf("Case C\n");
+                        //printf("?: %d %d (%d %d %d)\n", cell->source_category(), twinCell->source_category(), bp::SOURCE_CATEGORY_SEGMENT_START_POINT, bp::SOURCE_CATEGORY_SEGMENT_END_POINT, bp::SOURCE_CATEGORY_SINGLE_POINT);
+                        //printf("s: (%d, %d), (%d, %d)\n", x(low(segments[cell->source_index()])), y(low(segments[cell->source_index()])), x(high(segments[cell->source_index()])), y(high(segments[cell->source_index()])));
+                        //printf("s: (%d, %d), (%d, %d)\n", x(low(segments[twinCell->source_index()])), y(low(segments[twinCell->source_index()])), x(high(segments[twinCell->source_index()])), y(high(segments[twinCell->source_index()])));
+                        //printf("p1: (%d, %d)\n", x(p1), y(p1));
+                        //printf("p2: (%d, %d)\n", x(p2), y(p2));
+
                         dist1 = dist(p1, segments[cell->source_index()]);
+                        //double altdist1 = dist(p1, segments[twinCell->source_index()]);
+                        //printf("** %d, %d: %f %f\n", x(p1), y(p1), dist1, altdist1);
                         dist2 = dist(p2, segments[cell->source_index()]);
+                        //double altdist2 = dist(p2, segments[twinCell->source_index()]);
+                        //printf("** %d, %d: %f %f\n", x(p2), y(p2), dist2, altdist2);
                     }
 
                     int z1 = -lround(dist1 / tan(angle/2));

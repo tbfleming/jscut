@@ -220,6 +220,7 @@ jscut.priv.path = jscut.priv.path || {};
     }
 
     // Convert C format paths to Clipper paths. double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
+    // This version assume each point has X, Y (stride = 2).
     jscut.priv.path.convertPathsFromCpp = function (memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
         var cPaths = Module.HEAPU32[cPathsRef >> 2];
         memoryBlocks.push(cPaths);
@@ -254,7 +255,8 @@ jscut.priv.path = jscut.priv.path || {};
     }
 
     // Convert C format paths to array of CamPath. double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
-    jscut.priv.path.convertPathsFromCppToCamPath = function(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
+    // This version assume each point has X, Y, Z (stride = 3).
+    jscut.priv.path.convertPathsFromCppToCamPath = function (memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
         var cPaths = Module.HEAPU32[cPathsRef >> 2];
         memoryBlocks.push(cPaths);
         var cPathsBase = cPaths >> 2;

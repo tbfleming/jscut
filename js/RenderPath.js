@@ -182,7 +182,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         requestFrame();
         var inputStride = 4;
         pathNumPoints = path.length / inputStride;
-        var numHalfCircleSegments = 10;
+        var numHalfCircleSegments = 4;
 
         if (isVBit) {
             pathStride = 12;
@@ -254,13 +254,25 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
                 }
 
                 if (Math.abs(z - prevZ) >= xyDist * Math.PI / 2 * Math.cos(cutterAngleRad / 2) / Math.sin(cutterAngleRad / 2)) {
+                    //console.log("plunge or retract");
                     // plunge or retract
-                    var command = prevZ < z ? 100 : 101;
                     var index = 0;
-                    console.log("!!!!! todo");
-                    while (index < pathVertexesPerLine)
-                        f(index++, 200, 0, 0, 0, 1, 0);
+
+                    var command = prevZ < z ? 100 : 101;
+                    for (var circleIndex = 0; circleIndex < numHalfCircleSegments*2; ++circleIndex) {
+                        var a1 = 2 * Math.PI * circleIndex / numHalfCircleSegments/2;
+                        var a2 = 2 * Math.PI * (circleIndex + 1) / numHalfCircleSegments/2;
+                        f(index++, command, coneDia / 2 * Math.cos(a2), coneDia / 2 * Math.sin(a2), coneHeight, 1, 0);
+                        f(index++, command, 0, 0, 0, 1, 0);
+                        f(index++, command, coneDia / 2 * Math.cos(a1), coneDia / 2 * Math.sin(a1), coneHeight, 1, 0);
+                    }
+
+                    //if (index > pathVertexesPerLine)
+                    //    console.log("oops...");
+                    //while (index < pathVertexesPerLine)
+                    //    f(index++, 200, 0, 0, 0, 1, 0);
                 } else {
+                    //console.log("cut");
                     // cut
                     var planeContactAngle = Math.asin((prevZ - z) / xyDist * Math.sin(cutterAngleRad / 2) / Math.cos(cutterAngleRad / 2));
                     //console.log("\nxyDist = ", xyDist);
@@ -328,7 +340,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
 
         pathXOffset = -(minX + maxX) / 2;
         pathYOffset = -(minY + maxY) / 2;
-        var size = Math.max(maxX - minX /*+ 4 * cutterDia*/, maxY - minY /*+ 4 * cutterDia*/);
+        var size = Math.max(maxX - minX + 4 * cutterDia, maxY - minY + 4 * cutterDia);
         pathScale = 2 / size;
         pathMinZ = minZ;
 
