@@ -27,4 +27,7 @@ var options = {
 
     // Debug run times
     profile: false,
+
+    // Other debugging support
+    debug: false,
 };
