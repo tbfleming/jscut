@@ -335,9 +335,9 @@ extern "C" void vPocket(
         if (start == edgeIndexes.end())
             start = edgeIndexes.begin(); // !!!!
         start->edge->setTaken();
-        PointWithZ p{start->point};
         if (start->isPoint2)
             swap(start->edge->point1, start->edge->point2);
+        PointWithZ p{start->edge->point2};
         reorderedEdges.push_back(*start->edge);
 
         printf("k\n");
@@ -370,9 +370,9 @@ extern "C" void vPocket(
             }
 
             closest->edge->setTaken();
-            p = closest->point;
             if (closest->isPoint2)
                 swap(closest->edge->point1, closest->edge->point2);
+            p = closest->edge->point2;
             reorderedEdges.push_back(*closest->edge);
         }
         edges = move(reorderedEdges);
