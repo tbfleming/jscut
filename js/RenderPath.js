@@ -269,8 +269,8 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
 
                     //if (index > pathVertexesPerLine)
                     //    console.log("oops...");
-                    //while (index < pathVertexesPerLine)
-                    //    f(index++, 200, 0, 0, 0, 1, 0);
+                    while (index < pathVertexesPerLine)
+                        f(index++, 200, 0, 0, 0, 1, 0);
                 } else {
                     //console.log("cut");
                     // cut
@@ -335,6 +335,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         if (!pathBuffer)
             pathBuffer = self.gl.createBuffer();
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
+        console.log("Path buffer size (MB): " + bufferContent.length * 4 / 1024 / 1024);
         self.gl.bufferData(self.gl.ARRAY_BUFFER, bufferContent, self.gl.STATIC_DRAW);
         self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
 
