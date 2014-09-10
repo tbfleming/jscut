@@ -192,7 +192,7 @@ jscut.priv.cam = jscut.priv.cam || {};
         return result;
     };
 
-    jscut.priv.cam.vPocket = function (geometry, cutterDia, cutterAngle) {
+    jscut.priv.cam.vPocket = function (geometry, cutterAngle, passDepth, maxDepth) {
         "use strict";
 
         if (cutterAngle <= 0 || cutterAngle >= 180)
@@ -210,12 +210,13 @@ jscut.priv.cam = jscut.priv.cam || {};
         memoryBlocks.push(resultPathSizesRef);
 
         //extern "C" void vPocket(
-        //    double** paths, int numPaths, int* pathSizes, double cutterDia, double cutterAngle,
+        //    double** paths, int numPaths, int* pathSizes,
+        //    double cutterAngle, double passDepth, double maxDepth,
         //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
         Module.ccall(
             'vPocket',
-            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
-            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, cutterAngle, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [cGeometry[0], cGeometry[1], cGeometry[2], cutterAngle, passDepth, maxDepth, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
 
         var result = jscut.priv.path.convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
 

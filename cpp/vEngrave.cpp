@@ -25,8 +25,39 @@ using namespace std;
 
 template<typename Derived>
 struct VoronoiEdge {
+    struct Index {
+        PointWithZ point;
+        bool isPoint2;
+        bool taken = false;
+        Derived* edge;
+
+        Index(PointWithZ point = {}, bool isPoint2 = false, Derived* edge = nullptr) :
+            point{point},
+            isPoint2{isPoint2},
+            edge{edge}
+        {
+        }
+
+        Index(const Index&) = default;
+        Index& operator=(const Index&) = default;
+
+        bool operator<(const Index& rhs) const
+        {
+            return this->point.x < rhs.point.x || this->point.x == rhs.point.x && this->point.y < rhs.point.y;
+        }
+    };
+
     bool isGeometry = false;
     bool isInGeometry = false;
+    bool taken = false;
+    Index* index1 = nullptr;
+    Index* index2 = nullptr;
+
+    void setTaken() {
+        taken = true;
+        index1->taken = true;
+        index2->taken = true;
+    }
 };
 
 struct SetIsInGeometry {
@@ -145,9 +176,9 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin
 } // linearizeParabola
 
 extern "C" void vPocket(
-    double** paths, int numPaths, int* pathSizes, double cutterDia, double cutterAngle,
-    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
-    )
+    double** paths, int numPaths, int* pathSizes,
+    double cutterAngle, double passDepth, double maxDepth,
+    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
 {
     double angle = cutterAngle * M_PI / 180;
 
@@ -273,21 +304,91 @@ extern "C" void vPocket(
             edges.begin(), edges.end(),
             makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
             SetIsInGeometry{});
+        edges.erase(
+            remove_if(edges.begin(), edges.end(), [](const Edge& e) {return e.isGeometry || !e.isInGeometry; }),
+            edges.end());
 
-        printf("h\n");
-        vector<vector<PointWithZ>> result;
-        for (auto& e: edges) {
-            if (!e.isGeometry && e.isInGeometry) {
-                vector<PointWithZ> path;
-                path.emplace_back(e.point1.x, e.point1.y, 0);
-                path.emplace_back(e.point1);
-                path.emplace_back(e.point2);
-                path.emplace_back(e.point2.x, e.point2.y, 0);
-                result.emplace_back(move(path));
-            }
+        if (edges.empty()) {
+            convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, vector<vector<PointWithZ>>{});
+            return;
         }
 
-        printf("i - done\n");
+        printf("i\n");
+        vector<Edge::Index> edgeIndexes;
+        edgeIndexes.reserve(edges.size() * 2);
+        for (auto& edge: edges) {
+            edgeIndexes.emplace_back(edge.point1, false, &edge);
+            edgeIndexes.emplace_back(edge.point2, true, &edge);
+        }
+        sort(edgeIndexes.begin(), edgeIndexes.end());
+        for (auto& edgeIndex: edgeIndexes) {
+            if (edgeIndex.isPoint2)
+                edgeIndex.edge->index2 = &edgeIndex;
+            else
+                edgeIndex.edge->index1 = &edgeIndex;
+        }
+
+        printf("j\n");
+        vector<Edge> reorderedEdges;
+        reorderedEdges.reserve(edges.size());
+        auto start = find_if(edgeIndexes.begin(), edgeIndexes.end(), [](const Edge::Index& index){return !index.point.z; });
+        if (start == edgeIndexes.end())
+            start = edgeIndexes.begin(); // !!!!
+        start->edge->setTaken();
+        PointWithZ p{start->point};
+        if (start->isPoint2)
+            swap(start->edge->point1, start->edge->point2);
+        reorderedEdges.push_back(*start->edge);
+
+        printf("k\n");
+        while (reorderedEdges.size() < edges.size()) {
+            auto it = lower_bound(edgeIndexes.begin(), edgeIndexes.end(), Edge::Index{p});
+            auto closest = edgeIndexes.begin();
+            double closestDist = numeric_limits<double>::max();
+
+            for (auto it2 = it; it2 != edgeIndexes.end(); ++it2) {
+                if (!closestDist || abs(it2->point.x - p.x) > closestDist)
+                    break;
+                if (!it2->taken) {
+                    double dist = lenSquared(p - it2->point);
+                    if (dist < closestDist) {
+                        closest = it2;
+                        closestDist = dist;
+                    }
+                }
+            }
+            for (auto it2 = it; it2 != edgeIndexes.begin(); --it2) {
+                if (!closestDist || abs(it2[-1].point.x - p.x) > closestDist)
+                    break;
+                if (!it2[-1].taken) {
+                    double dist = lenSquared(p - it2[-1].point);
+                    if (dist < closestDist) {
+                        closest = it2 - 1;
+                        closestDist = dist;
+                    }
+                }
+            }
+
+            closest->edge->setTaken();
+            p = closest->point;
+            if (closest->isPoint2)
+                swap(closest->edge->point1, closest->edge->point2);
+            reorderedEdges.push_back(*closest->edge);
+        }
+        edges = move(reorderedEdges);
+
+        printf("y\n");
+        vector<vector<PointWithZ>> result;
+        for (auto& e: edges) {
+            vector<PointWithZ> path;
+            path.emplace_back(e.point1.x, e.point1.y, 0);
+            path.emplace_back(e.point1);
+            path.emplace_back(e.point2);
+            path.emplace_back(e.point2.x, e.point2.y, 0);
+            result.emplace_back(move(path));
+        }
+
+        printf("z - done\n");
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, result);
         return;
     }

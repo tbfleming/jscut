@@ -245,9 +245,12 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <tr>
                                                 <td><label class="control-label">Units</label>
                                                 <td><select data-bind="value: units"><option>inch<option>mm</select>
-                                            <tr>
+                                            <tr data-bind="visible: camOp()!='V Pocket'">
                                                 <td><label class="control-label">Cut Depth</label>
                                                 <td><input id="opCutDepth" type="number" step="any" data-bind="value: cutDepth">
+                                            <tr data-bind="visible: camOp()=='V Pocket'">
+                                                <td><label class="control-label">Max Depth</label>
+                                                <td><input id="opVMaxDepth" type="number" step="any" data-bind="value: cutDepth">
                                             <tr data-bind="visible: camOp()!='Engrave'">
                                                 <td><label class="control-label">Margin</label>
                                                 <td><input id="opMargin" type="number" step="any" data-bind="value: margin">
