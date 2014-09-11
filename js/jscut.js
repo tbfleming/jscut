@@ -330,7 +330,7 @@ var operationPopovers = {
     opName: ['right', 'Name used in gcode comments'],
     opDirection: ['right', 'What direction the cutter should travel'],
     opCutDepth: ['right', 'How deep this operation should cut in total'],
-    opVMaxDepth: ['right', 'Maximum depth this operation should cut'],
+    opVMaxDepth: ['right', "Maximum depth this operation should cut. <p class='bg-danger'>not implemented yet; this is ignored.</p>"],
     opMargin: ['right', 'Positive: how much material to leave uncut.<br><br>Negative: how much extra material to cut'],
 }
 
