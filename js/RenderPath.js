@@ -687,7 +687,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
             self.createPathTexture();
         if (needToDrawHeightMap) {
             self.drawHeightMap();
-            //self.drawCutter();
+            self.drawCutter();
         }
         pendingRequest = false;
 

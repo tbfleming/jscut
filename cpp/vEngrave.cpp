@@ -319,7 +319,7 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
     start->edge->setTaken();
     if (start->isPoint2)
         swap(start->edge->point1, start->edge->point2);
-    PointWithZ p = callback(*start->edge);
+    PointWithZ p = callback(*start->edge, edges.size() == 1);
     size_t numProcessed = 1;
 
     auto rank = [&p](const typename Edge::Index& e) {
@@ -396,7 +396,7 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
         //        if (ind.point.x == p.x && ind.point.y == p.y)
         //            printf("  (%d, %d, %d) -> (%d, %d, %d) taken=%d\n", ind.point.x, ind.point.y, ind.point.z, ind.otherPoint.x, ind.otherPoint.y, ind.otherPoint.z, ind.taken);
 
-        p = callback(*closest->edge);
+        p = callback(*closest->edge, edges.size() == numProcessed + 1);
         ++numProcessed;
 
         //if (debugArg1 && numProcessed == (size_t)debugArg1)
@@ -425,14 +425,28 @@ extern "C" void vPocket(
             return;
         }
 
+        vector<Edge> span;
         vector<vector<PointWithZ>> result;
-        reorderEdges(debugArg0, debugArg1, edges, [&result](Edge& edge) {
-            vector<PointWithZ> path;
-            path.emplace_back(edge.point1.x, edge.point1.y, 0);
-            path.emplace_back(edge.point1);
-            path.emplace_back(edge.point2);
-            path.emplace_back(edge.point2.x, edge.point2.y, 0);
-            result.emplace_back(move(path));
+        reorderEdges(debugArg0, debugArg1, edges, [&span, &result](Edge& edge, bool isLast) {
+            auto flush = [&span, &result]() {
+                vector<PointWithZ> path;
+                path.emplace_back(span.front().point1.x, span.front().point1.y, 0);
+                if (span.front().point1.z != 0)
+                    path.emplace_back(span.front().point1);
+                for (auto& edge: span)
+                    path.emplace_back(edge.point2);
+                if (span.back().point2.z != 0)
+                    path.emplace_back(span.back().point2.x, span.back().point2.y, 0);
+                result.emplace_back(move(path));
+                span.clear();
+            };
+
+            if (!span.empty() && edge.point1 != span.back().point2)
+                flush();
+            span.emplace_back(edge);
+            if (isLast || edge.point2.z == 0)
+                flush();
+
             return edge.point2;
         });
 
