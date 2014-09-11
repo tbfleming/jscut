@@ -27,4 +27,7 @@ var options = {
 
     // Debug run times
     profile: false,
+
+    // Preload in-browser settings file.
+    preloadInBrowser: 'preload.jscut',
 };
