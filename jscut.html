@@ -394,6 +394,10 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                             <canvas id="renderPathCanvas" style="border: none;" width="10" height="10"></canvas>
                             <br /><br /><b>Simulation time: &nbsp;&nbsp;&nbsp;</b><input id="timeSlider" type="text" data-slider-min="0" data-slider-max="1000" data-slider-step="1" data-slider-value="1000" />
                             <br /><br />
+                            <div data-bind="visible: miscViewModel.debug">
+                                <label class="control-label">debugArg0:&nbsp;</label><input type="number" step="any" data-bind="value: miscViewModel.debugArg0"><br />
+                                <label class="control-label">debugArg1:&nbsp;</label><input type="number" step="any" data-bind="value: miscViewModel.debugArg1"><br />
+                            </div>
                             <ul>
                                 <li>Use mouse to rotate view</li>
                                 <li>Use slider control to set simulation time</li>

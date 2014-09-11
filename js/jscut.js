@@ -19,6 +19,9 @@ function MiscViewModel() {
     var self = this;
     self.enableGoogleDrive = ko.observable(options.enableGoogleDrive);
     self.enableDropbox = ko.observable(options.enableDropbox);
+    self.debug = ko.observable(options.debug);
+    self.debugArg0 = ko.observable(0);
+    self.debugArg1 = ko.observable(0);
     self.saveSettingsFilename = ko.observable("settings.jscut");
     self.loadLocalStorageFilename = ko.observable("settings.jscut");
     self.launchChiliUrl = ko.observable(null);
@@ -104,6 +107,7 @@ window.addEventListener("load", function () {
         downloadCpp();
 }, false);
 
+miscViewModel = new MiscViewModel();
 svgViewModel = new SvgViewModel();
 materialViewModel = new MaterialViewModel();
 selectionViewModel = new SelectionViewModel(svgViewModel, materialViewModel, selectionGroup);
@@ -114,8 +118,7 @@ operationsViewModel = new OperationsViewModel(
 tabsViewModel = new TabsViewModel(
     options, svgViewModel, materialViewModel, selectionViewModel, tabsGroup,
     function () { gcodeConversionViewModel.generateGcode(); });
-gcodeConversionViewModel = new GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel, tabsViewModel);
-miscViewModel = new MiscViewModel();
+gcodeConversionViewModel = new GcodeConversionViewModel(options, miscViewModel, materialViewModel, toolModel, operationsViewModel, tabsViewModel);
 
 ko.applyBindings(materialViewModel, $("#Material")[0]);
 ko.applyBindings(selectionViewModel, $("#CurveToLine")[0]);

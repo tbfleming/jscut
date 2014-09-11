@@ -182,7 +182,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         requestFrame();
         var inputStride = 4;
         pathNumPoints = path.length / inputStride;
-        var numHalfCircleSegments = 4;
+        var numHalfCircleSegments = 5;
 
         if (isVBit) {
             pathStride = 12;

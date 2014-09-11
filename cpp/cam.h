@@ -62,6 +62,14 @@ namespace cam {
         }
     };
 
+    static bool operator==(const PointWithZ& a, const PointWithZ& b) {
+        return a.x == b.x && a.y == b.y;
+    }
+
+    static bool operator!=(const PointWithZ& a, const PointWithZ& b) {
+        return a.x != b.x || a.y != b.y;
+    }
+
     static int x(PointWithZ p) {
         return p.x;
     }

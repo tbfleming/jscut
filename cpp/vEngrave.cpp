@@ -27,14 +27,17 @@ template<typename Derived>
 struct VoronoiEdge {
     struct Index {
         PointWithZ point;
+        PointWithZ otherPoint;
+        Derived* edge;
         bool isPoint2;
         bool taken = false;
-        Derived* edge;
 
-        Index(PointWithZ point = {}, bool isPoint2 = false, Derived* edge = nullptr) :
+        Index() = default;
+        Index(PointWithZ point, PointWithZ otherPoint = {}, bool isPoint2 = false, Derived* edge = nullptr) :
             point{point},
-            isPoint2{isPoint2},
-            edge{edge}
+            otherPoint{otherPoint},
+            edge{edge},
+            isPoint2{isPoint2}
         {
         }
 
@@ -110,18 +113,6 @@ static double dist(Point p, const Segment& s)
     double rx = x(a) - x(p) - nx * dot;
     double ry = y(a) - y(p) - ny * dot;
     double result = sqrt(rx * rx + ry * ry);
-
-    //printf("    dist\n");
-    //printf("        a     = %d, %d\n", x(a), y(a));
-    //printf("        other = %d, %d\n", x(high(s)), y(high(s)));
-    //printf("        delta = %d, %d\n", x(delta), y(delta));
-    //printf("        l     = %f\n", l);
-    //printf("        n     = %f, %f\n", nx, ny);
-    //printf("        n len = %f\n", sqrt(nx*nx + ny*ny));
-    //printf("        dot   = %f\n", dot);
-    //printf("        r     = %f, %f\n", rx, ry);
-    //printf("        result= %f\n", result);
-
     return result;
 }
 
@@ -169,7 +160,7 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin
                 edges.emplace_back(lastPoint, PointWithZ{end.x, end.y, thisZ});
             else {
                 edges.emplace_back(lastPoint, PointWithZ{thisX, thisY, thisZ});
-                lastPoint = PointWithZ{thisX, thisY};
+                lastPoint = PointWithZ{thisX, thisY, thisZ};
             }
         }
     }
@@ -216,9 +207,10 @@ vector<typename ScanlineEdge::Edge> getVoronoiEdges(PolygonSet& geometry, double
             Point p1{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())};
             Point p2{lround(edge.vertex1()->x()), lround(edge.vertex1()->y())};
 
+            edge.color(1);
+            edge.twin()->color(1);
+
             if (edge.is_linear()) {
-                edge.color(1);
-                edge.twin()->color(1);
                 auto segment1 = segments[cell->source_index()];
                 auto segment2 = segments[twinCell->source_index()];
                 bool keep = true;
@@ -290,13 +282,13 @@ vector<typename ScanlineEdge::Edge> getVoronoiEdges(PolygonSet& geometry, double
 } // getVoronoiEdges
 
 template<typename Edge>
-vector<Edge> reorderEdges(vector<Edge>& edges) {
+vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
     printf("i\n");
     vector<typename Edge::Index> edgeIndexes;
     edgeIndexes.reserve(edges.size() * 2);
     for (auto& edge: edges) {
-        edgeIndexes.emplace_back(edge.point1, false, &edge);
-        edgeIndexes.emplace_back(edge.point2, true, &edge);
+        edgeIndexes.emplace_back(edge.point1, edge.point2, false, &edge);
+        edgeIndexes.emplace_back(edge.point2, edge.point1, true, &edge);
     }
     sort(edgeIndexes.begin(), edgeIndexes.end());
     for (auto& edgeIndex: edgeIndexes) {
@@ -318,45 +310,93 @@ vector<Edge> reorderEdges(vector<Edge>& edges) {
     PointWithZ p{start->edge->point2};
     reorderedEdges.push_back(*start->edge);
 
+    auto rank = [&p](const typename Edge::Index& e) {
+        if ((e.point.z == 0) != (p.z == 0) || e.point != p) {
+            if (e.point.z != 0)
+                return 0;
+            else
+                return 1;
+        }
+        if ((e.otherPoint.z == 0) != (p.z == 0))
+            return 2;
+        return 3;
+    };
+
     printf("k\n");
     while (reorderedEdges.size() < edges.size()) {
-        auto it = lower_bound(edgeIndexes.begin(), edgeIndexes.end(), typename Edge::Index{p});
+        auto searchStart = lower_bound(edgeIndexes.begin(), edgeIndexes.end(), typename Edge::Index{p});
         auto closest = edgeIndexes.begin();
+        int closestRank = 0;
+        int closestZdist = numeric_limits<int>::max();
+        int closestOtherZdist = numeric_limits<int>::max();
         double closestDist = numeric_limits<double>::max();
 
-        for (auto it2 = it; it2 != edgeIndexes.end(); ++it2) {
-            if (!closestDist || abs(it2->point.x - p.x) > closestDist)
-                break;
-            if (!it2->taken) {
-                double dist = lenSquared(p - it2->point);
-                if (dist < closestDist) {
-                    closest = it2;
+        if (debugArg0 && reorderedEdges.size() == (size_t)debugArg0)
+            break;
+
+        if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+            printf("P: %d, %d, %d\n", p.x, p.y, p.z);
+
+        auto setClosest = [&](typename vector<typename Edge::Index>::iterator it) {
+            if (!it->taken) {
+                int r = rank(*it);
+                int zDist = abs(p.z - it->point.z);
+                int otherZdist = abs(p.z - it->otherPoint.z);
+                double dist = lenSquared(p - it->point);
+
+                if (r > closestRank || r == closestRank && (
+                    it->point == p && zDist < closestZdist || (it->point != p || zDist == closestZdist) && (
+                    it->point == p && otherZdist < closestOtherZdist || (it->point != p || otherZdist == closestOtherZdist) &&
+                    dist < closestDist))) {
+
+                    if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+                        printf("  +rank: %d zDist:%d otherZdist:%d dist: %lld (%d, %d, %d) -> (%d, %d, %d)\n", r, zDist, otherZdist, llround(dist), it->point.x, it->point.y, it->point.z, it->otherPoint.x, it->otherPoint.y, it->otherPoint.z);
+                    closest = it;
+                    closestZdist = zDist;
+                    closestOtherZdist = otherZdist;
                     closestDist = dist;
+                    closestRank = r;
                 }
+                else if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1/* && p == it->point)*/)
+                    printf("  -rank: %d zDist:%d otherZdist:%d dist: %lld (%d, %d, %d) -> (%d, %d, %d)\n", r, zDist, otherZdist, llround(dist), it->point.x, it->point.y, it->point.z, it->otherPoint.x, it->otherPoint.y, it->otherPoint.z);
             }
-        }
-        for (auto it2 = it; it2 != edgeIndexes.begin(); --it2) {
-            if (!closestDist || abs(it2[-1].point.x - p.x) > closestDist)
-                break;
-            if (!it2[-1].taken) {
-                double dist = lenSquared(p - it2[-1].point);
-                if (dist < closestDist) {
-                    closest = it2 - 1;
-                    closestDist = dist;
-                }
-            }
-        }
+        };
+
+        for (auto it2 = searchStart; it2 != edgeIndexes.end(); ++it2)
+            setClosest(it2);
+        for (auto it2 = searchStart; it2 != edgeIndexes.begin(); --it2)
+            setClosest(it2 - 1);
+
+        if (p.z == 0 && closest->point.z != 0)
+            printf("dive\n");
+        if (p.z != 0 && closest->point.z == 0)
+            printf("retract\n");
 
         closest->edge->setTaken();
         if (closest->isPoint2)
             swap(closest->edge->point1, closest->edge->point2);
+
+        if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+            printf("Old P: %d, %d, %d\n", p.x, p.y, p.z);
+
+        if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+            for (auto& ind: edgeIndexes)
+                if (ind.point.x == p.x && ind.point.y == p.y)
+                    printf("  (%d, %d, %d) -> (%d, %d, %d) taken=%d\n", ind.point.x, ind.point.y, ind.point.z, ind.otherPoint.x, ind.otherPoint.y, ind.otherPoint.z, ind.taken);
+
         p = closest->edge->point2;
+
+        if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+            printf("New P: %d, %d, %d\n", p.x, p.y, p.z);
+
         reorderedEdges.push_back(*closest->edge);
     }
+
     return reorderedEdges;
 } // reorderEdges
 
 extern "C" void vPocket(
+    int debugArg0, int debugArg1,
     double** paths, int numPaths, int* pathSizes,
     double cutterAngle, double passDepth, double maxDepth,
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
@@ -370,12 +410,13 @@ extern "C" void vPocket(
         PolygonSet geometry = convertPathsFromC(paths, numPaths, pathSizes);
 
         auto edges = getVoronoiEdges<ScanlineEdge>(geometry, angle);
+
         if (edges.empty()) {
             convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, vector<vector<PointWithZ>>{});
             return;
         }
 
-        edges = reorderEdges(edges);
+        edges = reorderEdges(debugArg0, debugArg1, edges);
 
         printf("y\n");
         vector<vector<PointWithZ>> result;

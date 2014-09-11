@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with jscut.  If not, see <http://www.gnu.org/licenses/>.
 
-function GcodeConversionViewModel(options, materialViewModel, toolModel, operationsViewModel, tabsViewModel) {
+function GcodeConversionViewModel(options, miscViewModel, materialViewModel, toolModel, operationsViewModel, tabsViewModel) {
     "use strict";
     var self = this;
     var allowGen = true;
+    self.miscViewModel = miscViewModel;
     self.units = ko.observable("mm");
     self.unitConverter = new UnitConverter(self.units);
     self.gcode = ko.observable("");
