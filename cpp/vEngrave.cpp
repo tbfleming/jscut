@@ -163,7 +163,7 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin
             if (i == 0)
                 lastPoint.z = thisZ;
             else {
-                edges.emplace_back(lastPoint, PointWithZ{thisX, thisY, thisZ});
+                edges.emplace_back(lastPoint, PointWithZ{thisX, thisY, thisZ}, true);
                 lastPoint = PointWithZ{thisX, thisY, thisZ};
             }
         }
@@ -242,7 +242,7 @@ vector<typename ScanlineEdge::Edge> getVoronoiEdges(int debugArg0, int debugArg1
                             lround(y(p1) + (double)i * (y(p2) - y(p1)) / numSegments)};
                         p.z = -lround(len(p - ref) / tan(angle/2));
                         if (i)
-                            edges.emplace_back(lastPoint, p);
+                            edges.emplace_back(lastPoint, p, true);
                         lastPoint = p;
                     }
                 }
@@ -252,7 +252,7 @@ vector<typename ScanlineEdge::Edge> getVoronoiEdges(int debugArg0, int debugArg1
                     double dist2 = dist(p2, segments[cell->source_index()]);
                     int z1 = -lround(dist1 / tan(angle/2));
                     int z2 = -lround(dist2 / tan(angle/2));
-                    edges.emplace_back(Edge{{x(p1), y(p1), z1}, {x(p2), y(p2), z2}});
+                    edges.emplace_back(Edge{{x(p1), y(p1), z1}, {x(p2), y(p2), z2}, true});
                 }
 
             }
@@ -404,6 +404,58 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
     } // while (numProcessed < edges.size())
 } // reorderEdges
 
+template<typename Edge>
+void clipTopZ(double passDepth, double maxDepth, vector<PointWithZ>& path, const Edge& edge)
+{
+    if (path.empty() || path.back() != edge.point1 || path.back().z != edge.point1.z)
+        path.push_back(edge.point1);
+    if (path.empty() || path.back() != edge.point2 || path.back().z != edge.point2.z)
+        path.push_back(edge.point2);
+}
+
+template<typename Edge>
+void processSpan(double passDepth, double maxDepth, vector<vector<PointWithZ>>& result, vector<Edge>& span)
+{
+    //passDepth = min(passDepth, maxDepth);
+    int minZ = 0;
+    for (auto& edge: span)
+        minZ = min(minZ, min(edge.point1.z, edge.point2.z));
+
+    vector<PointWithZ> path;
+
+    int deltaZ = max(0.0, -passDepth - minZ);
+    bool reverse = false;
+    while (true) {
+        if (reverse) {
+            for (auto it = span.rbegin(); it != span.rend(); ++it)
+            {
+                clipTopZ(passDepth, maxDepth, path, Edge{
+                    PointWithZ{it->point2.x, it->point2.y, it->point2.z + deltaZ},
+                    PointWithZ{it->point1.x, it->point1.y, it->point1.z + deltaZ}, false});
+            }
+        }
+        else {
+            for (auto& edge: span)
+            {
+                clipTopZ(passDepth, maxDepth, path, Edge{
+                    PointWithZ{edge.point1.x, edge.point1.y, edge.point1.z + deltaZ},
+                    PointWithZ{edge.point2.x, edge.point2.y, edge.point2.z + deltaZ}, false});
+            }
+        }
+
+        if (deltaZ == 0)
+            break;
+        deltaZ = max(0.0, deltaZ - passDepth);
+        reverse = !reverse;
+    }
+
+    if (path.front().z != 0)
+        path.insert(path.begin(), PointWithZ{path.front().x, path.front().y, 0});
+    if (path.back().z != 0)
+        path.insert(path.end(), PointWithZ{path.back().x, path.back().y, 0});
+    result.emplace_back(move(path));
+}
+
 extern "C" void vPocket(
     int debugArg0, int debugArg1,
     double** paths, int numPaths, int* pathSizes,
@@ -427,27 +479,23 @@ extern "C" void vPocket(
 
         vector<Edge> span;
         vector<vector<PointWithZ>> result;
-        reorderEdges(debugArg0, debugArg1, edges, [&span, &result](Edge& edge, bool isLast) {
-            auto flush = [&span, &result]() {
-                vector<PointWithZ> path;
-                path.emplace_back(span.front().point1.x, span.front().point1.y, 0);
-                if (span.front().point1.z != 0)
-                    path.emplace_back(span.front().point1);
-                for (auto& edge: span)
-                    path.emplace_back(edge.point2);
-                if (span.back().point2.z != 0)
-                    path.emplace_back(span.back().point2.x, span.back().point2.y, 0);
-                result.emplace_back(move(path));
+        reorderEdges(debugArg0, debugArg1, edges, [passDepth, maxDepth, &span, &result](Edge& edge, bool isLast) {
+            if (!span.empty() && edge.point1 != span.back().point2) {
+                processSpan(passDepth, maxDepth, result, span);
                 span.clear();
-            };
+            }
 
-            if (!span.empty() && edge.point1 != span.back().point2)
-                flush();
             span.emplace_back(edge);
-            if (isLast || edge.point2.z == 0)
-                flush();
 
-            return edge.point2;
+            if (isLast || edge.point2.z == 0) {
+                processSpan(passDepth, maxDepth, result, span);
+                span.clear();
+            }
+
+            if (!span.empty())
+                return span.back().point2;
+            else
+                return result.back().back();
         });
 
         printf("z - done\n");

@@ -87,18 +87,20 @@ struct Edge : Bases<Edge<TPoint, Bases...>>... {
     // How much to change the winding number when crossing edge in scan order
     int deltaWindingNumber = 0;
 
-    // Constructor reorders points and sets deltaWindingNumber
-    Edge(Point point1, Point point2) :
+    // Constructor reorders points and adjusts deltaWindingNumber if clean == true
+    Edge(Point point1, Point point2, bool clean) :
         point1(point1),
         point2(point2),
         deltaWindingNumber(1)
     {
-        if (x(this->point1) > x(this->point2) || x(this->point1) == x(this->point2) && y(this->point1) > y(this->point2)) {
-            std::swap(this->point1, this->point2);
-            this->deltaWindingNumber *= -1;
+        if (clean) {
+            if (x(this->point1) > x(this->point2) || x(this->point1) == x(this->point2) && y(this->point1) > y(this->point2)) {
+                std::swap(this->point1, this->point2);
+                this->deltaWindingNumber *= -1;
+            }
+            if (x(this->point1) == x(this->point2))
+                this->deltaWindingNumber *= -1;
         }
-        if (x(this->point1) == x(this->point2))
-            this->deltaWindingNumber *= -1;
     }
 
     Edge() = default;
@@ -232,7 +234,7 @@ struct Scan {
             else
                 break;
             if (allowZeroLength || toScanlineBasePoint(*p1) != toScanlineBasePoint(*p2))
-                dest.push_back({*p1, *p2});
+                dest.push_back({*p1, *p2, true});
         }
     };
 
