@@ -295,8 +295,8 @@ vector<typename ScanlineEdge::Edge> getVoronoiEdges(int debugArg0, int debugArg1
     return edges;
 } // getVoronoiEdges
 
-template<typename Edge>
-vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
+template<typename Edge, typename Callback>
+void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback callback) {
     printf("i\n");
     vector<typename Edge::Index> edgeIndexes;
     edgeIndexes.reserve(edges.size() * 2);
@@ -313,16 +313,14 @@ vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
     }
 
     printf("j\n");
-    vector<Edge> reorderedEdges;
-    reorderedEdges.reserve(edges.size());
     auto start = find_if(edgeIndexes.begin(), edgeIndexes.end(), [](const typename Edge::Index& index){return !index.point.z; });
     if (start == edgeIndexes.end())
         start = edgeIndexes.begin(); // !!!!
     start->edge->setTaken();
     if (start->isPoint2)
         swap(start->edge->point1, start->edge->point2);
-    PointWithZ p{start->edge->point2};
-    reorderedEdges.push_back(*start->edge);
+    PointWithZ p = callback(*start->edge);
+    size_t numProcessed = 1;
 
     auto rank = [&p](const typename Edge::Index& e) {
         if ((e.point.z == 0) != (p.z == 0) || e.point != p) {
@@ -337,7 +335,7 @@ vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
     };
 
     printf("k\n");
-    while (reorderedEdges.size() < edges.size()) {
+    while (numProcessed < edges.size()) {
         auto searchStart = lower_bound(edgeIndexes.begin(), edgeIndexes.end(), typename Edge::Index{p});
         auto closest = edgeIndexes.begin();
         int closestRank = 0;
@@ -345,10 +343,10 @@ vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
         int closestOtherZdist = numeric_limits<int>::max();
         double closestDist = numeric_limits<double>::max();
 
-        //if (debugArg0 && reorderedEdges.size() == (size_t)debugArg0)
+        //if (debugArg0 && numProcessed == (size_t)debugArg0)
         //    break;
 
-        //if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+        //if (debugArg1 && numProcessed == (size_t)debugArg1)
         //    printf("P: %d, %d, %d\n", p.x, p.y, p.z);
 
         auto setClosest = [&](typename vector<typename Edge::Index>::iterator it) {
@@ -363,7 +361,7 @@ vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
                     it->point == p && otherZdist < closestOtherZdist || (it->point != p || otherZdist == closestOtherZdist) &&
                     dist < closestDist))) {
 
-                    //if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+                    //if (debugArg1 && numProcessed == (size_t)debugArg1)
                     //    printf("  +rank: %d zDist:%d otherZdist:%d dist: %lld (%d, %d, %d) -> (%d, %d, %d)\n", r, zDist, otherZdist, llround(dist), it->point.x, it->point.y, it->point.z, it->otherPoint.x, it->otherPoint.y, it->otherPoint.z);
                     closest = it;
                     closestZdist = zDist;
@@ -371,7 +369,7 @@ vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
                     closestDist = dist;
                     closestRank = r;
                 }
-                //else if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1/* && p == it->point)*/)
+                //else if (debugArg1 && numProcessed == (size_t)debugArg1/* && p == it->point)*/)
                 //    printf("  -rank: %d zDist:%d otherZdist:%d dist: %lld (%d, %d, %d) -> (%d, %d, %d)\n", r, zDist, otherZdist, llround(dist), it->point.x, it->point.y, it->point.z, it->otherPoint.x, it->otherPoint.y, it->otherPoint.z);
             }
         };
@@ -390,23 +388,20 @@ vector<Edge> reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges) {
         if (closest->isPoint2)
             swap(closest->edge->point1, closest->edge->point2);
 
-        //if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+        //if (debugArg1 && numProcessed == (size_t)debugArg1)
         //    printf("Old P: %d, %d, %d\n", p.x, p.y, p.z);
 
-        //if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+        //if (debugArg1 && numProcessed == (size_t)debugArg1)
         //    for (auto& ind: edgeIndexes)
         //        if (ind.point.x == p.x && ind.point.y == p.y)
         //            printf("  (%d, %d, %d) -> (%d, %d, %d) taken=%d\n", ind.point.x, ind.point.y, ind.point.z, ind.otherPoint.x, ind.otherPoint.y, ind.otherPoint.z, ind.taken);
 
-        p = closest->edge->point2;
+        p = callback(*closest->edge);
+        ++numProcessed;
 
-        //if (debugArg1 && reorderedEdges.size() == (size_t)debugArg1)
+        //if (debugArg1 && numProcessed == (size_t)debugArg1)
         //    printf("New P: %d, %d, %d\n", p.x, p.y, p.z);
-
-        reorderedEdges.push_back(*closest->edge);
-    }
-
-    return reorderedEdges;
+    } // while (numProcessed < edges.size())
 } // reorderEdges
 
 extern "C" void vPocket(
@@ -430,18 +425,16 @@ extern "C" void vPocket(
             return;
         }
 
-        edges = reorderEdges(debugArg0, debugArg1, edges);
-
-        printf("y\n");
         vector<vector<PointWithZ>> result;
-        for (auto& e: edges) {
+        reorderEdges(debugArg0, debugArg1, edges, [&result](Edge& edge) {
             vector<PointWithZ> path;
-            path.emplace_back(e.point1.x, e.point1.y, 0);
-            path.emplace_back(e.point1);
-            path.emplace_back(e.point2);
-            path.emplace_back(e.point2.x, e.point2.y, 0);
+            path.emplace_back(edge.point1.x, edge.point1.y, 0);
+            path.emplace_back(edge.point1);
+            path.emplace_back(edge.point2);
+            path.emplace_back(edge.point2.x, edge.point2.y, 0);
             result.emplace_back(move(path));
-        }
+            return edge.point2;
+        });
 
         printf("z - done\n");
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, result);
