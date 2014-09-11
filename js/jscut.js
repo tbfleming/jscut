@@ -133,6 +133,7 @@ ko.applyBindings(miscViewModel, $("#LaunchChiliPeppr")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-warning")[0]);
 ko.applyBindings(miscViewModel, $("#save-gist-result")[0]);
 ko.applyBindings(miscViewModel, $("#load-local-storage-settings-modal")[0]);
+ko.applyBindings(miscViewModel, $("#delete-local-storage-settings-modal")[0]);
 ko.applyBindings(miscViewModel, $("#saveSettingsGoogle1")[0]);
 ko.applyBindings(miscViewModel, $("#saveGcodeGoogle1")[0]);
 ko.applyBindings(miscViewModel, $("#openSvgGoogle1")[0]);
@@ -631,6 +632,14 @@ function loadSettingsLocalStorage() {
     alert.remove();
 }
 
+function deleteSettingsLocalStorage() {
+    var settings = JSON.parse(localStorage.getItem("settings"));
+    delete settings[miscViewModel.loadLocalStorageFilename()];
+    localStorage.setItem("settings", JSON.stringify(settings));
+    $('#delete-local-storage-settings-modal').modal('hide');
+    showAlert('Deleted "' + miscViewModel.loadLocalStorageFilename() + '" from browser local storage', "alert-info");
+}
+
 function saveSettingsLocalStorage(callback) {
     var alert = showAlert("Saving settings into browser local storage", "alert-info", false);
     var settings = JSON.parse(localStorage.getItem("settings"));
@@ -796,4 +805,9 @@ function chiliSaveGcode() {
             showAlert("Can't save gcode to http://chilipeppr.com/", "alert-danger");
         });
     });
+}
+
+if (typeof options.preloadInBrowser == 'string' && options.preloadInBrowser.length > 0) {
+    var settings = JSON.parse(localStorage.getItem("settings"));
+    fromJson(settings[options.preloadInBrowser]);
 }

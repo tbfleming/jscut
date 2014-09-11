@@ -30,4 +30,7 @@ var options = {
 
     // Other debugging support
     debug: false,
+
+    // Preload in-browser settings file.
+    preloadInBrowser: 'preload.jscut',
 };
