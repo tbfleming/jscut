@@ -27,6 +27,7 @@ SNAPSHOT_FILES =        \
 
 COMPILE_FLAGS =                                     \
     cam.cpp                                         \
+    hspocket.cpp                                    \
     separateTabs.cpp                                \
     vEngrave.cpp                                    \
     -I ../../boost_1_56_0                           \
@@ -45,7 +46,7 @@ COMPILE_FLAGS =                                     \
     -s DISABLE_EXCEPTION_CATCHING=1                 \
     -s FORCE_ALIGNED_MEMORY=1                       \
     -s NO_EXIT_RUNTIME=1                            \
-    -s EXPORTED_FUNCTIONS="['_separateTabs', '_vPocket']" \
+    -s EXPORTED_FUNCTIONS="['_hspocket', '_separateTabs', '_vPocket']" \
     -o ../js/cam-cpp.js                             \
 
 RELEASE_FLAGS =                                     \

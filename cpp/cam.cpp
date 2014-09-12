@@ -24,25 +24,28 @@ using namespace cam;
 // Convert paths to C format
 void cam::convertPathsToC(
     double**& cPaths, int& cNumPaths, int*& cPathSizes,
-    const PolygonSet& paths
+    const PolygonSet& paths, bool includeDummyZ
     )
 {
     //!!!! don't need double
+    int stride = includeDummyZ ? 3 : 2;
     cPaths = (double**)malloc(paths.size() * sizeof(double*));
     cNumPaths = paths.size();
     cPathSizes = (int*)malloc(paths.size() * sizeof(int));
     for (size_t i = 0; i < paths.size(); ++i) {
         const Polygon& path = paths[i];
         cPathSizes[i] = path.size();
-        char* pathStorage = (char*)malloc(path.size() * 2 * sizeof(double) + sizeof(double) / 2);
+        char* pathStorage = (char*)malloc(path.size() * stride * sizeof(double) + sizeof(double) / 2);
         // cPaths[i] contains the unaligned block so the javascript side can free it properly.
         cPaths[i] = (double*)pathStorage;
         if ((int)pathStorage & 4)
             pathStorage += 4;
         double* p = (double*)pathStorage;
         for (size_t j = 0; j < path.size(); ++j) {
-            p[j*2] = x(path[j]);
-            p[j*2+1] = y(path[j]);
+            p[j*stride] = x(path[j]);
+            p[j*stride+1] = y(path[j]);
+            if (includeDummyZ)
+                p[j*stride+2] = 0;
         }
     }
 }

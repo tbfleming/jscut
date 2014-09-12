@@ -119,7 +119,7 @@ namespace cam {
     // Convert paths to C format
     void convertPathsToC(
         double**& cPaths, int& cNumPaths, int*& cPathSizes,
-        const PolygonSet& paths);
+        const PolygonSet& paths, bool includeDummyZ = false);
 
     // Convert paths to C format
     void convertPathsToC(

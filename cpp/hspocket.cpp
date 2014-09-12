@@ -49,7 +49,7 @@ extern "C" void hspocket(
         int precision = lround(inchToClipperScale / 5000);
 
         PolygonSet safeArea = FlexScan::offset(geometry, -cutterDia / 2, arcTolerance, true);
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea);
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea, true);
         return;
 
         Polygon spiral;
