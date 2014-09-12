@@ -115,26 +115,17 @@ extern "C" void hspocket(
 
         Polygon spiral = createSpiral(stepover, startX, startY, spiralR);
         trimSpiral(spiral, safeArea);
+        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral}, true);
+        //return;
 
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral}, true);
-        return;
+        PolygonSet cutterPaths;
+        cutterPaths.push_back(move(spiral));
+        PolygonSet cutArea = offset(cutterPaths, cutterDia / 2, arcTolerance, false);
 
-        PolygonSet cutArea{move(spiral)};
-        cutArea = offset(cutArea, cutterDia / 2, arcTolerance, false);
-        //PolygonSet cutterPaths;
-        //cutterPaths.push_back(move(spiral));
-
-        //for (auto& poly: cutArea) {
-        //    for (auto& pt: poly) {
-        //        x(pt, (x(pt)-startX)*10+startX);
-        //        y(pt, (y(pt)-startY)*10+startY);
-        //    }
-        //}
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
         return;
 
         //int currentX, currentY;
-
         //auto updateCurrentPos = [&]() {
         //    auto& lastPath = cutterPaths.back();
         //    auto& lastPos = lastPath.back();
@@ -143,30 +134,22 @@ extern "C" void hspocket(
         //};
         //updateCurrentPos();
 
-//
-//        //cutArea = cutArea.concat(cutterPaths);
-//        //var camPaths = [];
-//        //for (var i = 0; i < cutArea.length; ++i)
-//        //    camPaths.push({ path: cutArea[i], safeToClose: false });
-//        //return camPaths;
-//
-//        //var loopStartTime = Date.now();
-//        auto loopStartTime = std::chrono::high_resolution_clock::now();
-//
-//        //int yyy = 200-40+5-50;
-//        int yyy = 30-15;
-//        int xxx = 0;
+        auto loopStartTime = std::chrono::high_resolution_clock::now();
+
+        //int yyy = 200-40+5-50;
+        int yyy = 30-15;
+        int xxx = 0;
 //        while (true) {
 //            printf("%d\n", xxx);
 //            ++xxx;
 //            //if (xxx >= yyy)
 //            //    break;
-//            auto front = offset(cutArea, -cutterDia / 2 + stepover);
+//            auto front = offset(cutArea, -cutterDia / 2 + stepover, arcTolerance, true);
 //            //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
-//            auto back = offset(front, minProgress - stepover);
+//            auto back = offset(front, minProgress - stepover, arcTolerance, true);
 //            auto q = clip(front, safeArea, ctIntersection);
-//            q = offset(q, -minRadius);
-//            q = offset(q, minRadius);
+//            q = offset(q, -minRadius, arcTolerance, true);
+//            q = offset(q, minRadius, arcTolerance, true);
 //            //for (auto& path: q)
 //            //    path.push_back(path.front());
 //
@@ -370,11 +353,11 @@ extern "C" void hspocket(
 //                break;
 //            }
 //        }
-//
-//        //console.log("hspocket loop: " + (Date.now() - loopStartTime));
-//        printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
-//
-//        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
+
+        //console.log("hspocket loop: " + (Date.now() - loopStartTime));
+        printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
+
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
     }
     catch (exception& e) {
         printf("%s\n", e.what());

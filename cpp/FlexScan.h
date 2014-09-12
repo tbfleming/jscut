@@ -440,13 +440,17 @@ struct NotExcluded {
     }
 };
 
-template<typename Condition>
+template<typename WindingNumberBefore, typename WindingNumberAfter, typename Condition>
 struct AccumulateWindingNumber {
+    WindingNumberBefore windingNumberBefore;
+    WindingNumberAfter windingNumberAfter;
     Condition condition;
     mutable int leftWindingNumber = 0;
     mutable int rightWindingNumber = 0;
 
-    AccumulateWindingNumber(Condition condition) :
+    AccumulateWindingNumber(WindingNumberBefore windingNumberBefore, WindingNumberAfter windingNumberAfter, Condition condition) :
+        windingNumberBefore(windingNumberBefore),
+        windingNumberAfter(windingNumberAfter),
         condition(condition)
     {
     }
@@ -462,7 +466,7 @@ struct AccumulateWindingNumber {
             // non-vertical
             while (begin != end && x(begin->edge->point1) != x(begin->edge->point2)) {
                 if (begin->atPoint1)
-                    begin->windingNumberBefore = rightWindingNumber;
+                    windingNumberBefore(*begin) = rightWindingNumber;
                 if (condition(*begin))
                 {
                     if (!begin->atPoint1)
@@ -471,10 +475,10 @@ struct AccumulateWindingNumber {
                         rightWindingNumber += begin->edge->deltaWindingNumber;
                 }
                 if (begin->atPoint1)
-                    begin->windingNumberAfter = rightWindingNumber;
+                    windingNumberAfter(*begin) = rightWindingNumber;
                 if (debug) {
                     printf(" %d -> %d : @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaWindingNumber=%d\n",
-                        begin->windingNumberBefore, begin->windingNumberAfter, begin->atPoint1, begin->atPoint2,
+                        windingNumberBefore(*begin), windingNumberAfter(*begin), begin->atPoint1, begin->atPoint2,
                         x(begin->edge->point1), y(begin->edge->point1),
                         x(begin->edge->point2), y(begin->edge->point2),
                         begin->atPoint1, begin->atPoint2,
@@ -485,13 +489,13 @@ struct AccumulateWindingNumber {
 
             // vertical
             for (auto it = begin; it != end && x(it->edge->point1) == x(it->edge->point2); ++it) {
-                it->windingNumberBefore = leftWindingNumber;
+                windingNumberBefore(*it) = leftWindingNumber;
                 if (condition(*it))
                     leftWindingNumber += it->edge->deltaWindingNumber;
-                it->windingNumberAfter = leftWindingNumber;
+                windingNumberAfter(*it) = leftWindingNumber;
                 if (debug) {
                     printf("[%d -> %d]: @(%d, %d) (%d, %d) (%d, %d) @1=%d @2=%d deltaWindingNumber=%d\n",
-                        it->windingNumberBefore, it->windingNumberAfter, it->atPoint1, it->atPoint2,
+                        windingNumberBefore(*it), windingNumberAfter(*it), it->atPoint1, it->atPoint2,
                         x(it->edge->point1), y(it->edge->point1),
                         x(it->edge->point2), y(it->edge->point2),
                         it->atPoint1, it->atPoint2,
@@ -524,9 +528,36 @@ struct AccumulateWindingNumber {
     }
 };
 
+struct DefaultWindingNumberBefore {
+    DefaultWindingNumberBefore() = default;
+    DefaultWindingNumberBefore(const DefaultWindingNumberBefore&) = default;
+    DefaultWindingNumberBefore& operator=(const DefaultWindingNumberBefore&) = default;
+
+    template<typename ScanlineEdge>
+    int& operator()(ScanlineEdge& e) const {
+        return e.windingNumberBefore;
+    }
+};
+
+struct DefaultWindingNumberAfter {
+    DefaultWindingNumberAfter() = default;
+    DefaultWindingNumberAfter(const DefaultWindingNumberAfter&) = default;
+    DefaultWindingNumberAfter& operator=(const DefaultWindingNumberAfter&) = default;
+
+    template<typename ScanlineEdge>
+    int& operator()(ScanlineEdge& e) const {
+        return e.windingNumberAfter;
+    }
+};
+
+template<typename WindingNumberBefore, typename WindingNumberAfter, typename Condition>
+AccumulateWindingNumber<WindingNumberBefore, WindingNumberAfter, Condition> makeAccumulateWindingNumber(WindingNumberBefore windingNumberBefore, WindingNumberAfter windingNumberAfter, Condition condition) {
+    return{windingNumberBefore, windingNumberAfter, condition};
+}
+
 template<typename Condition>
-AccumulateWindingNumber<Condition> makeAccumulateWindingNumber(Condition condition) {
-    return{condition};
+AccumulateWindingNumber<DefaultWindingNumberBefore, DefaultWindingNumberAfter, Condition> makeAccumulateWindingNumber(Condition condition) {
+    return{DefaultWindingNumberBefore{}, DefaultWindingNumberAfter{}, condition};
 }
 
 template<typename ScanlineEdge, typename Condition>
