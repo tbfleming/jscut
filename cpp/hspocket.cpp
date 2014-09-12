@@ -21,10 +21,17 @@
 #include "offset.h"
 
 using namespace cam;
+using namespace FlexScan;
 using namespace boost::polygon::operators;
 using namespace std;
 
 static const long long spiralArcTolerance = inchToClipperScale / 1000;
+
+template<typename Derived>
+struct SpiralEdge {
+    bool isGeometry = false;
+    size_t index;
+};
 
 //struct CandidatePath {
 //    Path path;
@@ -48,9 +55,9 @@ extern "C" void hspocket(
         int minProgress = lround(stepover / 8);
         int precision = lround(inchToClipperScale / 5000);
 
-        PolygonSet safeArea = FlexScan::offset(geometry, -cutterDia / 2, arcTolerance, true);
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea, true);
-        return;
+        PolygonSet safeArea = offset(geometry, -cutterDia / 2, arcTolerance, true);
+        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea, true);
+        //return;
 
         Polygon spiral;
         {
@@ -59,53 +66,55 @@ extern "C" void hspocket(
             while (true) {
                 double r = angle / M_PI / 2 * stepover;
                 spiral.push_back({lround(r * cos(-angle) + startX), lround(r * sin(-angle) + startY)});
-                double deltaAngle = FlexScan::deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
+                double deltaAngle = deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
                 angle += deltaAngle;
                 if (r >= spiralR)
                     break;
             }
             printf("spiral: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralStartTime).count());
 
-            //Polygon combined{spiral};
+            auto spiralTrimStartTime = std::chrono::high_resolution_clock::now();
 
-            //void intersect_segments(
-            //    vector<pair<size_t, Segment>* result,
-            //    SegmentIterator first,
-            //    SegmentIterator last)
+            using Edge = Edge<Point, SpiralEdge>;
+            using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber>;
+            using Scan = Scan<ScanlineEdge>;
 
-            // !!!!!!!!!!!!!!!
-            //Clipper clipper;
-            //clipper.AddPath(spiral, ptSubject, false);
-            //clipper.AddPaths(safeArea, ptClip, true);
-            //PolyTree result;
-            //clipper.Execute(ctIntersection, result, pftEvenOdd, pftEvenOdd);
+            vector<Edge> edges;
+            Scan::insertPolygons(edges, safeArea.begin(), safeArea.end(), true);
+            for (auto& edge: edges)
+                edge.isGeometry = true;
+            auto spiralBegin = edges.size();
+            Scan::insertPoints(edges, spiral, false, true);
+            for (size_t i = 0; i < spiral.size(); ++i)
+                edges[spiralBegin + i].index = i;
 
-            //bool found = false;
-            //for (auto& child: result.Childs) {
-            //    if (found)
-            //        break;
-            //    for (auto& point: child->Contour) {
-            //        if (point.X == startX && point.Y == startY) {
-            //            reverse(child->Contour.begin(), child->Contour.end());
-            //            spiral = move(child->Contour);
-            //            found = true;
-            //            break;
-            //        }
-            //    }
-            //}
+            Scan::intersectEdges(edges, edges.begin(), edges.end());
+            Scan::sortEdges(edges.begin(), edges.end());
 
-            //if (!found)
-            //{
-            //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {});
-            //    return;
-            //}
+            size_t endIndex = spiral.size();
+            Scan::scan(
+                edges.begin(), edges.end(),
+                makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
+                [&endIndex](int x, double y, vector<ScanlineEdge>::iterator begin, vector<ScanlineEdge>::iterator end)
+            {
+                while (begin != end) {
+                    bool isInGeometry = begin->windingNumberBefore && begin->windingNumberAfter;
+                    if (!begin->edge->isGeometry && !isInGeometry && begin->edge->index < endIndex)
+                        endIndex = begin->edge->index;
+                    ++begin;
+                }
+            });
+
+            spiral.erase(spiral.begin() + endIndex, spiral.end());
+
+            printf("spiral trim: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralTrimStartTime).count());
         };
 
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral});
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral}, true);
         return;
 
         PolygonSet cutArea{move(spiral)};
-        cutArea = FlexScan::offset(cutArea, cutterDia / 2, arcTolerance, false);
+        cutArea = offset(cutArea, cutterDia / 2, arcTolerance, false);
         //PolygonSet cutterPaths;
         //cutterPaths.push_back(move(spiral));
 
@@ -115,8 +124,8 @@ extern "C" void hspocket(
         //        y(pt, (y(pt)-startY)*10+startY);
         //    }
         //}
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea);
-
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
+        return;
 
         //int currentX, currentY;
 
