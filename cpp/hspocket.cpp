@@ -38,6 +38,60 @@ struct SpiralEdge {
 //    double distToCurrentPos;
 //};
 
+Polygon createSpiral(int stepover, int startX, int startY, double spiralR) {
+    Polygon spiral;
+    auto spiralStartTime = std::chrono::high_resolution_clock::now();
+    double angle = 0;
+    while (true) {
+        double r = angle / M_PI / 2 * stepover;
+        spiral.push_back({lround(r * cos(-angle) + startX), lround(r * sin(-angle) + startY)});
+        double deltaAngle = deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
+        angle += deltaAngle;
+        if (r >= spiralR)
+            break;
+    }
+    printf("spiral: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralStartTime).count());
+    return spiral;
+}
+
+void trimSpiral(Polygon& spiral, const PolygonSet& safeArea) {
+    auto spiralTrimStartTime = std::chrono::high_resolution_clock::now();
+
+    using Edge = Edge<Point, SpiralEdge>;
+    using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber>;
+    using Scan = Scan<ScanlineEdge>;
+
+    vector<Edge> edges;
+    Scan::insertPolygons(edges, safeArea.begin(), safeArea.end(), true);
+    for (auto& edge: edges)
+        edge.isGeometry = true;
+    auto spiralBegin = edges.size();
+    Scan::insertPoints(edges, spiral, false, true);
+    for (size_t i = 0; i < spiral.size(); ++i)
+        edges[spiralBegin + i].index = i;
+
+    Scan::intersectEdges(edges, edges.begin(), edges.end());
+    Scan::sortEdges(edges.begin(), edges.end());
+
+    size_t endIndex = spiral.size();
+    Scan::scan(
+        edges.begin(), edges.end(),
+        makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
+        [&endIndex](int x, double y, vector<ScanlineEdge>::iterator begin, vector<ScanlineEdge>::iterator end)
+    {
+        while (begin != end) {
+            bool isInGeometry = begin->windingNumberBefore && begin->windingNumberAfter;
+            if (!begin->edge->isGeometry && !isInGeometry && begin->edge->index < endIndex)
+                endIndex = begin->edge->index;
+            ++begin;
+        }
+    });
+
+    spiral.erase(spiral.begin() + endIndex, spiral.end());
+
+    printf("spiral trim time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralTrimStartTime).count());
+}
+
 extern "C" void hspocket(
     double** paths, int numPaths, int* pathSizes, double cutterDia,
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
@@ -59,56 +113,8 @@ extern "C" void hspocket(
         //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea, true);
         //return;
 
-        Polygon spiral;
-        {
-            auto spiralStartTime = std::chrono::high_resolution_clock::now();
-            double angle = 0;
-            while (true) {
-                double r = angle / M_PI / 2 * stepover;
-                spiral.push_back({lround(r * cos(-angle) + startX), lround(r * sin(-angle) + startY)});
-                double deltaAngle = deltaAngleForError(spiralArcTolerance, max(r, (double)spiralArcTolerance));
-                angle += deltaAngle;
-                if (r >= spiralR)
-                    break;
-            }
-            printf("spiral: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralStartTime).count());
-
-            auto spiralTrimStartTime = std::chrono::high_resolution_clock::now();
-
-            using Edge = Edge<Point, SpiralEdge>;
-            using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber>;
-            using Scan = Scan<ScanlineEdge>;
-
-            vector<Edge> edges;
-            Scan::insertPolygons(edges, safeArea.begin(), safeArea.end(), true);
-            for (auto& edge: edges)
-                edge.isGeometry = true;
-            auto spiralBegin = edges.size();
-            Scan::insertPoints(edges, spiral, false, true);
-            for (size_t i = 0; i < spiral.size(); ++i)
-                edges[spiralBegin + i].index = i;
-
-            Scan::intersectEdges(edges, edges.begin(), edges.end());
-            Scan::sortEdges(edges.begin(), edges.end());
-
-            size_t endIndex = spiral.size();
-            Scan::scan(
-                edges.begin(), edges.end(),
-                makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
-                [&endIndex](int x, double y, vector<ScanlineEdge>::iterator begin, vector<ScanlineEdge>::iterator end)
-            {
-                while (begin != end) {
-                    bool isInGeometry = begin->windingNumberBefore && begin->windingNumberAfter;
-                    if (!begin->edge->isGeometry && !isInGeometry && begin->edge->index < endIndex)
-                        endIndex = begin->edge->index;
-                    ++begin;
-                }
-            });
-
-            spiral.erase(spiral.begin() + endIndex, spiral.end());
-
-            printf("spiral trim: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralTrimStartTime).count());
-        };
+        Polygon spiral = createSpiral(stepover, startX, startY, spiralR);
+        trimSpiral(spiral, safeArea);
 
         convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {spiral}, true);
         return;
