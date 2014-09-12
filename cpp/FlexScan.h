@@ -435,7 +435,7 @@ struct ExcludeOppositeEdges {
 
 struct NotExcluded {
     template<typename ScanlineEdge>
-    bool operator()(ScanlineEdge& e) {
+    bool operator()(ScanlineEdge& e) const {
         return !e.exclude;
     }
 };
@@ -620,7 +620,7 @@ void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
                 edge->next = nullptr;
                 edge = next;
                 if (edge) {
-                    if (swapped(edge))
+                    if (swapped(*edge))
                         polygon.emplace_back(edge->point2);
                     else
                         polygon.emplace_back(edge->point1);
