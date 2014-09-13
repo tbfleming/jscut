@@ -149,7 +149,11 @@ extern "C" void hspocket(
             auto back = offset(front, minProgress - stepover, arcTolerance, true);
 
             //auto q = safeArea;
-            auto q = combinePolygonSet(front, safeArea, makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }));
+            PolygonSet q;
+            fillPolygonSetFromEdges(q, combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
+                front, safeArea,
+                makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }),
+                SetNext{}));
             q = offset(q, -minRadius, arcTolerance, true);
             q = offset(q, minRadius, arcTolerance, true);
 

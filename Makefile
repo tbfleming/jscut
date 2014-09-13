@@ -66,7 +66,7 @@ debug:
 	cd cpp && em++ $(DEBUG_FLAGS)
 
 less:
-	make debug 2>&1 | less -R
+	clear && make 2>&1 | less -RFX
 
 standalone: default
 	rm -rf jscut_standalone jscut_standalone.tar.gz

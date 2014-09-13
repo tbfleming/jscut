@@ -129,6 +129,11 @@ struct EdgeNext {
     Derived* next = nullptr;
 };
 
+template<typename Derived>
+struct EdgePrev {
+    Derived* prev = nullptr;
+};
+
 template<typename TEdge, template<typename Derived> class... Bases>
 struct ScanlineEdge : Bases<ScanlineEdge<TEdge, Bases...>>... {
     using Edge = TEdge;
@@ -655,6 +660,21 @@ CombinePairs<ScanlineEdge, Condition, Combine> makeCombinePairs(Condition condit
     return{condition, combine};
 }
 
+struct SetNext {
+    template<typename ScanlineEdge>
+    void operator()(ScanlineEdge& a, ScanlineEdge& b) const {
+        a.edge->next = b.edge;
+    }
+};
+
+struct SetNextAndPrev {
+    template<typename ScanlineEdge>
+    void operator()(ScanlineEdge& a, ScanlineEdge& b) const {
+        a.edge->next = b.edge;
+        b.edge->prev = a.edge;
+    }
+};
+
 struct PositiveWinding {
     template<typename ScanlineEdge>
     bool operator()(const ScanlineEdge& e) const{
@@ -689,6 +709,11 @@ void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
         }
         ++begin;
     }
+}
+
+template<typename PolygonSet, typename Edges>
+void fillPolygonSetFromEdges(PolygonSet& ps, Edges&& edges) {
+    fillPolygonSetFromEdges(ps, edges.begin(), edges.end());
 }
 
 template<typename PolygonSet, typename Winding>
@@ -734,10 +759,9 @@ CombinePolygonSetCondition<CompareWinding> makeCombinePolygonSetCondition(Compar
     return{compareWinding};
 }
 
-template<typename PolygonSet, typename Condition>
-PolygonSet combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, Condition condition) {
+template<typename Edge, typename PolygonSet, typename Condition, typename Combine>
+std::vector<Edge> combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, Condition condition, Combine combine) {
     using Point = PointFromPolygonSet_t<PolygonSet>;
-    using Edge = Edge<Point, EdgeId, EdgeNext>;
     using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber, ScanlineEdgeWindingNumber2>;
     using Scan = Scan<ScanlineEdge>;
 
@@ -754,12 +778,8 @@ PolygonSet combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, Condi
         edges.begin(), edges.end(),
         makeAccumulateWindingNumber([](const ScanlineEdge& e){return e.edge->id == 0; }),
         makeAccumulateWindingNumber2([](const ScanlineEdge& e){return e.edge->id == 1; }),
-        makeCombinePairs<ScanlineEdge>(condition, [](ScanlineEdge& a, ScanlineEdge& b){a.edge->next = b.edge; }));
-
-    PolygonSet result;
-    fillPolygonSetFromEdges(result, edges.begin(), edges.end());
-
-    return result;
+        makeCombinePairs<ScanlineEdge>(condition, combine));
+    return edges;
 }
 
 } // namespace FlexScan
