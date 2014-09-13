@@ -120,6 +120,16 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
 }
 
 template<typename PolygonSet>
+static PolygonSet rawOffsetPolygonSet(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> amount, UnitFromPolygonSet_t<PolygonSet> arcTolerance, bool closed) {
+    PolygonSet result;
+    for (auto& poly: ps) {
+        auto raw = rawOffset(poly, amount, arcTolerance, closed);
+        result.push_back(move(raw));
+    }
+    return result;
+}
+
+template<typename PolygonSet>
 static PolygonSet offset(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> amount, UnitFromPolygonSet_t<PolygonSet> arcTolerance, bool closed) {
     using Polygon = PolygonFromPolygonSet_t<PolygonSet>;
 
