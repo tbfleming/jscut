@@ -583,20 +583,22 @@ AccumulateWindingNumber<DefaultWindingNumberBefore2, DefaultWindingNumberAfter2,
     return{DefaultWindingNumberBefore2{}, DefaultWindingNumberAfter2{}, condition};
 }
 
-template<typename ScanlineEdge, typename Condition>
-struct SetNext {
+template<typename ScanlineEdge, typename Condition, typename Combine>
+struct CombinePairs {
 public:
     Condition condition;
+    Combine combine;
 
-    SetNext(Condition condition) :
-        condition(condition)
+    CombinePairs(Condition condition, Combine combine) :
+        condition(condition),
+        combine(combine)
     {
     }
 
-    SetNext(const SetNext&) = default;
-    SetNext(SetNext&&) = default;
-    SetNext& operator=(const SetNext&) = default;
-    SetNext& operator=(SetNext&&) = default;
+    CombinePairs(const CombinePairs&) = default;
+    CombinePairs(CombinePairs&&) = default;
+    CombinePairs& operator=(const CombinePairs&) = default;
+    CombinePairs& operator=(CombinePairs&&) = default;
 
 private:
     mutable std::vector<ScanlineEdge*> candidates;
@@ -618,7 +620,7 @@ public:
     {
         using Scan = Scan<ScanlineEdge>;
 
-        //printf("SetNext %d\n", end-begin);
+        //printf("CombinePairs %d\n", end-begin);
         candidates.clear();
         candidates.reserve(end-begin);
         for (auto it = begin; it < end; ++it)
@@ -634,23 +636,23 @@ public:
                 --other;
             if (other != b) {
                 if (edgeDirection < 0)
-                    candidates[b]->edge->next = candidates[other]->edge;
+                    combine(*candidates[b], *candidates[other]);
                 else
-                    candidates[other]->edge->next = candidates[b]->edge;
+                    combine(*candidates[other], *candidates[b]);
                 --e;
                 candidates.erase(candidates.begin() + other);
             }
             else
-                printf("!*!*!*!!!!*!*!! SetNext\n");
+                printf("!*!*!*!!!!*!*!! CombinePairs\n");
             ++b;
         }
-        //printf("~SetNext\n");
+        //printf("~CombinePairs\n");
     }
 };
 
-template<typename ScanlineEdge, typename Condition>
-SetNext<ScanlineEdge, Condition> makeSetNext(Condition condition) {
-    return{condition};
+template<typename ScanlineEdge, typename Condition, typename Combine>
+CombinePairs<ScanlineEdge, Condition, Combine> makeCombinePairs(Condition condition, Combine combine) {
+    return{condition, combine};
 }
 
 struct PositiveWinding {
@@ -705,7 +707,7 @@ PolygonSet cleanPolygonSet(const PolygonSet& ps, Winding winding) {
         edges.begin(), edges.end(),
         ExcludeOppositeEdges{},
         makeAccumulateWindingNumber(NotExcluded{}),
-        makeSetNext<ScanlineEdge>(winding));
+        makeCombinePairs<ScanlineEdge>(winding, [](ScanlineEdge& a, ScanlineEdge& b){a.edge->next = b.edge; }));
 
     PolygonSet result;
     fillPolygonSetFromEdges(result, edges.begin(), edges.end());
@@ -752,7 +754,7 @@ PolygonSet combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, Condi
         edges.begin(), edges.end(),
         makeAccumulateWindingNumber([](const ScanlineEdge& e){return e.edge->id == 0; }),
         makeAccumulateWindingNumber2([](const ScanlineEdge& e){return e.edge->id == 1; }),
-        makeSetNext<ScanlineEdge>(condition));
+        makeCombinePairs<ScanlineEdge>(condition, [](ScanlineEdge& a, ScanlineEdge& b){a.edge->next = b.edge; }));
 
     PolygonSet result;
     fillPolygonSetFromEdges(result, edges.begin(), edges.end());
