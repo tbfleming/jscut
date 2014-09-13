@@ -349,12 +349,15 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
         //if (debugArg1 && numProcessed == (size_t)debugArg1)
         //    printf("P: %d, %d, %d\n", p.x, p.y, p.z);
 
-        auto setClosest = [&](typename vector<typename Edge::Index>::iterator it) {
+        auto setClosest = [&](typename vector<typename Edge::Index>::iterator it) -> bool{
             if (!it->taken) {
                 int r = rank(*it);
                 int zDist = abs(p.z - it->point.z);
                 int otherZdist = abs(p.z - it->otherPoint.z);
                 double dist = lenSquared(p - it->point);
+
+                if (closestRank >= 1 && abs(it->point.x - p.x) > closestDist)
+                    return false;
 
                 if (r > closestRank || r == closestRank && (
                     it->point == p && zDist < closestZdist || (it->point != p || zDist == closestZdist) && (
@@ -372,12 +375,15 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
                 //else if (debugArg1 && numProcessed == (size_t)debugArg1/* && p == it->point)*/)
                 //    printf("  -rank: %d zDist:%d otherZdist:%d dist: %lld (%d, %d, %d) -> (%d, %d, %d)\n", r, zDist, otherZdist, llround(dist), it->point.x, it->point.y, it->point.z, it->otherPoint.x, it->otherPoint.y, it->otherPoint.z);
             }
+            return true;
         };
 
         for (auto it2 = searchStart; it2 != edgeIndexes.end(); ++it2)
-            setClosest(it2);
+            if (!setClosest(it2))
+                break;
         for (auto it2 = searchStart; it2 != edgeIndexes.begin(); --it2)
-            setClosest(it2 - 1);
+            if (!setClosest(it2 - 1))
+                break;
 
         if (p.z == 0 && closest->point.z != 0)
             printf("dive\n");
