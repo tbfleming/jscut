@@ -122,8 +122,8 @@ extern "C" void hspocket(
         cutterPaths.push_back(move(spiral));
         PolygonSet cutArea = offset(cutterPaths, cutterDia / 2, arcTolerance, false);
 
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
-        return;
+        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
+        //return;
 
         //int currentX, currentY;
         //auto updateCurrentPos = [&]() {
@@ -140,28 +140,22 @@ extern "C" void hspocket(
         int yyy = 30-15;
         int xxx = 0;
 //        while (true) {
-//            printf("%d\n", xxx);
-//            ++xxx;
-//            //if (xxx >= yyy)
-//            //    break;
-//            auto front = offset(cutArea, -cutterDia / 2 + stepover, arcTolerance, true);
-//            //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
-//            auto back = offset(front, minProgress - stepover, arcTolerance, true);
-//            auto q = clip(front, safeArea, ctIntersection);
-//            q = offset(q, -minRadius, arcTolerance, true);
-//            q = offset(q, minRadius, arcTolerance, true);
-//            //for (auto& path: q)
-//            //    path.push_back(path.front());
-//
-//            //if (xxx >= yyy) {
-//            //    for (auto& path: q) {
-//            //        printf("q f: %lld, %lld\n", path.front().X, path.front().Y);
-//            //        printf("q  : %lld, %lld\n", (++path.begin())->X, (++path.begin())->Y);
-//            //        printf("q  : %lld, %lld\n", (--path.end())->X, (--path.end())->Y);
-//            //        printf("q b: %lld, %lld\n", path.back().X, path.back().Y);
-//            //    }
-//            //}
-//
+            printf("%d\n", xxx);
+            ++xxx;
+            //if (xxx >= yyy)
+            //    break;
+            auto front = offset(cutArea, -cutterDia / 2 + stepover, arcTolerance, true);
+            //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
+            auto back = offset(front, minProgress - stepover, arcTolerance, true);
+
+            //auto q = safeArea;
+            auto q = combinePolygonSet(front, safeArea, makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }));
+            q = offset(q, -minRadius, arcTolerance, true);
+            q = offset(q, minRadius, arcTolerance, true);
+
+            convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, q, true);
+            return;
+
 //            printf("/a\n");
 //
 //            Clipper clipper;
