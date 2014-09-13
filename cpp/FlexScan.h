@@ -688,7 +688,6 @@ template<typename PolygonSet, typename It>
 void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
     while (begin != end) {
         if (begin->next) {
-            //printf("\n");
             ps.emplace_back();
             auto& polygon = ps.back();
             auto* edge = &*begin;
@@ -714,6 +713,67 @@ void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
 template<typename PolygonSet, typename Edges>
 void fillPolygonSetFromEdges(PolygonSet& ps, Edges&& edges) {
     fillPolygonSetFromEdges(ps, edges.begin(), edges.end());
+}
+
+template<typename PolygonSet, typename It>
+void fillOpenPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
+    // Grab open polygons
+    auto b = begin;
+    while (b != end) {
+        if (b->next && !b->prev) {
+            ps.emplace_back();
+            auto& polygon = ps.back();
+            auto* edge = &*b;
+            while (edge) {
+                if (swapped(*edge))
+                    polygon.emplace_back(edge->point2);
+                else
+                    polygon.emplace_back(edge->point1);
+                if (!edge->next) {
+                    if (swapped(*edge))
+                        polygon.emplace_back(edge->point1);
+                    else
+                        polygon.emplace_back(edge->point2);
+                }
+                auto n = edge->next;
+                edge->next = nullptr;
+                edge = n;
+            }
+        }
+        ++b;
+    }
+
+    // Grab closed polygons; breaks at arbitrary point
+    b = begin;
+    while (b != end) {
+        if (b->next) {
+            b->prev->next = nullptr;
+            ps.emplace_back();
+            auto& polygon = ps.back();
+            auto* edge = &*b;
+            while (edge) {
+                if (swapped(*edge))
+                    polygon.emplace_back(edge->point2);
+                else
+                    polygon.emplace_back(edge->point1);
+                if (!edge->next) {
+                    if (swapped(*edge))
+                        polygon.emplace_back(edge->point1);
+                    else
+                        polygon.emplace_back(edge->point2);
+                }
+                auto n = edge->next;
+                edge->next = nullptr;
+                edge = n;
+            }
+        }
+        ++b;
+    }
+} // fillOpenPolygonSetFromEdges
+
+template<typename PolygonSet, typename Edges>
+void fillOpenPolygonSetFromEdges(PolygonSet& ps, Edges&& edges) {
+    fillOpenPolygonSetFromEdges(ps, edges.begin(), edges.end());
 }
 
 template<typename PolygonSet, typename Winding>
@@ -759,16 +819,23 @@ CombinePolygonSetCondition<CompareWinding> makeCombinePolygonSetCondition(Compar
     return{compareWinding};
 }
 
+struct OpenMinusClosedCondition {
+    template<typename ScanlineEdge>
+    bool operator()(ScanlineEdge& e) const {
+        return e.edge->id == 0 && e.windingNumberBefore2 <= 0 && e.windingNumberAfter2 <= 0;
+    }
+};
+
 template<typename Edge, typename PolygonSet, typename Condition, typename Combine>
-std::vector<Edge> combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, Condition condition, Combine combine) {
+std::vector<Edge> combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, bool closed1, bool closed2, Condition condition, Combine combine) {
     using Point = PointFromPolygonSet_t<PolygonSet>;
     using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber, ScanlineEdgeWindingNumber2>;
     using Scan = Scan<ScanlineEdge>;
 
     std::vector<Edge> edges;
-    Scan::insertPolygons(edges, ps1.begin(), ps1.end());
+    Scan::insertPolygons(edges, ps1.begin(), ps1.end(), closed1);
     size_t edges1Size = edges.size();
-    Scan::insertPolygons(edges, ps2.begin(), ps2.end());
+    Scan::insertPolygons(edges, ps2.begin(), ps2.end(), closed2);
     for (size_t i = edges1Size; i < edges.size(); ++i)
         edges[i].id = 1;
 

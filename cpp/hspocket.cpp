@@ -139,7 +139,7 @@ extern "C" void hspocket(
         //int yyy = 200-40+5-50;
         int yyy = 30-15;
         int xxx = 0;
-//        while (true) {
+        while (true) {
             printf("%d\n", xxx);
             ++xxx;
             //if (xxx >= yyy)
@@ -151,22 +151,29 @@ extern "C" void hspocket(
             //auto q = safeArea;
             PolygonSet q;
             fillPolygonSetFromEdges(q, combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
-                front, safeArea,
+                front, safeArea, true, true,
                 makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }),
                 SetNext{}));
             q = offset(q, -minRadius, arcTolerance, true);
             q = offset(q, minRadius, arcTolerance, true);
+            if (q.empty())
+                break;
 
-            convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, q, true);
+            //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, q, true);
+            //return;
+
+            PolygonSet paths;
+            fillOpenPolygonSetFromEdges(paths, combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgePrev>>(
+                q, back, true, true,
+                OpenMinusClosedCondition{},
+                SetNextAndPrev{}));
+
+            convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, paths, true);
             return;
 
-//            printf("/a\n");
-//
-//            Clipper clipper;
-//            clipper.AddPaths(q, ptSubject, false);
-//            clipper.AddPaths(back, ptClip, true);
-//            PolyTree result;
-//            clipper.Execute(ctDifference, result, pftEvenOdd, pftEvenOdd);
+            if (xxx >= yyy)
+                break;
+
 //
 //            printf("/b\n");
 //
@@ -350,7 +357,7 @@ extern "C" void hspocket(
 //                //cutterPaths = cutArea.concat(newCutArea);
 //                break;
 //            }
-//        }
+        }
 
         //console.log("hspocket loop: " + (Date.now() - loopStartTime));
         printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
