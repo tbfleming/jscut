@@ -87,26 +87,16 @@ void getCorner(const Segment& s1, const Segment& s2, F f)
         f(high(s1), low(s1), low(s2));
 }
 
-static double lenSquared(PointWithZ p)
-{
-    return (double)x(p)*x(p) + (double)y(p)*y(p);
-}
-
-static double len(PointWithZ p)
-{
-    return sqrt(lenSquared(p));
-}
-
 static double projectionRatio(PointWithZ lineBegin, PointWithZ lineEnd, PointWithZ p)
 {
-    return (double)dot(lineEnd-lineBegin, p-lineBegin) / lenSquared(lineEnd-lineBegin);
+    return (double)dot(lineEnd-lineBegin, p-lineBegin) / pointLengthSquared(lineEnd-lineBegin);
 }
 
 static double dist(Point p, const Segment& s)
 {
     auto a = low(s);
     auto delta = high(s)-low(s);
-    double l = len(delta);
+    double l = pointLength(delta);
     double nx = x(delta)/l;
     double ny = y(delta)/l;
     double dot = (x(a) - x(p)) * nx + (y(a) - y(p)) * ny;
@@ -158,7 +148,7 @@ void linearizeParabola(vector<Edge>& edges, Point p, Segment s, PointWithZ begin
                 thisY = end.y;
             }
 
-            int thisZ = -lround(len(Point{thisX, thisY} - p) / tan(angle/2));
+            int thisZ = -lround(pointLength(Point{thisX, thisY} - p) / tan(angle/2));
 
             if (i == 0)
                 lastPoint.z = thisZ;
@@ -240,7 +230,7 @@ vector<typename ScanlineEdge::Edge> getVoronoiEdges(int debugArg0, int debugArg1
                         PointWithZ p{
                             lround(x(p1) + (double)i * (x(p2) - x(p1)) / numSegments),
                             lround(y(p1) + (double)i * (y(p2) - y(p1)) / numSegments)};
-                        p.z = -lround(len(p - ref) / tan(angle/2));
+                        p.z = -lround(pointLength(p - ref) / tan(angle/2));
                         if (i)
                             edges.emplace_back(lastPoint, p, true);
                         lastPoint = p;
@@ -354,7 +344,7 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
                 int r = rank(*it);
                 int zDist = abs(p.z - it->point.z);
                 int otherZdist = abs(p.z - it->otherPoint.z);
-                double dist = lenSquared(p - it->point);
+                double dist = pointLengthSquared(p - it->point);
 
                 if (closestRank >= 1 && abs(it->point.x - p.x) > closestDist)
                     return false;
