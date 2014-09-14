@@ -685,7 +685,8 @@ struct PositiveWinding {
 };
 
 template<typename PolygonSet, typename It>
-void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
+PolygonSet getPolygonSetFromEdges(It begin, It end) {
+    PolygonSet ps;
     while (begin != end) {
         if (begin->next) {
             ps.emplace_back();
@@ -708,15 +709,18 @@ void fillPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
         }
         ++begin;
     }
+    return ps;
 }
 
-template<typename PolygonSet, typename Edges>
-void fillPolygonSetFromEdges(PolygonSet& ps, Edges&& edges) {
-    fillPolygonSetFromEdges(ps, edges.begin(), edges.end());
+template<typename PolygonSet, typename Container>
+PolygonSet getPolygonSetFromEdges(Container&& container) {
+    return getPolygonSetFromEdges<PolygonSet>(begin(container), end(container));
 }
 
 template<typename PolygonSet, typename It>
-void fillOpenPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
+PolygonSet getOpenPolygonSetFromEdges(It begin, It end) {
+    PolygonSet ps;
+
     // Grab open polygons
     auto b = begin;
     while (b != end) {
@@ -769,11 +773,13 @@ void fillOpenPolygonSetFromEdges(PolygonSet& ps, It begin, It end) {
         }
         ++b;
     }
-} // fillOpenPolygonSetFromEdges
 
-template<typename PolygonSet, typename Edges>
-void fillOpenPolygonSetFromEdges(PolygonSet& ps, Edges&& edges) {
-    fillOpenPolygonSetFromEdges(ps, edges.begin(), edges.end());
+    return ps;
+} // getOpenPolygonSetFromEdges
+
+template<typename PolygonSet, typename Container>
+PolygonSet getOpenPolygonSetFromEdges(Container&& container) {
+    return getOpenPolygonSetFromEdges<PolygonSet>(begin(container), end(container));
 }
 
 template<typename PolygonSet, typename Winding>
@@ -794,9 +800,7 @@ PolygonSet cleanPolygonSet(const PolygonSet& ps, Winding winding) {
         makeAccumulateWindingNumber(NotExcluded{}),
         makeCombinePairs<ScanlineEdge>(winding, [](ScanlineEdge& a, ScanlineEdge& b){a.edge->next = b.edge; }));
 
-    PolygonSet result;
-    fillPolygonSetFromEdges(result, edges.begin(), edges.end());
-    return result;
+    return getPolygonSetFromEdges<PolygonSet>(edges.begin(), edges.end());
 }
 
 template<typename CompareWinding>

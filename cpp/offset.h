@@ -147,4 +147,18 @@ static PolygonSet offset(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> 
     return result;
 }
 
+template<typename PolygonSet, typename Polygon>
+static PolygonSet offsetPolygon(const Polygon& poly, UnitFromPolygon_t<Polygon> amount, UnitFromPolygon_t<Polygon> arcTolerance, bool closed) {
+    PolygonSet result;
+    Polygon raw = rawOffset(poly, amount, arcTolerance, closed);
+    result.push_back(move(raw));
+
+    auto cleanStartTime = std::chrono::high_resolution_clock::now();
+    result = cleanPolygonSet(result, PositiveWinding{});
+    printf("offset clean time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
+    printf("polys: %d\n", result.size());
+
+    return result;
+}
+
 } // namespace FlexScan
