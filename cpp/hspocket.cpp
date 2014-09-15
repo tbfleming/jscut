@@ -92,6 +92,26 @@ void trimSpiral(Polygon& spiral, const PolygonSet& safeArea) {
     printf("spiral trim time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - spiralTrimStartTime).count());
 }
 
+PolygonSet reduceResolution(const PolygonSet& src) {
+    PolygonSet result;
+    for (auto& poly: src) {
+        if (poly.size() < 2)
+            continue;
+        result.emplace_back();
+        auto& dest = result.back();
+        for (size_t i = 0; i < poly.size(); ++i) {
+            if (!i || pointDistanceSquared(dest.back(), poly[i]) >= spiralArcTolerance * spiralArcTolerance)
+                dest.emplace_back(poly[i]);
+            else if (i+1 == poly.size()) {
+                if (dest.size() > 1)
+                    dest.pop_back();
+                dest.emplace_back(poly[i]);
+            }
+        }
+    }
+    return result;
+}
+
 extern "C" void hspocket(
     double** paths, int numPaths, int* pathSizes, double cutterDia,
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
@@ -109,7 +129,7 @@ extern "C" void hspocket(
         int minProgress = lround(stepover / 8);
         int precision = lround(inchToClipperScale / 5000);
 
-        PolygonSet safeArea = offset(geometry, -cutterDia / 2, arcTolerance, true);
+        PolygonSet safeArea = offset(geometry, -cutterDia / 2, arcTolerance, OffsetOp::closed);
         //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, safeArea, true);
         //return;
 
@@ -120,7 +140,7 @@ extern "C" void hspocket(
 
         PolygonSet cutterPaths;
         cutterPaths.push_back(move(spiral));
-        PolygonSet cutArea = offset(cutterPaths, cutterDia / 2, arcTolerance, false);
+        PolygonSet cutArea = offset(cutterPaths, cutterDia / 2, arcTolerance, OffsetOp::open);
 
         //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
         //return;
@@ -144,10 +164,11 @@ extern "C" void hspocket(
             //if (xxx >= yyy)
             //    break;
             printf("* a\n");
-            auto front = offset(cutArea, -cutterDia / 2 + stepover, arcTolerance, true);
+            auto front = reduceResolution(offset(cutArea, -cutterDia / 2 + stepover, arcTolerance, OffsetOp::closed));
+
             printf("* b\n");
             //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
-            auto back = offset(front, minProgress - stepover, arcTolerance, true);
+            auto back = offset(front, minProgress - stepover, arcTolerance, OffsetOp::closed);
 
             printf("* c\n");
             PolygonSet q = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
@@ -155,9 +176,9 @@ extern "C" void hspocket(
                 makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }),
                 SetNext{}));
             printf("* d\n");
-            q = offset(q, -minRadius, arcTolerance, true);
+            q = offset(q, -minRadius, arcTolerance, OffsetOp::closed);
             printf("* e\n");
-            q = offset(q, minRadius, arcTolerance, true);
+            q = offset(q, minRadius, arcTolerance, OffsetOp::closed);
             if (q.empty())
                 break;
 
@@ -192,12 +213,16 @@ extern "C" void hspocket(
             while (!found && !candidates.empty()) {
                 auto& newCutterPath = candidates.front().path;
                 printf("* i1\n");
-                auto newCutArea = offsetPolygon<PolygonSet>(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back());
+                auto newCutArea = offsetPolygon<PolygonSet>(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back() ? OffsetOp::closed : OffsetOp::openRight);
 
-                //if (xxx == 1) {
-                //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, newCutArea, true);
-                //    return;
-                //}
+                if (xxx == 2) {
+                    auto dbg = rawOffset(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back() ? OffsetOp::closed : OffsetOp::openRight);
+                    for (size_t i = 0; i+1 < newCutterPath.size(); ++i)
+                        if (newCutterPath[i] == newCutterPath[i+1])
+                            printf("== %d\n", i);
+                    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {dbg}, true);
+                    return;
+                }
 
                 printf("* i3\n");
                 bool haveSomething = false;

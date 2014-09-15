@@ -49,6 +49,12 @@ namespace cam {
         return pointLength(Point{x(p1)-x(p2), y(p1)-y(p2)});
     }
 
+    template<typename Point>
+    static double pointDistanceSquared(Point p1, Point p2)
+    {
+        return pointLengthSquared(Point{x(p1)-x(p2), y(p1)-y(p2)});
+    }
+
     // 2D point with Z. This is not a 3D point. Z is extra data; most operations ignore Z.
     struct PointWithZ {
         using coordinate_type = int;

@@ -21,8 +21,14 @@
 
 namespace FlexScan {
 
+enum class OffsetOp {
+    closed,
+    open,
+    openRight,
+};
+
 template<typename Polygon>
-static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount, UnitFromPolygon_t<Polygon> arcTolerance, bool closed) {
+static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount, UnitFromPolygon_t<Polygon> arcTolerance, OffsetOp offsetOp) {
     using Point = PointFromPolygon_t<Polygon>;
     using Unit = UnitFromPolygon_t<Polygon>;
     using Segment = bp::segment_data<Unit>;
@@ -85,7 +91,7 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
     };
 
     Polygon raw;
-    if (closed) {
+    if (offsetOp == OffsetOp::closed) {
         const Point* p0 = &path.back();
         const Point* p1 = &path[0];
         for (size_t i = 0; i+1 < path.size(); ++i) {
@@ -106,11 +112,20 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
             p0 = p1;
             p1 = p2;
         }
-        for (size_t i = path.size()-1; i > 0; --i) {
-            const Point* p2 = &path[i-1];
+        if (offsetOp == OffsetOp::open) {
+            for (size_t i = path.size()-1; i > 0; --i) {
+                const Point* p2 = &path[i-1];
+                processSegment(raw, *p0, *p1, *p2, amount);
+                p0 = p1;
+                p1 = p2;
+            }
+        }
+        // openRight
+        else {
+            const Point* p2 = &path[path.size()-2];
             processSegment(raw, *p0, *p1, *p2, amount);
-            p0 = p1;
-            p1 = p2;
+            for (size_t i = path.size(); i > 0; --i)
+                raw.emplace_back(path[i-1]);
         }
     }
 
@@ -120,22 +135,22 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
 }
 
 template<typename PolygonSet>
-static PolygonSet rawOffsetPolygonSet(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> amount, UnitFromPolygonSet_t<PolygonSet> arcTolerance, bool closed) {
+static PolygonSet rawOffsetPolygonSet(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> amount, UnitFromPolygonSet_t<PolygonSet> arcTolerance, OffsetOp offsetOp) {
     PolygonSet result;
     for (auto& poly: ps) {
-        auto raw = rawOffset(poly, amount, arcTolerance, closed);
+        auto raw = rawOffset(poly, amount, arcTolerance, offsetOp);
         result.push_back(move(raw));
     }
     return result;
 }
 
 template<typename PolygonSet>
-static PolygonSet offset(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> amount, UnitFromPolygonSet_t<PolygonSet> arcTolerance, bool closed) {
+static PolygonSet offset(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> amount, UnitFromPolygonSet_t<PolygonSet> arcTolerance, OffsetOp offsetOp) {
     using Polygon = PolygonFromPolygonSet_t<PolygonSet>;
 
     PolygonSet result;
     for (auto& poly: ps) {
-        Polygon raw = rawOffset(poly, amount, arcTolerance, closed);
+        Polygon raw = rawOffset(poly, amount, arcTolerance, offsetOp);
         result.push_back(move(raw));
     }
 
@@ -148,9 +163,9 @@ static PolygonSet offset(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> 
 }
 
 template<typename PolygonSet, typename Polygon>
-static PolygonSet offsetPolygon(const Polygon& poly, UnitFromPolygon_t<Polygon> amount, UnitFromPolygon_t<Polygon> arcTolerance, bool closed) {
+static PolygonSet offsetPolygon(const Polygon& poly, UnitFromPolygon_t<Polygon> amount, UnitFromPolygon_t<Polygon> arcTolerance, OffsetOp offsetOp) {
     PolygonSet result;
-    Polygon raw = rawOffset(poly, amount, arcTolerance, closed);
+    Polygon raw = rawOffset(poly, amount, arcTolerance, offsetOp);
     result.push_back(move(raw));
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
