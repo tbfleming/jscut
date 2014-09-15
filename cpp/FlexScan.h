@@ -675,6 +675,23 @@ struct SetNextAndPrev {
     }
 };
 
+struct SetHaveSomething {
+    bool* haveSomething;
+
+    SetHaveSomething(bool& haveSomething) :
+        haveSomething(&haveSomething)
+    {
+    }
+
+    SetHaveSomething(const SetHaveSomething&) = default;
+    SetHaveSomething& operator=(const SetHaveSomething&) = default;
+
+    template<typename ScanlineEdge>
+    void operator()(ScanlineEdge& a, ScanlineEdge& b) const {
+        *haveSomething = true;
+    }
+};
+
 struct PositiveWinding {
     template<typename ScanlineEdge>
     bool operator()(const ScanlineEdge& e) const{

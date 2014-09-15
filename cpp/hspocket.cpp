@@ -136,7 +136,7 @@ extern "C" void hspocket(
 
         auto loopStartTime = std::chrono::high_resolution_clock::now();
 
-        int yyy = 2;
+        int yyy = 3;
         int xxx = 0;
         while (true) {
             printf("%d\n", xxx);
@@ -161,8 +161,10 @@ extern "C" void hspocket(
             if (q.empty())
                 break;
 
-            //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, q, true);
-            //return;
+            //if (xxx == 2) {
+            //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths, true);
+            //    return;
+            //}
 
             printf("* f\n");
             PolygonSet paths = getOpenPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgePrev>>(
@@ -190,31 +192,42 @@ extern "C" void hspocket(
             while (!found && !candidates.empty()) {
                 auto& newCutterPath = candidates.front().path;
                 printf("* i1\n");
-                reverse(newCutterPath.begin(), newCutterPath.end());
-                printf("* i2\n");
                 auto newCutArea = offsetPolygon<PolygonSet>(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back());
-                //if (!clip(newCutArea, cutArea, ctDifference).empty()) {
 
-                    //if (xxx >= yyy) {
-                    //    cutterPaths.clear();
-                    //    //cutterPaths.push_back(move(newCutterPath));
-                    //    cutterPaths.push_back(move(ccc));
-                    //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths);
-                    //    return;
-                    //}
-
-
-
-
-
-                //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
-                //return;
-
-
-                //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, newCutArea, true);
-                //return;
+                //if (xxx == 1) {
+                //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, newCutArea, true);
+                //    return;
+                //}
 
                 printf("* i3\n");
+                bool haveSomething = false;
+                combinePolygonSet<FlexScan::Edge<Point, EdgeId>>(
+                    newCutArea, cutArea, true, true,
+                    makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
+                    SetHaveSomething{haveSomething});
+                if (haveSomething) {
+                    printf("* i3a\n");
+                    reverse(newCutterPath.begin(), newCutterPath.end());
+
+                    if (xxx == 6) {
+                        auto qqq = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
+                            newCutArea, cutArea, true, true,
+                            makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
+                            SetNext{}));
+                        printf("%d\n", qqq.size());
+                        for (auto& p: qqq)
+                            printf("%d\n", p.size());
+                        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, qqq, true);
+                        return;
+                    }
+
+                    //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
+                    //return;
+
+                    //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, newCutArea, true);
+                    //return;
+
+                    printf("* i4\n");
                     cutterPaths.push_back(move(newCutterPath));
                     cutArea = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
                         cutArea, newCutArea, true, true,
@@ -227,20 +240,23 @@ extern "C" void hspocket(
                     //printf("Here!\n");
                     //break;
 
-                    printf("* i4\n");
+                    printf("* i5\n");
                     updateCurrentPos();
                     found = true;
-                //}
-                //else {
-                //    pop_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
-                //    candidates.pop_back();
-                //}
+                }
+                else {
+                    printf("* i3x\n");
+                    pop_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
+                    candidates.pop_back();
+                }
             }
 
             printf("* end i\n");
 
-            if (!found)
+            if (!found) {
+                printf("!found xxx=%d\n", xxx);
                 break;
+            }
 
             if (xxx >= yyy) {
                 //cutterPaths = cutArea.concat(newCutArea);
