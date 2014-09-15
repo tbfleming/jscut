@@ -45,8 +45,6 @@ struct TimeTrack {
     }
 };
 
-
-
 // Combine less comparitors
 template<typename T, typename Less0, typename... TLess>
 bool combineLess(const T& a, const T& b, const Less0& less0, const TLess&... less)
