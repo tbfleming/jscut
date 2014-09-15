@@ -676,8 +676,8 @@ public:
                 --e;
                 candidates.erase(candidates.begin() + other);
             }
-            else
-                printf("!*!*!*!!!!*!*!! CombinePairs\n");
+            //else
+            //    printf("!*!*!*!!!!*!*!! CombinePairs\n");
             ++b;
         }
         //printf("~CombinePairs\n");

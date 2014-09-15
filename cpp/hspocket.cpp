@@ -114,30 +114,45 @@ PolygonSet reduceResolution(const PolygonSet& src) {
     return result;
 }
 
+static FlexScan::TimeTrack timeTracks[14];
+
 static vector<CandidatePath> getCandidates(double cutterDia, int stepover, int currentX, int currentY, int minProgress, const PolygonSet& safeArea, const PolygonSet& cutArea)
 {
+    timeTracks[0].start();
     auto front = reduceResolution(offset(cutArea, -cutterDia / 2 + stepover, arcTolerance, OffsetOp::closed));
-    //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
-    auto back = offset(front, minProgress - stepover, arcTolerance, OffsetOp::closed);
+    timeTracks[0].stop();
 
+    //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
+    timeTracks[1].start();
+    auto back = offset(front, minProgress - stepover, arcTolerance, OffsetOp::closed);
+    timeTracks[1].stop();
+
+    timeTracks[2].start();
     PolygonSet q = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
         front, safeArea, true, true,
         makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }),
         SetNext{}));
+    timeTracks[2].stop();
     if (q.empty())
         return{};
 
+    timeTracks[3].start();
     PolygonSet paths = reduceResolution(getOpenPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgePrev>>(
         q, back, true, true,
         OpenMinusClosedCondition{},
         SetNextAndPrev{})));
+    timeTracks[3].stop();
 
+    timeTracks[4].start();
     vector<CandidatePath> candidates;
     for (auto& path: paths) {
         double d = pointDistance(path.back(), Point{currentX, currentY});
         candidates.push_back({move(path), d});
     }
+    timeTracks[4].stop();
+    timeTracks[5].start();
     make_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
+    timeTracks[5].stop();
 
     return candidates;
 }
@@ -152,7 +167,7 @@ extern "C" void hspocket(
 
         int startX = lround(67 / 25.4 * inchToClipperScale);
         int startY = lround(72 / 25.4 * inchToClipperScale);
-        int stepover = cutterDia / 4;
+        int stepover = cutterDia / 10;
         double spiralR = 60 / 25.4 * inchToClipperScale;
         int minProgress = lround(stepover / 8);
 
@@ -174,50 +189,67 @@ extern "C" void hspocket(
         };
         updateCurrentPos();
 
-        FlexScan::TimeTrack timeTracks[15];
         auto loopStartTime = std::chrono::high_resolution_clock::now();
 
-        int yyy = 39;
+        int yyy = 100;
         int xxx = 0;
         while (true) {
             ++xxx;
             printf("xxx = %d\n", xxx);
 
+            timeTracks[6].start();
             auto candidates = getCandidates(cutterDia, stepover, currentX, currentY, minProgress, safeArea, cutArea);
+            timeTracks[6].stop();
+            size_t numCandidates = candidates.size();
 
             bool found = false;
             while (!found && !candidates.empty()) {
                 auto& newCutterPath = candidates.front().path;
-                auto newCutArea = offsetPolygon<PolygonSet>(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back() ? OffsetOp::closed : OffsetOp::openRight);
+                timeTracks[7].start();
+                auto newCutArea = reduceResolution(offsetPolygon<PolygonSet>(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back() ? OffsetOp::closed : OffsetOp::openRight));
+                timeTracks[7].stop();
 
                 bool haveSomething = false;
+                timeTracks[8].start();
                 combinePolygonSet<FlexScan::Edge<Point, EdgeId>>(
                     newCutArea, cutArea, true, true,
                     makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
                     SetHaveSomething{haveSomething});
+                timeTracks[8].stop();
                 if (haveSomething) {
+                    timeTracks[9].start();
                     reverse(newCutterPath.begin(), newCutterPath.end());
+                    timeTracks[9].stop();
 
+                    timeTracks[10].start();
                     cutterPaths.push_back(move(newCutterPath));
+                    timeTracks[10].stop();
+                    timeTracks[11].start();
                     cutArea = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
                         cutArea, newCutArea, true, true,
                         makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 || w2 > 0; }),
                         SetNext{}));
+                    timeTracks[11].stop();
 
+                    timeTracks[12].start();
                     updateCurrentPos();
+                    timeTracks[12].stop();
                     found = true;
                 }
                 else {
+                    timeTracks[13].start();
                     pop_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
                     candidates.pop_back();
+                    timeTracks[13].stop();
                 }
             }
-
 
             if (!found) {
                 printf("!found xxx=%d\n", xxx);
                 break;
             }
+
+            printf("  %d/%d\n", numCandidates-candidates.size(), numCandidates);
 
             if (xxx >= yyy)
                 break;
@@ -228,7 +260,8 @@ extern "C" void hspocket(
 
         printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
 
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths, true);
+        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths, true);
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
     }
     catch (exception& e) {
         printf("%s\n", e.what());
