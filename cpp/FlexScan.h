@@ -441,8 +441,8 @@ struct Scan {
                 scanX = std::min(scanX, x(edgeBegin->point1));
         }
 
-        printf("sortTime:     %d\n", sortTime.ms());
-        printf("callbackTime: %d\n", callbackTime.ms());
+        //printf("sortTime:     %d\n", sortTime.ms());
+        //printf("callbackTime: %d\n", callbackTime.ms());
     }
 }; // Scan
 
@@ -838,20 +838,20 @@ PolygonSet cleanPolygonSet(const PolygonSet& ps, Winding winding) {
     using Scan = Scan<ScanlineEdge>;
 
     std::vector<Edge> edges;
-    printf("clean: a\n");
+    //printf("clean: a\n");
     Scan::insertPolygons(edges, ps.begin(), ps.end());
 
-    printf("clean: b\n");
+    //printf("clean: b\n");
     Scan::intersectEdges(edges, edges.begin(), edges.end());
-    printf("clean: c\n");
+    //printf("clean: c\n");
     Scan::sortEdges(edges.begin(), edges.end());
-    printf("clean: d\n");
+    //printf("clean: d\n");
     Scan::scan(
         edges.begin(), edges.end(),
         ExcludeOppositeEdges{},
         makeAccumulateWindingNumber(NotExcluded{}),
         makeCombinePairs<ScanlineEdge>(winding, [](ScanlineEdge& a, ScanlineEdge& b){a.edge->next = b.edge; }));
-    printf("clean: e\n");
+    //printf("clean: e\n");
 
     return getPolygonSetFromEdges<PolygonSet>(edges.begin(), edges.end());
 }

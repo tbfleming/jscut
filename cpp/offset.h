@@ -40,7 +40,7 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    auto processSegment = [arcTolerance](Polygon& raw, const Point& p0, const Point& p1, const Point& p2, int amount) {
+    auto processSegment = [arcTolerance, offsetOp](Polygon& raw, const Point& p0, const Point& p1, const Point& p2, int amount) {
         if (p1 == p0)
             return;
 
@@ -54,6 +54,13 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
         auto o = orientation(Segment{p1, {x(p1)+x(normal01), y(p1)+y(normal01)}}, Segment{p1, {x(p1)+x(normal12), y(p1)+y(normal12)}});
         if (amount < 0)
             o = -o;
+
+        //if (offsetOp == OffsetOp::openRight) {
+        //    raw.push_back({x(p1)+x(normal01), y(p1)+y(normal01)});
+        //    raw.push_back(p1);
+        //    raw.push_back({x(p1)+x(normal12), y(p1)+y(normal12)});
+        //    return;
+        //}
 
         // turn left
         if (o == 1 || o == 0 && dot(normal01, normal12) < 0) {
@@ -91,6 +98,11 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
     };
 
     Polygon raw;
+    //if (offsetOp == OffsetOp::openRight) {
+    //    for (size_t i = 0; i+2 < path.size(); ++i) {
+    //        processSegment(raw, path[i], path[i+1], path[i+2], amount);
+    //    }
+    //}
     if (offsetOp == OffsetOp::closed) {
         const Point* p0 = &path.back();
         const Point* p1 = &path[0];
@@ -129,7 +141,7 @@ static Polygon rawOffset(const Polygon& path, UnitFromPolygon_t<Polygon> amount,
         }
     }
 
-    printf("rawOffset time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count());
+    //printf("rawOffset time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count());
 
     return raw;
 }
@@ -156,8 +168,8 @@ static PolygonSet offset(const PolygonSet& ps, UnitFromPolygonSet_t<PolygonSet> 
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
     result = cleanPolygonSet(result, PositiveWinding{});
-    printf("offset clean time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
-    printf("polys: %d\n", result.size());
+    //printf("offset clean time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
+    //printf("polys: %d\n", result.size());
 
     return result;
 }
@@ -170,8 +182,8 @@ static PolygonSet offsetPolygon(const Polygon& poly, UnitFromPolygon_t<Polygon> 
 
     auto cleanStartTime = std::chrono::high_resolution_clock::now();
     result = cleanPolygonSet(result, PositiveWinding{});
-    printf("offset clean time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
-    printf("polys: %d\n", result.size());
+    //printf("offset clean time: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cleanStartTime).count());
+    //printf("polys: %d\n", result.size());
 
     return result;
 }

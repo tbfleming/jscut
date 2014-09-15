@@ -95,6 +95,7 @@ void trimSpiral(Polygon& spiral, const PolygonSet& safeArea) {
 PolygonSet reduceResolution(const PolygonSet& src) {
     PolygonSet result;
     for (auto& poly: src) {
+        //printf("@@@@@@@@@\n");
         if (poly.size() < 2)
             continue;
         result.emplace_back();
@@ -108,6 +109,7 @@ PolygonSet reduceResolution(const PolygonSet& src) {
                 dest.emplace_back(poly[i]);
             }
         }
+        //printf("%d -> %d\n", poly.size(), dest.size());
     }
     return result;
 }
@@ -156,28 +158,28 @@ extern "C" void hspocket(
 
         auto loopStartTime = std::chrono::high_resolution_clock::now();
 
-        int yyy = 3;
+        int yyy = 80;
         int xxx = 0;
         while (true) {
-            printf("%d\n", xxx);
             ++xxx;
+            printf("xxx = %d\n", xxx);
             //if (xxx >= yyy)
             //    break;
-            printf("* a\n");
+            if(xxx == yyy) printf("* a\n");
             auto front = reduceResolution(offset(cutArea, -cutterDia / 2 + stepover, arcTolerance, OffsetOp::closed));
 
-            printf("* b\n");
+            if (xxx == yyy) printf("* b\n");
             //auto back = offset(cutArea, -cutterDia / 2 + minProgress);
             auto back = offset(front, minProgress - stepover, arcTolerance, OffsetOp::closed);
 
-            printf("* c\n");
+            if (xxx == yyy) printf("* c\n");
             PolygonSet q = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
                 front, safeArea, true, true,
                 makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }),
                 SetNext{}));
-            printf("* d\n");
+            if (xxx == yyy) printf("* d\n");
             q = offset(q, -minRadius, arcTolerance, OffsetOp::closed);
-            printf("* e\n");
+            if (xxx == yyy) printf("* e\n");
             q = offset(q, minRadius, arcTolerance, OffsetOp::closed);
             if (q.empty())
                 break;
@@ -187,11 +189,11 @@ extern "C" void hspocket(
             //    return;
             //}
 
-            printf("* f\n");
-            PolygonSet paths = getOpenPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgePrev>>(
+            if (xxx == yyy) printf("* f\n");
+            PolygonSet paths = reduceResolution(getOpenPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgePrev>>(
                 q, back, true, true,
                 OpenMinusClosedCondition{},
-                SetNextAndPrev{}));
+                SetNextAndPrev{})));
 
             //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, paths, true);
             //return;
@@ -199,52 +201,55 @@ extern "C" void hspocket(
             //if (xxx >= yyy)
             //    break;
 
-            printf("* g\n");
+            if (xxx == yyy) printf("* g\n");
             vector<CandidatePath> candidates;
             for (auto& path: paths) {
                 double d = pointDistance(path.back(), Point{currentX, currentY});
                 candidates.push_back({move(path), d});
             }
-            printf("* h\n");
+            if (xxx == yyy) printf("* h\n");
             make_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
 
-            printf("* i\n");
+            if (xxx == yyy) printf("* i\n");
             bool found = false;
             while (!found && !candidates.empty()) {
                 auto& newCutterPath = candidates.front().path;
-                printf("* i1\n");
+                if (xxx == yyy) printf("* i1\n");
                 auto newCutArea = offsetPolygon<PolygonSet>(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back() ? OffsetOp::closed : OffsetOp::openRight);
 
-                if (xxx == 2) {
-                    auto dbg = rawOffset(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back() ? OffsetOp::closed : OffsetOp::openRight);
-                    for (size_t i = 0; i+1 < newCutterPath.size(); ++i)
-                        if (newCutterPath[i] == newCutterPath[i+1])
-                            printf("== %d\n", i);
-                    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {dbg}, true);
-                    return;
-                }
+                //if (xxx == 2) {
+                //    //newCutterPath = reduceResolution({newCutterPath})[0];
+                //    printf("%d\n", newCutterPath.size());
+                //    auto dbg = rawOffset(newCutterPath, cutterDia / 2, arcTolerance, newCutterPath.front() == newCutterPath.back() ? OffsetOp::closed : OffsetOp::openRight);
+                //    for (size_t i = 0; i+1 < newCutterPath.size(); ++i)
+                //        if (newCutterPath[i] == newCutterPath[i+1])
+                //            printf("== %d\n", i);
+                //    //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {dbg}, true);
+                //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, {newCutterPath}, true);
+                //    return;
+                //}
 
-                printf("* i3\n");
+                if (xxx == yyy) printf("* i3 xxx=%d\n", xxx);
                 bool haveSomething = false;
                 combinePolygonSet<FlexScan::Edge<Point, EdgeId>>(
                     newCutArea, cutArea, true, true,
                     makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
                     SetHaveSomething{haveSomething});
                 if (haveSomething) {
-                    printf("* i3a\n");
+                    if (xxx == yyy) printf("* i3a newCutterPath:%d\n", newCutterPath.size());
                     reverse(newCutterPath.begin(), newCutterPath.end());
 
-                    if (xxx == 6) {
-                        auto qqq = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
-                            newCutArea, cutArea, true, true,
-                            makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
-                            SetNext{}));
-                        printf("%d\n", qqq.size());
-                        for (auto& p: qqq)
-                            printf("%d\n", p.size());
-                        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, qqq, true);
-                        return;
-                    }
+                    //if (xxx == 2) {
+                    //    auto qqq = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
+                    //        newCutArea, cutArea, true, true,
+                    //        makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
+                    //        SetNext{}));
+                    //    printf("%d\n", qqq.size());
+                    //    for (auto& p: qqq)
+                    //        printf("%d\n", p.size());
+                    //    convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, qqq, true);
+                    //    return;
+                    //}
 
                     //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
                     //return;
@@ -252,7 +257,7 @@ extern "C" void hspocket(
                     //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, newCutArea, true);
                     //return;
 
-                    printf("* i4\n");
+                    if (xxx == yyy) printf("* i4\n");
                     cutterPaths.push_back(move(newCutterPath));
                     cutArea = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
                         cutArea, newCutArea, true, true,
@@ -265,18 +270,18 @@ extern "C" void hspocket(
                     //printf("Here!\n");
                     //break;
 
-                    printf("* i5\n");
+                    if (xxx == yyy) printf("* i5\n");
                     updateCurrentPos();
                     found = true;
                 }
                 else {
-                    printf("* i3x\n");
+                    if (xxx == yyy) printf("* i3x\n");
                     pop_heap(candidates.begin(), candidates.end(), [](CandidatePath& a, CandidatePath& b){return a.distToCurrentPos > b.distToCurrentPos; });
                     candidates.pop_back();
                 }
             }
 
-            printf("* end i\n");
+            if (xxx == yyy) printf("* end i\n");
 
             if (!found) {
                 printf("!found xxx=%d\n", xxx);
