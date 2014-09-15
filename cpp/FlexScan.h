@@ -25,6 +25,28 @@ namespace FlexScan {
 
 namespace bp = boost::polygon;
 
+struct TimeTrack {
+    std::chrono::high_resolution_clock::duration total;
+    std::chrono::high_resolution_clock::time_point timePoint;
+
+    void start()
+    {
+        timePoint = std::chrono::high_resolution_clock::now();
+    }
+
+    void stop()
+    {
+        total += std::chrono::high_resolution_clock::now() - timePoint;
+    }
+
+    int ms()
+    {
+        return (int)std::chrono::duration_cast<std::chrono::milliseconds>(total).count();
+    }
+};
+
+
+
 // Combine less comparitors
 template<typename T, typename Less0, typename... TLess>
 bool combineLess(const T& a, const T& b, const Less0& less0, const TLess&... less)
@@ -323,6 +345,8 @@ struct Scan {
         Callback... callback)
     {
         const bool debug = false;
+        TimeTrack sortTime;
+        TimeTrack callbackTime;
         if (edgeBegin == edgeEnd)
             return;
 
@@ -347,7 +371,9 @@ struct Scan {
                 scanlineEdge.atEndpoint = scanX == x(edge.point1) || scanX == x(edge.point2);
             }
 
+            sortTime.start();
             sort(begin(scanlineEdges), end(scanlineEdges), lessScanlineEdge);
+            sortTime.stop();
 
             if (debug) {
                 printf("\nscan line:\n");
@@ -381,7 +407,9 @@ struct Scan {
                     //    x(edge.point1) == x(edge.point2) ? "vertical" : "");
                 }
                 //printf("call\n");
+                callbackTime.start();
                 callCallback(scanX, scanlineEdgeIt->yIntercept, scanlineEdgeIt, e, callback...);
+                callbackTime.stop();
                 while (scanlineEdgeIt < e && (x(scanlineEdgeIt->edge->point1) != x(scanlineEdgeIt->edge->point2) || scanlineEdgeIt->atPoint2))
                     ++scanlineEdgeIt;
                 for (auto it = scanlineEdgeIt; it < e; ++it) {
@@ -412,6 +440,9 @@ struct Scan {
             if (edgeBegin != edgeEnd)
                 scanX = std::min(scanX, x(edgeBegin->point1));
         }
+
+        printf("sortTime:     %d\n", sortTime.ms());
+        printf("callbackTime: %d\n", callbackTime.ms());
     }
 }; // Scan
 
@@ -807,15 +838,20 @@ PolygonSet cleanPolygonSet(const PolygonSet& ps, Winding winding) {
     using Scan = Scan<ScanlineEdge>;
 
     std::vector<Edge> edges;
+    printf("clean: a\n");
     Scan::insertPolygons(edges, ps.begin(), ps.end());
 
+    printf("clean: b\n");
     Scan::intersectEdges(edges, edges.begin(), edges.end());
+    printf("clean: c\n");
     Scan::sortEdges(edges.begin(), edges.end());
+    printf("clean: d\n");
     Scan::scan(
         edges.begin(), edges.end(),
         ExcludeOppositeEdges{},
         makeAccumulateWindingNumber(NotExcluded{}),
         makeCombinePairs<ScanlineEdge>(winding, [](ScanlineEdge& a, ScanlineEdge& b){a.edge->next = b.edge; }));
+    printf("clean: e\n");
 
     return getPolygonSetFromEdges<PolygonSet>(edges.begin(), edges.end());
 }
