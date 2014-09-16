@@ -158,6 +158,7 @@ static vector<CandidatePath> getCandidates(double cutterDia, int stepover, int c
 }
 
 extern "C" void hspocket(
+    int debugArg0, int debugArg1,
     double** paths, int numPaths, int* pathSizes, double cutterDia,
     double**& resultPaths, int& resultNumPaths, int*& resultPathSizes
     )
@@ -191,7 +192,6 @@ extern "C" void hspocket(
 
         auto loopStartTime = std::chrono::high_resolution_clock::now();
 
-        int yyy = 100;
         int xxx = 0;
         while (true) {
             ++xxx;
@@ -251,7 +251,7 @@ extern "C" void hspocket(
 
             printf("  %d/%d\n", numCandidates-candidates.size(), numCandidates);
 
-            if (xxx >= yyy)
+            if (debugArg0 && xxx >= debugArg0)
                 break;
         }
 
@@ -260,8 +260,7 @@ extern "C" void hspocket(
 
         printf("hspocket loop: %d\n", (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - loopStartTime).count());
 
-        //convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths, true);
-        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutArea, true);
+        convertPathsToC(resultPaths, resultNumPaths, resultPathSizes, cutterPaths, true);
     }
     catch (exception& e) {
         printf("%s\n", e.what());

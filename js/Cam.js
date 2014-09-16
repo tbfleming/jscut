@@ -147,12 +147,13 @@ jscut.priv.cam = jscut.priv.cam || {};
         memoryBlocks.push(resultPathSizesRef);
 
         //extern "C" void hspocket(
+        //    int debugArg0, int debugArg1,
         //    double** paths, int numPaths, int* pathSizes, double cutterDia,
         //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
         Module.ccall(
             'hspocket',
-            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number'],
-            [cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+            'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+            [miscViewModel.debugArg0(), miscViewModel.debugArg1(), cGeometry[0], cGeometry[1], cGeometry[2], cutterDia, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
 
         var result = jscut.priv.path.convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
 
