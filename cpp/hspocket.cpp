@@ -128,18 +128,18 @@ static vector<CandidatePath> getCandidates(double cutterDia, int stepover, int c
     timeTracks[1].stop();
 
     timeTracks[2].start();
-    PolygonSet q = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
+    PolygonSet q = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgeReversed>>(
         front, safeArea, true, true,
-        makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 > 0; }),
+        makeCombinePolygonSetWinding([](int w1, int w2){return w1 > 0 && w2 > 0; }),
         SetNext{}));
     timeTracks[2].stop();
     if (q.empty())
         return{};
 
     timeTracks[3].start();
-    PolygonSet paths = reduceResolution(getOpenPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgePrev>>(
+    PolygonSet paths = reduceResolution(getOpenPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgePrev, EdgeReversed>>(
         q, back, true, true,
-        OpenMinusClosedCondition{},
+        OpenMinusClosedWinding{},
         SetNextAndPrev{})));
     timeTracks[3].stop();
 
@@ -211,9 +211,9 @@ extern "C" void hspocket(
 
                 bool haveSomething = false;
                 timeTracks[8].start();
-                combinePolygonSet<FlexScan::Edge<Point, EdgeId>>(
+                combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeReversed>>(
                     newCutArea, cutArea, true, true,
-                    makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
+                    makeCombinePolygonSetWinding([](int w1, int w2){return w1 > 0 && w2 <= 0; }),
                     SetHaveSomething{haveSomething});
                 timeTracks[8].stop();
                 if (haveSomething) {
@@ -225,9 +225,9 @@ extern "C" void hspocket(
                     cutterPaths.push_back(move(newCutterPath));
                     timeTracks[10].stop();
                     timeTracks[11].start();
-                    cutArea = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext>>(
+                    cutArea = getPolygonSetFromEdges<PolygonSet>(combinePolygonSet<FlexScan::Edge<Point, EdgeId, EdgeNext, EdgeReversed>>(
                         cutArea, newCutArea, true, true,
-                        makeCombinePolygonSetCondition([](int w1, int w2){return w1 > 0 || w2 > 0; }),
+                        makeCombinePolygonSetWinding([](int w1, int w2){return w1 > 0 || w2 > 0; }),
                         SetNext{}));
                     timeTracks[11].stop();
 

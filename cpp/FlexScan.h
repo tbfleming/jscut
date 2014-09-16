@@ -154,6 +154,11 @@ struct EdgePrev {
     Derived* prev = nullptr;
 };
 
+template<typename Derived>
+struct EdgeReversed {
+    bool reversed = false;
+};
+
 template<typename TEdge, template<typename Derived> class... Bases>
 struct ScanlineEdge : Bases<ScanlineEdge<TEdge, Bases...>>... {
     using Edge = TEdge;
@@ -617,14 +622,14 @@ AccumulateWindingNumber<DefaultWindingNumberBefore2, DefaultWindingNumberAfter2,
     return{DefaultWindingNumberBefore2{}, DefaultWindingNumberAfter2{}, condition};
 }
 
-template<typename ScanlineEdge, typename Condition, typename Combine>
+template<typename ScanlineEdge, typename Winding, typename Combine>
 struct CombinePairs {
 public:
-    Condition condition;
+    Winding winding;
     Combine combine;
 
-    CombinePairs(Condition condition, Combine combine) :
-        condition(condition),
+    CombinePairs(Winding winding, Combine combine) :
+        winding(winding),
         combine(combine)
     {
     }
@@ -635,8 +640,6 @@ public:
     CombinePairs& operator=(CombinePairs&&) = default;
 
 private:
-    mutable std::vector<ScanlineEdge*> candidates;
-
     // negative: polygon travels from edge to scan point
     // positive: polygon travels from scan point to edge
     static int getEdgeDirection(const ScanlineEdge& scanlineEdge) {
@@ -648,6 +651,24 @@ private:
         return i;
     }
 
+    struct Candidate {
+        ScanlineEdge* sledge = nullptr;
+        int direction = 0;
+        bool reversed = false;
+
+        Candidate() = default;
+        Candidate(ScanlineEdge* sledge, int direction, bool reversed) :
+            sledge{sledge},
+            direction{direction},
+            reversed{reversed}
+        {
+        }
+        Candidate(const Candidate&) = default;
+        Candidate& operator=(const Candidate&) = default;
+    };
+
+    mutable std::vector<Candidate> candidates;
+
 public:
     template<typename Unit, typename HighPrecision, typename It>
     void operator()(Unit scanX, HighPrecision scanY, It begin, It end) const
@@ -657,22 +678,28 @@ public:
         //printf("CombinePairs %d\n", end-begin);
         candidates.clear();
         candidates.reserve(end-begin);
-        for (auto it = begin; it < end; ++it)
-            if (it->atEndpoint && it->edge->deltaWindingNumber && condition(*it))
-                candidates.push_back(&*it);
+        for (auto it = begin; it < end; ++it) {
+            if (it->atEndpoint && it->edge->deltaWindingNumber) {
+                int w = winding(*it);
+                if (w)
+                    candidates.emplace_back(&*it, w * getEdgeDirection(*it), w < 0);
+            }
+        }
 
         size_t b = 0;
         size_t e = candidates.size();
         while (b != e) {
-            int edgeDirection = getEdgeDirection(*candidates[b]);
+            int edgeDirection = candidates[b].direction;
             auto other = e-1;
-            while (other != b && getEdgeDirection(*candidates[other]) != -edgeDirection)
+            while (other != b && candidates[other].direction != -edgeDirection)
                 --other;
             if (other != b) {
+                candidates[b].sledge->edge->reversed = candidates[b].reversed;
+                candidates[other].sledge->edge->reversed = candidates[other].reversed;
                 if (edgeDirection < 0)
-                    combine(*candidates[b], *candidates[other]);
+                    combine(*candidates[b].sledge, *candidates[other].sledge);
                 else
-                    combine(*candidates[other], *candidates[b]);
+                    combine(*candidates[other].sledge, *candidates[b].sledge);
                 --e;
                 candidates.erase(candidates.begin() + other);
             }
@@ -684,9 +711,9 @@ public:
     }
 };
 
-template<typename ScanlineEdge, typename Condition, typename Combine>
-CombinePairs<ScanlineEdge, Condition, Combine> makeCombinePairs(Condition condition, Combine combine) {
-    return{condition, combine};
+template<typename ScanlineEdge, typename Winding, typename Combine>
+CombinePairs<ScanlineEdge, Winding, Combine> makeCombinePairs(Winding winding, Combine combine) {
+    return{winding, combine};
 }
 
 struct SetNext {
@@ -723,7 +750,7 @@ struct SetHaveSomething {
 
 struct PositiveWinding {
     template<typename ScanlineEdge>
-    bool operator()(const ScanlineEdge& e) const{
+    int operator()(const ScanlineEdge& e) const{
         return !e.exclude && (
             e.windingNumberBefore == 0 && e.windingNumberAfter == 1 ||
             e.windingNumberBefore == 1 && e.windingNumberAfter == 0);
@@ -744,7 +771,7 @@ PolygonSet getPolygonSetFromEdges(It begin, It end) {
                 edge->next = nullptr;
                 edge = next;
                 if (edge) {
-                    if (swapped(*edge))
+                    if (swapped(*edge) ^ edge->reversed)
                         polygon.emplace_back(edge->point2);
                     else
                         polygon.emplace_back(edge->point1);
@@ -775,12 +802,12 @@ PolygonSet getOpenPolygonSetFromEdges(It begin, It end) {
             auto& polygon = ps.back();
             auto* edge = &*b;
             while (edge) {
-                if (swapped(*edge))
+                if (swapped(*edge) ^ edge->reversed)
                     polygon.emplace_back(edge->point2);
                 else
                     polygon.emplace_back(edge->point1);
                 if (!edge->next) {
-                    if (swapped(*edge))
+                    if (swapped(*edge) ^ edge->reversed)
                         polygon.emplace_back(edge->point1);
                     else
                         polygon.emplace_back(edge->point2);
@@ -802,12 +829,12 @@ PolygonSet getOpenPolygonSetFromEdges(It begin, It end) {
             auto& polygon = ps.back();
             auto* edge = &*b;
             while (edge) {
-                if (swapped(*edge))
+                if (swapped(*edge) ^ edge->reversed)
                     polygon.emplace_back(edge->point2);
                 else
                     polygon.emplace_back(edge->point1);
                 if (!edge->next) {
-                    if (swapped(*edge))
+                    if (swapped(*edge) ^ edge->reversed)
                         polygon.emplace_back(edge->point1);
                     else
                         polygon.emplace_back(edge->point2);
@@ -831,7 +858,7 @@ PolygonSet getOpenPolygonSetFromEdges(Container&& container) {
 template<typename PolygonSet, typename Winding>
 PolygonSet cleanPolygonSet(const PolygonSet& ps, Winding winding) {
     using Point = PointFromPolygonSet_t<PolygonSet>;
-    using Edge = Edge<Point, EdgeNext>;
+    using Edge = Edge<Point, EdgeNext, EdgeReversed>;
     using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeExclude, ScanlineEdgeWindingNumber>;
     using Scan = Scan<ScanlineEdge>;
 
@@ -855,34 +882,44 @@ PolygonSet cleanPolygonSet(const PolygonSet& ps, Winding winding) {
 }
 
 template<typename CompareWinding>
-struct CombinePolygonSetCondition {
+struct CombinePolygonSetWinding {
     CompareWinding compareWinding;
 
     template<typename ScanlineEdge>
-    bool operator()(ScanlineEdge& e) const {
+    int operator()(ScanlineEdge& e) const {
         // 2 overlapping edges? keep only one.
         if (e.edge->id && e.windingNumberAfter != e.windingNumberBefore && e.windingNumberAfter2 != e.windingNumberBefore2)
             return false;
         bool before = compareWinding(e.windingNumberBefore, e.windingNumberBefore2);
         bool after = compareWinding(e.windingNumberAfter, e.windingNumberAfter2);
-        return before != after;
+        if (before == after)
+            return 0;
+
+        int result = 1;
+        if (before)
+            result = -result;
+        if (e.edge->id == 0 && e.windingNumberBefore > e.windingNumberAfter)
+            result = -result;
+        if (e.edge->id == 1 && e.windingNumberBefore2 > e.windingNumberAfter2)
+            result = -result;
+        return result;
     }
 };
 
 template<typename CompareWinding>
-CombinePolygonSetCondition<CompareWinding> makeCombinePolygonSetCondition(CompareWinding compareWinding) {
+CombinePolygonSetWinding<CompareWinding> makeCombinePolygonSetWinding(CompareWinding compareWinding) {
     return{compareWinding};
 }
 
-struct OpenMinusClosedCondition {
+struct OpenMinusClosedWinding {
     template<typename ScanlineEdge>
-    bool operator()(ScanlineEdge& e) const {
+    int operator()(ScanlineEdge& e) const {
         return e.edge->id == 0 && e.windingNumberBefore2 <= 0 && e.windingNumberAfter2 <= 0;
     }
 };
 
-template<typename Edge, typename PolygonSet, typename Condition, typename Combine>
-std::vector<Edge> combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, bool closed1, bool closed2, Condition condition, Combine combine) {
+template<typename Edge, typename PolygonSet, typename Winding, typename Combine>
+std::vector<Edge> combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2, bool closed1, bool closed2, Winding winding, Combine combine) {
     using Point = PointFromPolygonSet_t<PolygonSet>;
     using ScanlineEdge = ScanlineEdge<Edge, ScanlineEdgeWindingNumber, ScanlineEdgeWindingNumber2>;
     using Scan = Scan<ScanlineEdge>;
@@ -900,7 +937,7 @@ std::vector<Edge> combinePolygonSet(const PolygonSet& ps1, const PolygonSet& ps2
         edges.begin(), edges.end(),
         makeAccumulateWindingNumber([](const ScanlineEdge& e){return e.edge->id == 0; }),
         makeAccumulateWindingNumber2([](const ScanlineEdge& e){return e.edge->id == 1; }),
-        makeCombinePairs<ScanlineEdge>(condition, combine));
+        makeCombinePairs<ScanlineEdge>(winding, combine));
     return edges;
 }
 
