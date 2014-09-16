@@ -22,6 +22,7 @@ function MiscViewModel() {
     self.debug = ko.observable(options.debug);
     self.debugArg0 = ko.observable(0);
     self.debugArg1 = ko.observable(0);
+    self.debugOmitClean = ko.observable(false);
     self.saveSettingsFilename = ko.observable("settings.jscut");
     self.loadLocalStorageFilename = ko.observable("settings.jscut");
     self.launchChiliUrl = ko.observable(null);
@@ -139,7 +140,7 @@ ko.applyBindings(miscViewModel, $("#saveGcodeGoogle1")[0]);
 ko.applyBindings(miscViewModel, $("#openSvgGoogle1")[0]);
 ko.applyBindings(miscViewModel, $("#loadSettingsGoogle1")[0]);
 ko.applyBindings(miscViewModel, $("#openSvgDropbox1")[0]);
-
+ko.applyBindings(miscViewModel, $("#debugPanel")[0]);
 
 function updateSvgAutoHeight() {
     $("svg.autoheight").each(function () {

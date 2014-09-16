@@ -292,6 +292,8 @@ jscut.priv.path = jscut.priv.path || {};
 
     // Simplify and clean up Clipper geometry. fillRule is ClipperLib.PolyFillType.
     jscut.priv.path.simplifyAndClean = function (geometry, fillRule) {
+        if (miscViewModel.debugOmitClean())
+            return geometry;
         geometry = ClipperLib.Clipper.CleanPolygons(geometry, jscut.priv.path.cleanPolyDist);
         geometry = ClipperLib.Clipper.SimplifyPolygons(geometry, fillRule);
         return geometry;
