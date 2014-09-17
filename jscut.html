@@ -234,6 +234,16 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                     <div style="display: table-cell; width: 1000px; padding-right: 5px; text-align:right"><a id="opGenerate" href="#" data-bind="click: generateToolPath">Generate</a></div>
                                     <div style="display: table-cell; width: 1px; text-align:right"><label id="opShowDetail" data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
                                 </div>
+                                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && !miscViewModel.loadedCamCpp() && miscViewModel.camCppError().length == 0">
+                                    <div style="display: table-cell"></div>
+                                    <div style="display: table-cell"></div>
+                                    <div style="display: table-cell">Waiting for cam-cpp.js to load.</div>
+                                </div>
+                                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && miscViewModel.camCppError().length != 0">
+                                    <div style="display: table-cell"></div>
+                                    <div style="display: table-cell"></div>
+                                    <div style="display: table-cell" data-bind="html: miscViewModel.camCppError()"></div>
+                                </div>
                                 <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && toolModel.angle() == 180">
                                     <div style="display: table-cell"></div>
                                     <div style="display: table-cell"></div>
@@ -297,6 +307,12 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                     </div>
                     <div id="collapseTabs" class="panel-collapse collapse in">
                         <div class="panel-body">
+                            <div class="alert alert-danger" data-bind="visible: tabs().length != 0 && !miscViewModel.loadedCamCpp() && miscViewModel.camCppError().length == 0">
+                                <div>Waiting for cam-cpp.js to load.</div>
+                            </div>
+                            <div class="alert alert-danger" data-bind="visible: tabs().length != 0 && miscViewModel.camCppError().length != 0">
+                                <div data-bind="html: miscViewModel.camCppError()"></div>
+                            </div>
                             <table class="table">
                                 <tr>
                                     <td><label for="tabsUnits" class="control-label">Units</label>

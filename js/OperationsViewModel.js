@@ -93,8 +93,9 @@ function ToolModel() {
     }
 }
 
-function Operation(options, svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, loading) {
+function Operation(miscViewModel, options, svgViewModel, materialViewModel, operationsViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, loading) {
     var self = this;
+    self.miscViewModel = miscViewModel;
     self.materialViewModel = materialViewModel;
     self.rawPaths = rawPaths;
     self.showDetail = ko.observable(false);
@@ -358,7 +359,7 @@ function Operation(options, svgViewModel, materialViewModel, operationsViewModel
     }
 }
 
-function OperationsViewModel(options, svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, toolPathsChanged) {
+function OperationsViewModel(miscViewModel, options, svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup, toolPathsChanged) {
     var self = this;
     self.svgViewModel = svgViewModel;
     self.operations = ko.observableArray();
@@ -415,7 +416,7 @@ function OperationsViewModel(options, svgViewModel, materialViewModel, selection
             });
         });
         selectionViewModel.clearSelection();
-        var op = new Operation(options, svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, false);
+        var op = new Operation(miscViewModel, options, svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, rawPaths, toolPathsChanged, false);
         self.operations.push(op);
         op.enabled.subscribe(findMinMax);
         op.toolPaths.subscribe(findMinMax);
@@ -456,7 +457,7 @@ function OperationsViewModel(options, svgViewModel, materialViewModel, selection
             self.operations.removeAll();
 
             for (var i = 0; i < json.operations.length; ++i) {
-                var op = new Operation(options, svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, [], toolPathsChanged, true);
+                var op = new Operation(miscViewModel, options, svgViewModel, materialViewModel, self, toolModel, combinedGeometryGroup, toolPathsGroup, [], toolPathsChanged, true);
                 self.operations.push(op);
                 op.fromJson(json.operations[i]);
                 op.enabled.subscribe(findMinMax);

@@ -29,6 +29,8 @@ function MiscViewModel() {
     self.savedGistUrl = ko.observable("");
     self.savedGistLaunchUrl = ko.observable("");
     self.localStorageSettings = ko.observableArray([]);
+    self.loadedCamCpp = ko.observable(false);
+    self.camCppError = ko.observable("");
 }
 
 var mainSvg = Snap("#MainSvg");
@@ -88,18 +90,28 @@ function loadScript(path, loadedCallback, errorCallback) {
 }
 
 var downloadCppStarted = false;
+var triedPaths = [];
 function downloadCpp() {
     downloadCppStarted = true;
     if (options.camCppPaths.length == 0) {
         console.log('Error: nothing left to try; cam-cpp is unavailable.\n');
+        var e = "cam-cpp.js is unavailable; tried the following paths:<ul>";
+        for (var i = 0; i < triedPaths.length; ++i)
+            e += "<li>" + triedPaths[i] + "</li>";
+        e += "</ul>"
+        miscViewModel.camCppError(e);
         return;
     }
     var nextLocation = options.camCppPaths.shift();
     var script = nextLocation + "/cam-cpp.js";
+    triedPaths.push(script);
 
     loadScript(
         script,
-        function () { console.log('cam-cpp found: ' + script); },
+        function () {
+            console.log('cam-cpp found: ' + script);
+            miscViewModel.loadedCamCpp(true);
+        },
         downloadCpp);
 }
 window.addEventListener("load", function () {
@@ -113,10 +125,10 @@ materialViewModel = new MaterialViewModel();
 selectionViewModel = new SelectionViewModel(svgViewModel, materialViewModel, selectionGroup);
 toolModel = new ToolModel();
 operationsViewModel = new OperationsViewModel(
-    options, svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup,
+    miscViewModel, options, svgViewModel, materialViewModel, selectionViewModel, toolModel, combinedGeometryGroup, toolPathsGroup,
     function () { gcodeConversionViewModel.generateGcode(); });
 tabsViewModel = new TabsViewModel(
-    options, svgViewModel, materialViewModel, selectionViewModel, tabsGroup,
+    miscViewModel, options, svgViewModel, materialViewModel, selectionViewModel, tabsGroup,
     function () { gcodeConversionViewModel.generateGcode(); });
 gcodeConversionViewModel = new GcodeConversionViewModel(options, miscViewModel, materialViewModel, toolModel, operationsViewModel, tabsViewModel);
 

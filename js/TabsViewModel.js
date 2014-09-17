@@ -126,9 +126,10 @@ function Tab(options, svgViewModel, tabsViewModel, tabsGroup, rawPaths, toolPath
     }
 }
 
-function TabsViewModel(options, svgViewModel, materialViewModel, selectionViewModel, tabsGroup, toolPathsChanged) {
+function TabsViewModel(miscViewModel, options, svgViewModel, materialViewModel, selectionViewModel, tabsGroup, toolPathsChanged) {
     "use strict";
     var self = this;
+    self.miscViewModel = miscViewModel;
     self.svgViewModel = svgViewModel;
     self.tabs = ko.observableArray();
     self.units = ko.observable(materialViewModel.matUnits());
