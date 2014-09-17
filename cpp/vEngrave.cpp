@@ -55,6 +55,7 @@ struct VoronoiEdge {
     bool taken = false;
     Index* index1 = nullptr;
     Index* index2 = nullptr;
+    size_t sourceIndex = 0;
 
     void setTaken() {
         taken = true;
@@ -194,104 +195,120 @@ vector<typename ScanlineEdge::Edge> getVoronoiEdges(int debugArg0, int debugArg1
     printf("c\n");
     builder.construct(&vd);
 
-    vector<Edge> edges;
+    vector<Edge> filterEdges;
     printf("d\n");
-    Scan::insertPolygons(edges, geometry.begin(), geometry.end(), true);
+    Scan::insertPolygons(filterEdges, geometry.begin(), geometry.end(), true);
     printf("e\n");
-    for (size_t i = 0; i < edges.size(); ++i)
-        edges[i].isGeometry = true;
+    for (size_t i = 0; i < filterEdges.size(); ++i)
+        filterEdges[i].isGeometry = true;
 
     for (auto& edge: vd.edges())
         edge.color(0);
-    printf("f\n");
-    for (auto& edge: vd.edges()) {
-        //if (debugArg0 && edges.size() == (size_t)debugArg0)
-        //    break;
-        if (edge.is_primary() && edge.is_finite() && !(edge.color()&1)) {
-            auto cell = edge.cell();
-            auto twinCell = edge.twin()->cell();
-            Point p1{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())};
-            Point p2{lround(edge.vertex1()->x()), lround(edge.vertex1()->y())};
+    printf("f: %d voronoi edges\n", vd.edges().size());
 
+    for (size_t i = 0; i < vd.edges().size(); ++i) {
+        auto& edge = vd.edges()[i];
+        if (edge.is_primary() && edge.is_finite() && !(edge.color()&1)) {
             edge.color(1);
             edge.twin()->color(1);
-
-            if (edge.is_linear()) {
-                auto segment1 = segments[cell->source_index()];
-                auto segment2 = segments[twinCell->source_index()];
-                bool keep = true;
-                getCorner(segment1, segment2, [&keep](Point center, Point e1, Point e2) {
-                    double c = dot(e1-center, e2-center) / euclidean_distance(e1, center) / euclidean_distance(e2, center);
-                    if (c <= cos(95/2/M_PI))
-                        keep = false;
-                });
-                if (!keep)
-                    continue;
-
-                if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT || cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_END_POINT) {
-                    PointWithZ ref;
-                    if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
-                        ref = low(segments[cell->source_index()]);
-                    else
-                        ref = high(segments[cell->source_index()]);
-                    int numSegments = 20;
-                    PointWithZ lastPoint;
-                    for (int i = 0; i <= numSegments; ++i) {
-                        PointWithZ p{
-                            lround(x(p1) + (double)i * (x(p2) - x(p1)) / numSegments),
-                            lround(y(p1) + (double)i * (y(p2) - y(p1)) / numSegments)};
-                        p.z = -lround(len(p - ref) / tan(angle/2));
-                        if (i)
-                            edges.emplace_back(lastPoint, p, true);
-                        lastPoint = p;
-                    }
-                }
-                else
-                {
-                    double dist1 = dist(p1, segments[cell->source_index()]);
-                    double dist2 = dist(p2, segments[cell->source_index()]);
-                    int z1 = -lround(dist1 / tan(angle/2));
-                    int z2 = -lround(dist2 / tan(angle/2));
-                    edges.emplace_back(Edge{{x(p1), y(p1), z1}, {x(p2), y(p2), z2}, true});
-                }
-
-            }
-            else if (edge.is_curved()) {
-                Point point;
-                Segment segment;
-
-                if (cell->contains_point()) {
-                    if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
-                        point = low(segments[cell->source_index()]);
-                    else
-                        point = high(segments[cell->source_index()]);
-                    segment = segments[twinCell->source_index()];
-                }
-                else {
-                    if (twinCell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
-                        point = low(segments[twinCell->source_index()]);
-                    else
-                        point = high(segments[twinCell->source_index()]);
-                    segment = segments[cell->source_index()];
-                }
-
-                linearizeParabola(edges, point, segment, p1, p2, angle);
-            }
+            Point p1{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())};
+            Point p2{lround(edge.vertex1()->x()), lround(edge.vertex1()->y())};
+            filterEdges.emplace_back(p1, p2, true);
+            filterEdges.back().sourceIndex = i;
         }
     }
 
-    printf("g1\n");
-    Scan::intersectEdges(edges, edges.begin(), edges.end());
-    printf("g2\n");
-    Scan::sortEdges(edges.begin(), edges.end());
-    printf("g3\n");
+    printf("g1: %d filterEdges\n", filterEdges.size());
+    Scan::intersectEdges(filterEdges, filterEdges.begin(), filterEdges.end());
+    printf("g2: %d filterEdges\n", filterEdges.size());
+    Scan::sortEdges(filterEdges.begin(), filterEdges.end());
+    printf("g3: %d filterEdges\n", filterEdges.size());
     Scan::scan(
-        edges.begin(), edges.end(),
+        filterEdges.begin(), filterEdges.end(),
         makeAccumulateWindingNumber([](ScanlineEdge& e){return e.edge->isGeometry; }),
         SetIsInGeometry{});
-    edges.erase(
-        remove_if(edges.begin(), edges.end(), [](const Edge& e) {return e.isGeometry || !e.isInGeometry; }),
-        edges.end());
+    printf("g4\n");
+
+    vector<Edge> edges;
+    for (auto& e: filterEdges) {
+        if (e.isGeometry || !e.isInGeometry)
+            continue;
+
+        auto& edge = vd.edges()[e.sourceIndex];
+
+        //if (debugArg0 && edges.size() == (size_t)debugArg0)
+        //    break;
+        auto cell = edge.cell();
+        auto twinCell = edge.twin()->cell();
+        Point p1{lround(edge.vertex0()->x()), lround(edge.vertex0()->y())};
+        Point p2{lround(edge.vertex1()->x()), lround(edge.vertex1()->y())};
+
+        if (edge.is_linear()) {
+            auto segment1 = segments[cell->source_index()];
+            auto segment2 = segments[twinCell->source_index()];
+            bool keep = true;
+            getCorner(segment1, segment2, [&keep](Point center, Point e1, Point e2) {
+                double c = dot(e1-center, e2-center) / euclidean_distance(e1, center) / euclidean_distance(e2, center);
+                if (c <= cos(95/2/M_PI))
+                    keep = false;
+            });
+            if (!keep)
+                continue;
+
+            if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT || cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_END_POINT) {
+                PointWithZ ref;
+                if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
+                    ref = low(segments[cell->source_index()]);
+                else
+                    ref = high(segments[cell->source_index()]);
+                int numSegments = 20;
+                PointWithZ lastPoint;
+                for (int i = 0; i <= numSegments; ++i) {
+                    PointWithZ p{
+                        lround(x(p1) + (double)i * (x(p2) - x(p1)) / numSegments),
+                        lround(y(p1) + (double)i * (y(p2) - y(p1)) / numSegments)};
+                    p.z = -lround(len(p - ref) / tan(angle/2));
+                    //printf("zzz0: %d, %d, i: %d, p:(%d, %d), p1: (%d, %d), p2: (%d, %d), ref:(%d, %d)\n", lastPoint.z, p.z, i, x(p), y(p), x(p1), y(p1), x(p2), y(p2), x(ref), y(ref));
+                    if (i)
+                        edges.emplace_back(lastPoint, p, true);
+                    lastPoint = p;
+                }
+            }
+            else
+            {
+                double dist1 = dist(p1, segments[cell->source_index()]);
+                double dist2 = dist(p2, segments[cell->source_index()]);
+                int z1 = -lround(dist1 / tan(angle/2));
+                int z2 = -lround(dist2 / tan(angle/2));
+                //printf("zzz1: %d, %d\n", z1, z2);
+                edges.emplace_back(Edge{{x(p1), y(p1), z1}, {x(p2), y(p2), z2}, true});
+            }
+
+        }
+        else if (edge.is_curved()) {
+            Point point;
+            Segment segment;
+
+            if (cell->contains_point()) {
+                if (cell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
+                    point = low(segments[cell->source_index()]);
+                else
+                    point = high(segments[cell->source_index()]);
+                segment = segments[twinCell->source_index()];
+            }
+            else {
+                if (twinCell->source_category() == bp::SOURCE_CATEGORY_SEGMENT_START_POINT)
+                    point = low(segments[twinCell->source_index()]);
+                else
+                    point = high(segments[twinCell->source_index()]);
+                segment = segments[cell->source_index()];
+            }
+
+            linearizeParabola(edges, point, segment, p1, p2, angle);
+        }
+    }
+
+    printf("g5: %d edges\n", edges.size());
     return edges;
 } // getVoronoiEdges
 
@@ -312,7 +329,7 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
             edgeIndex.edge->index1 = &edgeIndex;
     }
 
-    printf("j\n");
+    printf("j: edgeIndexes: %d\n", edgeIndexes.size());
     auto start = find_if(edgeIndexes.begin(), edgeIndexes.end(), [](const typename Edge::Index& index){return !index.point.z; });
     if (start == edgeIndexes.end())
         start = edgeIndexes.begin(); // !!!!
@@ -336,6 +353,7 @@ void reorderEdges(int debugArg0, int debugArg1, vector<Edge>& edges, Callback ca
 
     printf("k\n");
     while (numProcessed < edges.size()) {
+        //printf("numProcessed: %d/%d\n", numProcessed, edges.size());
         auto searchStart = lower_bound(edgeIndexes.begin(), edgeIndexes.end(), typename Edge::Index{p});
         auto closest = edgeIndexes.begin();
         int closestRank = 0;
@@ -422,6 +440,7 @@ void clipTopZ(double passDepth, double maxDepth, vector<PointWithZ>& path, const
 template<typename Edge>
 void processSpan(double passDepth, double maxDepth, vector<vector<PointWithZ>>& result, vector<Edge>& span)
 {
+    //printf("processSpan\n");
     //passDepth = min(passDepth, maxDepth);
     int minZ = 0;
     for (auto& edge: span)
@@ -430,8 +449,12 @@ void processSpan(double passDepth, double maxDepth, vector<vector<PointWithZ>>& 
     vector<PointWithZ> path;
 
     int deltaZ = max(0.0, -passDepth - minZ);
+    //printf("    span: %d, passDepth: %d, minZ: %d, deltaZ: %d\n", span.size(), (int)passDepth, minZ, deltaZ);
+
     bool reverse = false;
     while (true) {
+        //printf("    span: %d, reverse: %d, deltaZ: %d\n", span.size(), reverse, deltaZ);
+
         if (reverse) {
             for (auto it = span.rbegin(); it != span.rend(); ++it)
             {
@@ -460,6 +483,7 @@ void processSpan(double passDepth, double maxDepth, vector<vector<PointWithZ>>& 
     if (path.back().z != 0)
         path.insert(path.end(), PointWithZ{path.back().x, path.back().y, 0});
     result.emplace_back(move(path));
+    //printf("    result: %d\n", result.size());
 }
 
 extern "C" void vPocket(

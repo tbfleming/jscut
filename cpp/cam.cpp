@@ -57,12 +57,15 @@ void cam::convertPathsToC(
     )
 {
     //!!!! don't need double
+    printf("ma: %d->%d\n", paths.size(), paths.size() * sizeof(double*));
     cPaths = (double**)malloc(paths.size() * sizeof(double*));
     cNumPaths = paths.size();
+    printf("mb: %d->%d\n", paths.size(), paths.size() * sizeof(int));
     cPathSizes = (int*)malloc(paths.size() * sizeof(int));
     for (size_t i = 0; i < paths.size(); ++i) {
         const auto& path = paths[i];
         cPathSizes[i] = path.size();
+        //printf("mc: %d->%d\n", path.size(), path.size() * 3 * sizeof(double) + sizeof(double) / 2);
         char* pathStorage = (char*)malloc(path.size() * 3 * sizeof(double) + sizeof(double) / 2);
         // cPaths[i] contains the unaligned block so the javascript side can free it properly.
         cPaths[i] = (double*)pathStorage;
@@ -75,6 +78,7 @@ void cam::convertPathsToC(
             p[j*3+2] = path[j].z;
         }
     }
+    printf("m done\n");
 }
 
 PolygonSet cam::convertPathsFromC(
