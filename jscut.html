@@ -258,17 +258,17 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                                 <td><input id="opName" data-bind="value: name">
                                             <tr data-bind="visible: camOp()!='V Pocket'">
                                                 <td><label class="control-label">Ramp Plunge</label>
-                                                <td><input type="checkbox" data-bind="checked: ramp" />
+                                                <td><input id="opRamp" type="checkbox" data-bind="checked: ramp" />
                                             <tr>
                                                 <td><label class="control-label">Combine</label>
                                                 <td>
-                                                    <select data-bind="value: combineOp">
+                                                    <select id="opCombine" data-bind="value: combineOp">
                                                         <option>Union</option>
                                                         <option>Intersect</option>
                                                         <option>Diff</option>
                                                         <option>Xor</option>
                                                     </select>
-                                            <tr>
+                                            <tr data-bind="visible: camOp()!='V Pocket'">
                                                 <td><label class="control-label">Direction</label>
                                                 <td>
                                                     <select id="opDirection" data-bind="value: direction">
@@ -281,15 +281,12 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <tr data-bind="visible: camOp()!='V Pocket'">
                                                 <td><label class="control-label">Cut Depth</label>
                                                 <td><input id="opCutDepth" type="number" step="any" data-bind="value: cutDepth">
-                                            <tr data-bind="visible: camOp()=='V Pocket'">
-                                                <td><label class="control-label">Max Depth</label>
-                                                <td><input id="opVMaxDepth" type="number" step="any" data-bind="value: cutDepth">
                                             <tr data-bind="visible: camOp()!='Engrave'">
                                                 <td><label class="control-label">Margin</label>
                                                 <td><input id="opMargin" type="number" step="any" data-bind="value: margin">
                                             <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
                                                 <td><label class="control-label">Width</label>
-                                                <td><input type="number" step="any" data-bind="value: width">
+                                                <td><input id="opWidth" type="number" step="any" data-bind="value: width">
                                             <tr><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
                                         </table>
                                     </div>

@@ -308,11 +308,12 @@ function Operation(miscViewModel, options, svgViewModel, materialViewModel, oper
             'enabled': self.enabled(),
             'combineOp': self.combineOp(),
             'camOp': self.camOp(),
-            'direction': self.direction(),
-            'cutDepth': self.cutDepth(),
         };
-        if (self.camOp() != 'V Pocket')
+        if (self.camOp() != 'V Pocket') {
+            result.direction = self.direction();
+            result.cutDepth = self.cutDepth();
             result.ramp = self.ramp();
+        }
         if (self.camOp() != 'Engrave')
             result.margin = self.margin();
         if (self.camOp() == 'Inside' || self.camOp() == 'Outside')
