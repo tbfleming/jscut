@@ -327,6 +327,7 @@ popoverHover('#inputSelMinSegmentLength', "top", "Minimum length of each line se
 
 popoverHover('#gcodeZeroLowerLeft', "top", "Changes the X and Y Offset values so that 0,0 is at the lower-left corner of all tool paths.");
 popoverHover('#gcodeZeroCenter', "top", "Changes the X and Y Offset values so that 0,0 is at the center of all tool paths.");
+popoverHover('#gcodeReturn00', "top", "Move the tool to 0,0 after the last operation.");
 popoverHover('#gcodeOffsetX', "top", "Amount to add to gcode X coordinates");
 popoverHover('#gcodeOffsetY', "top", "Amount to add to gcode Y coordinates");
 popoverHover('#gcodeMinX', "top", "Minimum X coordinate in gcode. If this is out of range of your machine then adjust X Offset.");

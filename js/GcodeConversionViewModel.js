@@ -26,6 +26,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
     self.gcodeFilename = ko.observable("gcode.gcode");
     self.offsetX = ko.observable(0);
     self.offsetY = ko.observable(0);
+    self.returnTo00 = ko.observable(false);
 
     self.unitConverter.add(self.offsetX);
     self.unitConverter.add(self.offsetY);
@@ -158,6 +159,11 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
             });
         }
 
+        if (self.returnTo00())
+            gcode +=
+                "\r\n; Return to 0,0\r\n" +
+                "G0 X0 Y0 F" + rapidRate + "\r\n";
+
         self.gcode(gcode);
 
         if (options.profile)
@@ -178,6 +184,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
 
     self.offsetX.subscribe(self.generateGcode);
     self.offsetY.subscribe(self.generateGcode);
+    self.returnTo00.subscribe(self.generateGcode);
     toolModel.angle.subscribe(self.generateGcode);
 
     self.toJson = function () {
