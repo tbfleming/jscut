@@ -94,7 +94,6 @@ function Tab(options, svgViewModel, tabsViewModel, tabsGroup, rawPaths, toolPath
         toolPathsChanged();
     }
 
-    svgViewModel.pxPerInch.subscribe(self.recombine);
     self.margin.subscribe(self.recombine);
     self.recombine();
 
@@ -138,6 +137,12 @@ function TabsViewModel(miscViewModel, options, svgViewModel, materialViewModel, 
 
     self.unitConverter.add(self.maxCutDepth);
     self.maxCutDepth.subscribe(toolPathsChanged);
+
+    svgViewModel.pxPerInch.subscribe(function () {
+        var tabs = self.tabs();
+        for (var i = 0; i < tabs.length; ++i)
+            tabs[i].recombine();
+    });
 
     self.addTab = function () {
         var rawPaths = [];

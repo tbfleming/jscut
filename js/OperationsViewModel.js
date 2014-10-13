@@ -230,10 +230,6 @@ function Operation(miscViewModel, options, svgViewModel, materialViewModel, oper
         self.enabled(true);
     }
 
-    toolModel.stepover.subscribe(self.removeToolPaths);
-
-    toolModel.diameter.subscribe(self.recombine);
-    svgViewModel.pxPerInch.subscribe(self.recombine);
     self.combineOp.subscribe(self.recombine);
     self.camOp.subscribe(self.recombine);
     self.margin.subscribe(self.recombine);
@@ -368,6 +364,24 @@ function OperationsViewModel(miscViewModel, options, svgViewModel, materialViewM
     self.minY = ko.observable(0);
     self.maxX = ko.observable(0);
     self.maxY = ko.observable(0);
+
+    svgViewModel.pxPerInch.subscribe(function () {
+        var ops = self.operations();
+        for (var i = 0; i < ops.length; ++i)
+            ops[i].recombine();
+    });
+
+    toolModel.stepover.subscribe(function () {
+        var ops = self.operations();
+        for (var i = 0; i < ops.length; ++i)
+            ops[i].removeToolPaths();
+    });
+
+    toolModel.diameter.subscribe(function () {
+        var ops = self.operations();
+        for (var i = 0; i < ops.length; ++i)
+            ops[i].recombine();
+    });
 
     function findMinMax() {
         var minX = 0, maxX = 0, minY = 0, maxY = 0;
