@@ -24,7 +24,7 @@ function Tab(options, svgViewModel, tabsViewModel, tabsGroup, rawPaths, toolPath
     self.combinedGeometry = [];
     self.combinedGeometrySvg = null;
 
-    tabsViewModel.unitConverter.add(self.margin);
+    tabsViewModel.unitConverter.addComputed(self.margin);
     self.enabled.subscribe(toolPathsChanged);
 
     self.removeCombinedGeometrySvg = function() {
@@ -137,6 +137,20 @@ function TabsViewModel(miscViewModel, options, svgViewModel, materialViewModel, 
 
     self.unitConverter.add(self.maxCutDepth);
     self.maxCutDepth.subscribe(toolPathsChanged);
+
+    self.units.subscribe(function (newValue) {
+        var tabs = self.tabs();
+        if (newValue == "inch")
+            for (var i = 0; i < tabs.length ; ++i) {
+                var tab = tabs[i];
+                tab.margin(tab.margin() / 25.4);
+            }
+        else
+            for (var i = 0; i < tabs.length ; ++i) {
+                var tab = tabs[i];
+                tab.margin(tab.margin() * 25.4);
+            }
+    });
 
     svgViewModel.pxPerInch.subscribe(function () {
         var tabs = self.tabs();
