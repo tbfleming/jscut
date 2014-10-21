@@ -220,7 +220,8 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                         </div>
                         <div style="display:table">
                             <div data-bind="foreach: {data: operations, afterRender: hookupOperationPopovers}">
-                                <div style="display:table-row">
+                                <div style="display:table-row; background-color: #f5f5f5;">
+                                    <div style="display: table-cell; width: 1px; text-align:right"><label id="opShowDetail" data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
                                     <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px"><input id="opEnabled" type="checkbox" data-bind="checked: enabled" /></div>
                                     <div style="display: table-cell; width: 1px; padding-right: 5px">
                                         <select id="opOperation" data-bind="value: camOp">
@@ -231,9 +232,10 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <option>V Pocket</option>
                                         </select>
                                     </div>
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><input id="opCutDepth" class="number" type="number" step="any" data-bind="visible: camOp()!='V Pocket', value: cutDepth"></div>
+                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><label data-bind="visible: camOp()!='V Pocket'" class="control-label">Deep</label></div>
                                     <div style="display: table-cell; width: 1000px; padding-right: 5px; text-align:right"><a id="opGenerate" href="#" data-bind="click: generateToolPath">Generate</a></div>
-                                    <div style="display: table-cell; width: 1px; text-align:right"><label id="opShowDetail" data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
-                                </div>
+                                    </div>
                                 <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && !miscViewModel.loadedCamCpp() && miscViewModel.camCppError().length == 0">
                                     <div style="display: table-cell"></div>
                                     <div style="display: table-cell"></div>
@@ -278,9 +280,6 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <tr>
                                                 <td><label class="control-label">Units</label>
                                                 <td><select data-bind="value: units"><option>inch<option>mm</select>
-                                            <tr data-bind="visible: camOp()!='V Pocket'">
-                                                <td><label class="control-label">Cut Depth</label>
-                                                <td><input id="opCutDepth" type="number" step="any" data-bind="value: cutDepth">
                                             <tr data-bind="visible: camOp()!='Engrave'">
                                                 <td><label class="control-label">Margin</label>
                                                 <td><input id="opMargin" type="number" step="any" data-bind="value: margin">

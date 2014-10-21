@@ -344,7 +344,7 @@ var operationPopovers = {
     opRamp: ['right', 'Ramp the cutter in gradually instead of plunging straight down'],
     opCombine: ['right', 'How to combine multiple objects into this operation'],
     opDirection: ['right', 'What direction the cutter should travel'],
-    opCutDepth: ['right', 'How deep this operation should cut in total'],
+    opCutDepth: ['top', 'How deep this operation should cut in total'],
     opVMaxDepth: ['right', "Maximum depth this operation should cut. <p class='bg-danger'>not implemented yet; this is ignored.</p>"],
     opMargin: ['right', 'Positive: how much material to leave uncut.<br><br>Negative: how much extra material to cut'],
     opWidth: ['right', 'How wide a path to cut. If this is less than the cutter width then it uses the cutter width.'],
