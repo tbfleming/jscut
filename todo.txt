@@ -8,7 +8,6 @@ what users want; the TODO list doesn't.
 * SVG view doesn't resize if "Simulate GCODE" tab is selected
   while opening an SVG
 * Multiple tools
-* Highlight selected operation in main view
 * Force non-boundary paths before boundary ones when combining
 * Report problems on SVG load
   * empty fill
@@ -18,11 +17,9 @@ what users want; the TODO list doesn't.
 * Support these primitives directly instead of requiring conversion to Path
   * Polygon
   * Circle & Ellipse
-* V-shaped bits
 * Code cleanup
   * Replace alertFn callback with exception?
 * Trim gcode of tiny moves
 * UI cleanup
   * add scroll & zoom
   * make tutorial hidable
-  * wasted space
