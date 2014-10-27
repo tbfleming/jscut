@@ -23,6 +23,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
     var needToDrawHeightMap = false;
     var requestFrame;
 
+    var gpuMem = 2 * 1024 * 1024;
     var resolution = 1024;
     var cutterDia = .125;
     var cutterAngleRad = Math.PI;
@@ -156,7 +157,6 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
     }
 
     var pathBufferContent;
-    var pathBuffer;
     var pathNumPoints = 0;
     var pathStride = 9;
     var pathVertexesPerLine = 18;
@@ -332,12 +332,7 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         }
         self.totalTime = time;
 
-        if (!pathBuffer)
-            pathBuffer = self.gl.createBuffer();
-        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
-        console.log("Path buffer size (MB): " + bufferContent.length * 4 / 1024 / 1024);
-        self.gl.bufferData(self.gl.ARRAY_BUFFER, bufferContent, self.gl.STATIC_DRAW);
-        self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+        console.log("bufferContent (MB): " + bufferContent.length * 4 / 1024 / 1024);
 
         pathXOffset = -(minX + maxX) / 2;
         pathYOffset = -(minY + maxY) / 2;
@@ -351,9 +346,18 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         requestFrame();
     }
 
+    var pathBuffer;
+
     self.drawPath = function () {
         if (!rasterizePathProgram || !renderHeightMapProgram || !basicProgram)
             return;
+
+        if (!pathBuffer) {
+            pathBuffer = self.gl.createBuffer();
+            self.gl.bindBuffer(self.gl.ARRAY_BUFFER, pathBuffer);
+            self.gl.bufferData(self.gl.ARRAY_BUFFER, gpuMem, self.gl.DYNAMIC_DRAW);
+            self.gl.bindBuffer(self.gl.ARRAY_BUFFER, null);
+        }
 
         self.gl.useProgram(rasterizePathProgram);
         self.gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -383,7 +387,19 @@ function RenderPath(options, canvas, shaderDir, shadersReady) {
         self.gl.enableVertexAttribArray(rasterizePathProgram.command);
         if(isVBit)
             self.gl.enableVertexAttribArray(rasterizePathProgram.rawPos);
-        self.gl.drawArrays(self.gl.TRIANGLES, 0, pathNumVertexes);
+
+        var numTriangles = pathNumVertexes / 3;
+        var lastTriangle = 0;
+        var maxTriangles = Math.floor(gpuMem / pathStride / 3 / Float32Array.BYTES_PER_ELEMENT);
+
+        while (lastTriangle < numTriangles) {
+            var n = Math.min(numTriangles - lastTriangle, maxTriangles);
+            var b = new Float32Array(pathBufferContent.buffer, lastTriangle * pathStride * 3 * Float32Array.BYTES_PER_ELEMENT, n * pathStride * 3);
+            self.gl.bufferSubData(self.gl.ARRAY_BUFFER, 0, b);
+            self.gl.drawArrays(self.gl.TRIANGLES, 0, n * 3);
+            lastTriangle += n;
+        }
+
         self.gl.disableVertexAttribArray(rasterizePathProgram.pos1);
         self.gl.disableVertexAttribArray(rasterizePathProgram.pos2);
         self.gl.disableVertexAttribArray(rasterizePathProgram.startTime);
