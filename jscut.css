@@ -72,3 +72,27 @@ code {
     cursor: inherit;
     display: block;
 }
+
+#operationsList {
+  }
+  #operationsList .summary {
+    background-color: #f5f5f5;
+    overflow: auto;
+    }
+    #operationsList .summary label {
+        font-weight: normal;
+    }
+    #operationsList .summary div {
+      float:left;
+      margin-right: 5px;
+      }
+      #operationsList .summary div:first-child {
+        margin-left: 5px;
+      }
+      #operationsList .summary div:last-child {
+        float:right;
+        margin-top: 4px;
+      }
+  #operationsList .details {
+    padding: 5px 15px 0 15px;
+  }
