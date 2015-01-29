@@ -20,7 +20,7 @@ function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
     var self = this;
 
     self.selMinNumSegments = ko.observable("1");
-    self.selMinSegmentLength = ko.observable("0.1");
+    self.selMinSegmentLength = ko.observable("0.01");
     self.selNumSelected = ko.observable("0");
 
     materialViewModel.unitConverter.add(self.selMinSegmentLength);
