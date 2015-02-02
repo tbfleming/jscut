@@ -76,7 +76,7 @@ standalone: default
 	tar czf jscut_standalone.tar.gz jscut_standalone
 
 deploy: standalone
-	appcfg.py update .
+	appcfg.py --oauth2 --noauth_local_webserver update .
 
 clean:
 	rm -rf jscut_standalone
