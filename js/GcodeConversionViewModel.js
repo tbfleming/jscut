@@ -79,13 +79,13 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
         if (ops.length == 0)
             return;
 
-        var safeZ = self.unitConverter.fromInch(materialViewModel.matZSafeMove.toInch());
-        var rapidRate = self.unitConverter.fromInch(toolModel.rapidRate.toInch());
-        var plungeRate = self.unitConverter.fromInch(toolModel.plungeRate.toInch());
-        var cutRate = self.unitConverter.fromInch(toolModel.cutRate.toInch());
-        var passDepth = self.unitConverter.fromInch(toolModel.passDepth.toInch());
-        var topZ = self.unitConverter.fromInch(materialViewModel.matTopZ.toInch());
-        var tabCutDepth = self.unitConverter.fromInch(tabsViewModel.maxCutDepth.toInch());
+        var safeZ = this.unitConverter.toItsOwn(materialViewModel.matZSafeMove(), materialViewModel.matUnits(), self.units());
+        var rapidRate = this.unitConverter.toItsOwn(toolModel.rapidRate(), toolModel.units(), self.units());
+        var plungeRate = this.unitConverter.toItsOwn(toolModel.plungeRate(), toolModel.units(), self.units());
+        var cutRate = this.unitConverter.toItsOwn(toolModel.cutRate(), toolModel.units(), self.units());
+        var passDepth = this.unitConverter.toItsOwn(toolModel.passDepth(), toolModel.units(), self.units());
+        var topZ = this.unitConverter.toItsOwn(materialViewModel.matTopZ(), materialViewModel.matUnits(), self.units());
+        var tabCutDepth = this.unitConverter.toItsOwn(tabsViewModel.maxCutDepth(), tabsViewModel.units(), self.units());
         var tabZ = topZ - tabCutDepth;
 
         if(passDepth <= 0) {
