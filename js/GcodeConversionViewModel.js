@@ -79,13 +79,13 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
         if (ops.length == 0)
             return;
 
-        var safeZ = self.unitConverter.fromInch(materialViewModel.matZSafeMove.toInch());
-        var rapidRate = self.unitConverter.fromInch(toolModel.rapidRate.toInch());
-        var plungeRate = self.unitConverter.fromInch(toolModel.plungeRate.toInch());
-        var cutRate = self.unitConverter.fromInch(toolModel.cutRate.toInch());
-        var passDepth = self.unitConverter.fromInch(toolModel.passDepth.toInch());
-        var topZ = self.unitConverter.fromInch(materialViewModel.matTopZ.toInch());
-        var tabCutDepth = self.unitConverter.fromInch(tabsViewModel.maxCutDepth.toInch());
+        var safeZ = materialViewModel.matZSafeMove();
+        var rapidRate = toolModel.rapidRate();
+        var plungeRate = toolModel.plungeRate();
+        var cutRate = toolModel.cutRate();
+        var passDepth = toolModel.passDepth();
+        var topZ = materialViewModel.matTopZ();
+        var tabCutDepth = tabsViewModel.maxCutDepth();
         var tabZ = topZ - tabCutDepth;
 
         if(passDepth <= 0) {
