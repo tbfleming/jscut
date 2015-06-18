@@ -57,7 +57,7 @@ function UnitConverter(units) {
             return f * 25.4;
         } else {
            // they are the same
-           return f;
+           return f * 1;
         }
     }
 
