@@ -387,7 +387,7 @@ jscut.priv.cam = jscut.priv.cam || {};
         }
 
         function convertPoint(p) {
-            result = ' X' + (p.X * scale + offsetX).toFixed(decimal) + ' Y' + (-p.Y * scale + offsetY).toFixed(decimal);
+            var result = ' X' + (p.X * scale + offsetX).toFixed(decimal) + ' Y' + (-p.Y * scale + offsetY).toFixed(decimal);
             if (useZ)
                 result += ' Z' + (p.Z * scale + topZ).toFixed(decimal);
             return result;
