@@ -386,7 +386,7 @@ jscut.priv.cam = jscut.priv.cam || {};
             return -p.Y * scale + offsetY;
         }
 
-        function convertPoint(p) {
+        function convertPoint(p, useZ) {
             var result = ' X' + (p.X * scale + offsetX).toFixed(decimal) + ' Y' + (-p.Y * scale + offsetY).toFixed(decimal);
             if (useZ)
                 result += ' Z' + (p.Z * scale + topZ).toFixed(decimal);
@@ -419,7 +419,7 @@ jscut.priv.cam = jscut.priv.cam || {};
                     currentZ = Math.max(finishedZ, tabZ);
                 gcode +=
                     '; Rapid to initial position\r\n' +
-                    'G1' + convertPoint(origPath[0]) + rapidFeedGcode + '\r\n' +
+                    'G1' + convertPoint(origPath[0], false) + rapidFeedGcode + '\r\n' +
                     'G1 Z' + currentZ.toFixed(decimal) + '\r\n';
 
                 var selectedPaths;
@@ -460,7 +460,7 @@ jscut.priv.cam = jscut.priv.cam || {};
                                     for (var i = 1; i < rampPath.length; ++i) {
                                         distTravelled += dist(getX(rampPath[i - 1]), getY(rampPath[i - 1]), getX(rampPath[i]), getY(rampPath[i]));
                                         var newZ = currentZ + distTravelled / totalDist * (selectedZ - currentZ);
-                                        gcode += 'G1' + convertPoint(rampPath[i]) + ' Z' + newZ.toFixed(decimal);
+                                        gcode += 'G1' + convertPoint(rampPath[i], false) + ' Z' + newZ.toFixed(decimal);
                                         if (i == 1)
                                             gcode += ' F' + Math.min(totalDist / minPlungeTime, namedArgs.cutFeed).toFixed(decimal) + '\r\n';
                                         else
@@ -481,7 +481,7 @@ jscut.priv.cam = jscut.priv.cam || {};
                     gcode += '; cut\r\n';
 
                     for (var i = 1; i < selectedPath.length; ++i) {
-                        gcode += 'G1' + convertPoint(selectedPath[i]);
+                        gcode += 'G1' + convertPoint(selectedPath[i], useZ);
                         if (i == 1)
                             gcode += cutFeedGcode + '\r\n';
                         else
