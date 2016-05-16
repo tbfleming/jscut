@@ -164,6 +164,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
                 "\r\n; Return to 0,0\r\n" +
                 "G0 X0 Y0 F" + rapidRate + "\r\n";
 
+        gcode += "M2\r\n";
         self.gcode(gcode);
 
         if (options.profile)
