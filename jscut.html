@@ -218,12 +218,12 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                 <button id="createOperationButton" class="btn btn-default" data-bind="click: addOperation, enable:selectionViewModel.selNumSelected()>0">Create Operation</button>
                             </div>
                         </div>
-                        <div style="display:table">
-                            <div data-bind="foreach: {data: operations, afterRender: hookupOperationPopovers}">
-                                <div style="display:table-row; background-color: #f5f5f5;">
-                                    <div style="display: table-cell; width: 1px; text-align:right"><label id="opShowDetail" data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
-                                    <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px"><input id="opEnabled" type="checkbox" data-bind="checked: enabled" /></div>
-                                    <div style="display: table-cell; width: 1px; padding-right: 5px">
+                        <div id="operationsList">
+                            <div class="operation" data-bind="foreach: {data: operations, afterRender: hookupOperationPopovers}">
+                                <div class="summary">
+                                    <div><label id="opShowDetail" data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'"></label></div>
+                                    <div><input id="opEnabled" type="checkbox" data-bind="checked: enabled" /></div>
+                                    <div>
                                         <select id="opOperation" data-bind="value: camOp">
                                             <option>Pocket</option>
                                             <option>Inside</option>
@@ -232,63 +232,56 @@ along with jscut.  If not, see <http://www.gnu.org/licenses/>.
                                             <option>V Pocket</option>
                                         </select>
                                     </div>
-                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><input id="opCutDepth" class="number" type="number" step="any" data-bind="visible: camOp()!='V Pocket', value: cutDepth"></div>
-                                    <div style="display: table-cell; width: 1px; padding-right: 5px"><label data-bind="visible: camOp()!='V Pocket'" class="control-label">Deep</label></div>
-                                    <div style="display: table-cell; width: 1000px; padding-right: 5px; text-align:right"><a id="opGenerate" href="#" data-bind="click: generateToolPath">Generate</a></div>
+                                    <div>
+                                        <input id="opCutDepth" class="number" type="number" step="any" data-bind="visible: camOp()!='V Pocket', value: cutDepth">
+                                        <label data-bind="visible: camOp()!='V Pocket'" class="control-label">Deep</label>
                                     </div>
-                                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && !miscViewModel.loadedCamCpp() && miscViewModel.camCppError().length == 0">
-                                    <div style="display: table-cell"></div>
-                                    <div style="display: table-cell"></div>
-                                    <div style="display: table-cell">Waiting for cam-cpp.js to load.</div>
+                                    <div><a id="opGenerate" href="#" data-bind="click: generateToolPath">Generate</a></div>
                                 </div>
-                                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && miscViewModel.camCppError().length != 0">
-                                    <div style="display: table-cell"></div>
-                                    <div style="display: table-cell"></div>
-                                    <div style="display: table-cell" data-bind="html: miscViewModel.camCppError()"></div>
+                                <div class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && !miscViewModel.loadedCamCpp() && miscViewModel.camCppError().length == 0">
+                                    Waiting for cam-cpp.js to load.
                                 </div>
-                                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && toolModel.angle() == 180">
-                                    <div style="display: table-cell"></div>
-                                    <div style="display: table-cell"></div>
-                                    <div style="display: table-cell">Set Tool Angle. This operation will not work until tool angle is set.</div>
+                                <div class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && miscViewModel.camCppError().length != 0">
+                                    <div data-bind="html: miscViewModel.camCppError()"></div>
                                 </div>
-                                <div style="display:table-row" data-bind="visible: showDetail">
-                                    <div style="display: table-cell; width: 20px"></div>
-                                    <div style="display: table-cell">
-                                        <table class="table">
-                                            <tr>
-                                                <td><label class="control-label">Name</label>
-                                                <td><input id="opName" data-bind="value: name">
-                                            <tr data-bind="visible: camOp()!='V Pocket'">
-                                                <td><label class="control-label">Ramp Plunge</label>
-                                                <td><input id="opRamp" type="checkbox" data-bind="checked: ramp" />
-                                            <tr>
-                                                <td><label class="control-label">Combine</label>
-                                                <td>
-                                                    <select id="opCombine" data-bind="value: combineOp">
-                                                        <option>Union</option>
-                                                        <option>Intersect</option>
-                                                        <option>Diff</option>
-                                                        <option>Xor</option>
-                                                    </select>
-                                            <tr data-bind="visible: camOp()!='V Pocket'">
-                                                <td><label class="control-label">Direction</label>
-                                                <td>
-                                                    <select id="opDirection" data-bind="value: direction">
-                                                        <option>Conventional</option>
-                                                        <option>Climb</option>
-                                                    </select>
-                                            <tr>
-                                                <td><label class="control-label">Units</label>
-                                                <td><select data-bind="value: units"><option>inch<option>mm</select>
-                                            <tr data-bind="visible: camOp()!='Engrave'">
-                                                <td><label class="control-label">Margin</label>
-                                                <td><input id="opMargin" type="number" step="any" data-bind="value: margin">
-                                            <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
-                                                <td><label class="control-label">Width</label>
-                                                <td><input id="opWidth" type="number" step="any" data-bind="value: width">
-                                            <tr><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
-                                        </table>
-                                    </div>
+                                <div class="alert alert-danger" data-bind="visible: enabled() && camOp()=='V Pocket' && toolModel.angle() == 180">
+                                    <div>Set Tool Angle. This operation will not work until tool angle is set.</div>
+                                </div>
+                                <div class="details" style="display:table-row" data-bind="visible: showDetail">
+                                    <table class="table">
+                                        <tr>
+                                            <td><label class="control-label">Name</label>
+                                            <td><input id="opName" data-bind="value: name">
+                                        <tr data-bind="visible: camOp()!='V Pocket'">
+                                            <td><label class="control-label">Ramp Plunge</label>
+                                            <td><input id="opRamp" type="checkbox" data-bind="checked: ramp" />
+                                        <tr>
+                                            <td><label class="control-label">Combine</label>
+                                            <td>
+                                                <select id="opCombine" data-bind="value: combineOp">
+                                                    <option>Union</option>
+                                                    <option>Intersect</option>
+                                                    <option>Diff</option>
+                                                    <option>Xor</option>
+                                                </select>
+                                        <tr data-bind="visible: camOp()!='V Pocket'">
+                                            <td><label class="control-label">Direction</label>
+                                            <td>
+                                                <select id="opDirection" data-bind="value: direction">
+                                                    <option>Conventional</option>
+                                                    <option>Climb</option>
+                                                </select>
+                                        <tr>
+                                            <td><label class="control-label">Units</label>
+                                            <td><select data-bind="value: units"><option>inch<option>mm</select>
+                                        <tr data-bind="visible: camOp()!='Engrave'">
+                                            <td><label class="control-label">Margin</label>
+                                            <td><input id="opMargin" type="number" step="any" data-bind="value: margin">
+                                        <tr data-bind="visible: camOp()=='Inside' || camOp()=='Outside'">
+                                            <td><label class="control-label">Width</label>
+                                            <td><input id="opWidth" type="number" step="any" data-bind="value: width">
+                                        <tr><td><td><a href="#" data-bind="click: $root.removeOperation">Delete Operation</a>
+                                    </table>
                                 </div>
                             </div>
                         </div>
