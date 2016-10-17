@@ -49,18 +49,6 @@ function UnitConverter(units) {
             return x * 25.4;
     }
 
-    self.toItsOwn = function (f, modelUnits, selfUnits) {
-        // this checks the tool operations units setting against the gcode units setting and returns the correct value
-        if (modelUnits == "inch" && selfUnits == 'mm') {
-            return f / 25.4;
-        } else if (modelUnits == "mm" &&  selfUnits == 'inch') {
-            return f * 25.4;
-        } else {
-           // they are the same
-           return f * 1;
-        }
-    }
-
     self.add = function (observable) {
         self.unitsObservables.push(observable);
         observable.units = function () {
