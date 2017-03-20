@@ -233,7 +233,7 @@ function loadSvg(alert, filename, content) {
     if(alert)
         alert.remove();
     showAlert("loaded " + filename, "alert-success");
-    tutorial(2, 'Click 1 or more objects.');
+    tutorial(2, 'Click 1 or more objects or double click to select all');
 }
 
 $(document).on('change', '#choose-svg-file', function (event) {
@@ -275,9 +275,33 @@ function openSvgDropbox() {
 }
 
 $("#MainSvg").click(function (e) {
+    // Ignore double click
+    if (e.originalEvent.detail > 1)
+        return;
+
     var element = Snap.getElementByPoint(e.pageX, e.pageY);
     if (element != null) {
         operationsViewModel.clickOnSvg(element) || tabsViewModel.clickOnSvg(element) || selectionViewModel.clickOnSvg(element);
+        if (selectionViewModel.selNumSelected() > 0) {
+            tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
+        }
+    }
+});
+
+$("#MainSvg").dblclick(function (e) {
+    // Toggle select all
+    if (selectionViewModel.selNumSelected() > 1) {
+        selectionViewModel.clearSelection();
+        return;
+    }
+
+    var selectedPaths = mainSvg.selectAll('path');
+    if (selectedPaths.length > 0) {
+        selectedPaths.forEach(function (element) {
+            if (element.attr("class") != "selectedPath") {
+                operationsViewModel.clickOnSvg(element) || tabsViewModel.clickOnSvg(element) || selectionViewModel.clickOnSvg(element);
+            }
+        });
         if (selectionViewModel.selNumSelected() > 0) {
             tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
         }
