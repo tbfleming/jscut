@@ -406,7 +406,9 @@ jscut.priv.cam = jscut.priv.cam || {};
 
             var currentZ = safeZ;
             var finishedZ = topZ;
-            while (finishedZ > botZ) {
+            // Hide floating-point arithmetic imprecision and work with g-code precision
+            // to avoid possible duplication of the last pass
+            while (Number(finishedZ.toFixed(decimal)) > Number(botZ.toFixed(decimal))) {
                 var nextZ = Math.max(finishedZ - passDepth, botZ);
                 if (currentZ < safeZ && (!path.safeToClose || tabGeometry.length > 0)) {
                     gcode += retractGcode;
