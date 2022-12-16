@@ -419,8 +419,8 @@ jscut.priv.cam = jscut.priv.cam || {};
                     currentZ = Math.max(finishedZ, tabZ);
                 gcode +=
                     '; Rapid to initial position\r\n' +
-                    'G1' + convertPoint(origPath[0], false) + rapidFeedGcode + '\r\n' +
-                    'G1 Z' + currentZ.toFixed(decimal) + '\r\n';
+                    'G0' + convertPoint(origPath[0], false) + '\r\n' +
+                    'G0 Z' + currentZ.toFixed(decimal) + '\r\n';
 
                 var selectedPaths;
                 if (nextZ >= tabZ || useZ)
