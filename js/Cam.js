@@ -372,7 +372,8 @@ jscut.priv.cam = jscut.priv.cam || {};
 
         var retractGcode =
             '; Retract\r\n' +
-            'G1 Z' + safeZ.toFixed(decimal) + rapidFeedGcode + '\r\n';
+            'G1 Z' + safeZ.toFixed(decimal) + retractFeedGcode + '\r\n';
+
 
         var retractForTabGcode =
             '; Retract for tab\r\n' +
@@ -420,7 +421,7 @@ jscut.priv.cam = jscut.priv.cam || {};
                 gcode +=
                     '; Rapid to initial position\r\n' +
                     'G1' + convertPoint(origPath[0], false) + rapidFeedGcode + '\r\n' +
-                    'G1 Z' + currentZ.toFixed(decimal) + '\r\n';
+                    'G1 Z' + currentZ.toFixed(decimal) + retractFeedGcode + '\r\n';
 
                 var selectedPaths;
                 if (nextZ >= tabZ || useZ)

@@ -82,6 +82,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
         var safeZ = self.unitConverter.fromInch(materialViewModel.matZSafeMove.toInch());
         var rapidRate = self.unitConverter.fromInch(toolModel.rapidRate.toInch());
         var plungeRate = self.unitConverter.fromInch(toolModel.plungeRate.toInch());
+        var rapidZRate = self.unitConverter.fromInch(toolModel.rapidZRate.toInch());
         var cutRate = self.unitConverter.fromInch(toolModel.cutRate.toInch());
         var passDepth = self.unitConverter.fromInch(toolModel.passDepth.toInch());
         var topZ = self.unitConverter.fromInch(materialViewModel.matTopZ.toInch());
@@ -115,7 +116,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
         else
             gcode += "G21         ; Set units to mm\r\n";
         gcode += "G90         ; Absolute positioning\r\n";
-        gcode += "G1 Z" + safeZ + " F" + rapidRate + "      ; Move to clearance level\r\n"
+        gcode += "G1 Z" + safeZ + " F" + rapidZRate + "      ; Move to clearance level\r\n"
 
         for (var opIndex = 0; opIndex < ops.length; ++opIndex) {
             var op = ops[opIndex];
@@ -135,6 +136,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
                 "\r\n; Cut Depth:    " + cutDepth +
                 "\r\n; Pass Depth:   " + passDepth +
                 "\r\n; Plunge rate:  " + plungeRate +
+                "\r\n; Rapid Z rate:  " + rapidZRate +
                 "\r\n; Cut rate:     " + cutRate +
                 "\r\n;\r\n";
 
@@ -151,7 +153,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
                 safeZ:          safeZ,
                 passDepth:      passDepth,
                 plungeFeed:     plungeRate,
-                retractFeed:    rapidRate,
+		retractFeed:    rapidZRate,
                 cutFeed:        cutRate,
                 rapidFeed:      rapidRate,
                 tabGeometry:    tabGeometry,
