@@ -115,7 +115,7 @@ function GcodeConversionViewModel(options, miscViewModel, materialViewModel, too
         else
             gcode += "G21         ; Set units to mm\r\n";
         gcode += "G90         ; Absolute positioning\r\n";
-        gcode += "G1 Z" + safeZ + " F" + rapidRate + "      ; Move to clearance level\r\n"
+        gcode += "G0 Z" + safeZ + "      ; Move to clearance level\r\n"
 
         for (var opIndex = 0; opIndex < ops.length; ++opIndex) {
             var op = ops[opIndex];

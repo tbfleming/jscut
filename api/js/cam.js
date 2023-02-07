@@ -142,8 +142,8 @@ jscut.cam = jscut.cam || {};
         else
             gcode += "G21         ; Set units to mm\r\n";
         gcode += "G90         ; Absolute positioning\r\n";
-        gcode += "G1 Z" + (topZ + material.clearance * fromMatConv * toGcodeConv) +
-            " F" + tool.rapidRate * fromToolConv * toGcodeConv + "      ; Move to clearance level\r\n"
+        gcode += "G0 Z" + (topZ + material.clearance * fromMatConv * toGcodeConv) +
+            "      ; Move to clearance level\r\n"
         return gcode;
     }
 
