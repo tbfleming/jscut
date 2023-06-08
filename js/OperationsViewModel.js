@@ -25,12 +25,14 @@ function ToolModel() {
     self.stepover = ko.observable(.4);
     self.rapidRate = ko.observable(100);
     self.plungeRate = ko.observable(5);
+    self.rapidZRate = ko.observable(10);
     self.cutRate = ko.observable(40);
 
     self.unitConverter.add(self.diameter);
     self.unitConverter.add(self.passDepth);
     self.unitConverter.add(self.rapidRate);
     self.unitConverter.add(self.plungeRate);
+    self.unitConverter.add(self.rapidZRate);
     self.unitConverter.add(self.cutRate);
 
     self.angle.subscribe(function (newValue) {
@@ -68,6 +70,7 @@ function ToolModel() {
             'stepover': self.stepover(),
             'rapidRate': self.rapidRate(),
             'plungeRate': self.plungeRate(),
+            'rapidZRate': self.rapidZRate(),
             'cutRate': self.cutRate(),
         };
     }
@@ -88,6 +91,7 @@ function ToolModel() {
             f(json.stepover, self.stepover);
             f(json.rapidRate, self.rapidRate);
             f(json.plungeRate, self.plungeRate);
+            f(json.rapidZRate, self.rapidZRate);
             f(json.cutRate, self.cutRate);
         }
     }
