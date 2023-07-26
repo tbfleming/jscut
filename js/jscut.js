@@ -284,6 +284,19 @@ $("#MainSvg").click(function (e) {
     }
 });
 
+$("#MainSvg").dblclick(function (e) {
+    var elements = Snap.selectAll("path");
+    for (let index = 0; index < elements.length; index++) {
+        var element = elements[index];
+        if (element != null) {
+            operationsViewModel.clickOnSvg(element) || tabsViewModel.clickOnSvg(element) || selectionViewModel.clickOnSvg(element);
+            if (selectionViewModel.selNumSelected() > 0) {
+                tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
+            }
+        }
+    }
+});
+
 function makeAllSameUnit(val) {
     "use strict";
     materialViewModel.matUnits(val);
